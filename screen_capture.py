@@ -101,32 +101,33 @@ async def setup(cap):
   t_count = int(sc_settings["top-count"])
   b_count = int(sc_settings["bottom-count"])
 
-  is_fwd = int(sc_settings["fwd"])
+  #is_fwd = int(sc_settings["fwd"])
   is_bl = int(sc_settings["bl"]) # is bottom left
 
   fwd_multiplier = 1
   next_index = 0
 
-  if(is_fwd <= 1): # if it is reverse
-    fwd_multiplier = -1
-    next_index = l_count + r_count + t_count + b_count  
+  # if(is_fwd <= 1): # if it is reverse
+  #   fwd_multiplier = -1
+  #   next_index = l_count + r_count + t_count + b_count  
   
-  if(is_bl <= 1): # if it is bottom right, clockwise, unless its reversed.
-    await setup_right_side(r_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+  if(is_bl <= 1): # if it is bottom right, clockwise while counting backwards 
     next_index += r_count * fwd_multiplier
-    await setup_top_side(t_count, led_dict, w, v_offset, h_offset, next_index, fwd_multiplier)
+    await setup_right_side(r_count, led_dict, w, h, h_offset, next_index, -1)
     next_index += t_count * fwd_multiplier
-    await setup_left_side(l_count, led_dict, h, v_offset, h_offset, next_index, fwd_multiplier)
+    await setup_top_side(t_count, led_dict, w, v_offset, next_index, -1)
     next_index += l_count * fwd_multiplier
-    await setup_bottom_side(b_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
-  else: # it is bottom left, counter clockwise, unless its reversed
-    await setup_left_side(l_count, led_dict, h, v_offset, h_offset, next_index, fwd_multiplier)
+    await setup_left_side(l_count, led_dict, h, h_offset, next_index, -1)
+    next_index+= b_count * fwd_multiplier
+    await setup_bottom_side(b_count, led_dict, w, h, v_offset, next_index, -1)
+  else: # it is bottom left, clockwise, unless its reversed
+    await setup_left_side(l_count, led_dict, h, h_offset, next_index, 1)
     next_index += r_count * fwd_multiplier
-    await setup_top_side(t_count, led_dict, w, v_offset, h_offset, next_index, fwd_multiplier)
+    await setup_top_side(t_count, led_dict, w, v_offset, next_index, 1)
     next_index += t_count * fwd_multiplier
-    await setup_right_side(r_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+    await setup_right_side(r_count, led_dict, w, h, h_offset, next_index, 1)
     next_index += r_count * fwd_multiplier
-    await setup_bottom_side(b_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+    await setup_bottom_side(b_count, led_dict, w, h, v_offset, next_index, 1)
 
   return led_dict
 
@@ -134,16 +135,15 @@ async def setup(cap):
 """
 set up left side of screen, and add the led data to the dictionary
 """
-async def setup_left_side(count, led_dict, h, v_offset, h_offset, next_index, fwd_multiplier):
+async def setup_left_side(count, led_dict, h, h_offset, next_index, fwd_multiplier):
   spacing = h // count # spacing in between the leds
-  led_offset = v_offset // spacing # the inset, in led index, that the leds are offset
 
-  next_index += led_offset * fwd_multiplier # next led index
+  #next_index += led_offset * fwd_multiplier # next led index
   # for the index on the screen where it starts. has to start at end because of how screen array is
-  start = count - led_offset
-  stop = led_offset
+  start = count
+  stop = 0
   x_index = h_offset # starts at this
-  for i in range(start, stop, -1): # start to stop - 1
+  for i in range(start, stop, fwd_multiplier): # start to stop - 1
     y_index = i * spacing
     led_dict[next_index] = (y_index, x_index)
     next_index += 1 * fwd_multiplier
@@ -151,15 +151,14 @@ async def setup_left_side(count, led_dict, h, v_offset, h_offset, next_index, fw
 """
 set up right side of screen, and add the led data to the dictionary
 """
-async def setup_right_side(count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier):
+async def setup_right_side(count, led_dict, w, h, h_offset, next_index, fwd_multiplier):
   spacing = h // count
-  led_offset = v_offset // spacing
 
-  next_index += led_offset * fwd_multiplier
-  start = led_offset
-  stop = count - led_offset
+  #next_index += led_offset * fwd_multiplier
+  start = 0
+  stop = count
   x_index = (w - 1) - h_offset
-  for i in range(start, stop, 1):
+  for i in range(start, stop, fwd_multiplier):
     y_index = i * spacing
     led_dict[next_index] = (y_index, x_index)
     next_index += 1 * fwd_multiplier
@@ -167,15 +166,14 @@ async def setup_right_side(count, led_dict, w, h, v_offset, h_offset, next_index
 """
 set up top of screen, and add the led data to the dictionary
 """
-async def setup_top_side(count, led_dict, w, v_offset, h_offset, next_index, fwd_multiplier):
+async def setup_top_side(count, led_dict, w, v_offset, next_index, fwd_multiplier):
   spacing = w // count
-  led_offset = h_offset // spacing
 
-  next_index+= led_offset * fwd_multiplier
-  start = led_offset
-  stop = count - led_offset
+  #next_index+= led_offset * fwd_multiplier
+  start = 0
+  stop = count
   y_index = v_offset # starts here
-  for i in range(start, stop, 1):
+  for i in range(start, stop, fwd_multiplier):
     x_index = i * spacing
     led_dict[next_index] = (y_index, x_index)
     next_index += 1 * fwd_multiplier
@@ -183,18 +181,16 @@ async def setup_top_side(count, led_dict, w, v_offset, h_offset, next_index, fwd
 """
 set up bottom of screen, and add the led data to the dictionary
 """
-async def setup_bottom_side(count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier):
+async def setup_bottom_side(count, led_dict, w, h, v_offset, next_index, fwd_multiplier):
   spacing = w // count
-  led_offset = h_offset // spacing
-
-  next_index += led_offset * fwd_multiplier
-  start = count - led_offset
-  stop = led_offset
+  #next_index += 1 * fwd_multiplier
+  start = count
+  stop = 0
   y_index = (h - 1) - v_offset
-  for i in range(start, stop, -1):
+  for i in range(start, stop, fwd_multiplier):
     x_index = i * spacing
     led_dict[next_index] = (y_index, x_index)
-    next_index += 1
+    next_index += 1 * fwd_multiplier
 
 """
 cap: video input
@@ -274,4 +270,3 @@ async def find_dominant_color(frame, k = 1):
 
   dominant_color = np.round(kmeans.cluster_centers_[0]).astype(int)
   return dominant_color # array of rgb values
-
