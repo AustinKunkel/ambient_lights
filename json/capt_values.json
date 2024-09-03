@@ -6,5 +6,6 @@
       "top-count": 100,
       "right-count": 50,
       "bottom-count": 99,
-      "diff-asp-ratio": 0
+      "fwd": 0,
+      "bl": 0
 }

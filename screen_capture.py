@@ -1,13 +1,9 @@
 import asyncio
-import json
 import cv2
-import time
 import numpy as np
 from sklearn.cluster import KMeans
 
-from rpi_ws281x import PixelStrip, Color
-
-import led_functions
+from rpi_ws281x import Color
 
 # screen capture settings, gets updated when the app runs
 sc_settings =     {
@@ -18,136 +14,30 @@ sc_settings =     {
       "top-count": 0,
       "right-count": 0,
       "bottom-count": 0,
-      "diff-asp-ratio": 0
+      "fwd": 0,
+      "bl": 0
     }
 
 
-async def main():
-  await capture_screen() if int(sc_settings["avg-color"]) == 0 else await capture_avg_screen_color()
+async def main(strip):
+  await capture_screen(strip) if int(sc_settings["avg-color"]) == 0 else await capture_avg_screen_color(strip)
 
 
 """
-start : LED index where it starts
-stop : LED index where it ends
-will loop through and update each LED accordingly
-starts bottom left then clockwise
+captures screen, first maps the leds to their respective
+indices in the frame, and then sends it off to the main 
+loop so it can update the leds rapidly
 """
-async def capture_screen():
+async def capture_screen(strip):
   try:
     cap = cv2.VideoCapture(0) # initialize video capture
     if not cap.isOpened():
       print("could not open capture card")
       return
     
-    ret, frame = cap.read()
+    led_dict = await setup(cap)
 
-    print("x: ",frame.shape[1], "y:", frame.shape[0])
-
-    if not ret:
-      print("failed to capture initial frame")
-      cap.release()
-      return
-    
-    h, w = frame.shape[:2] # frame defaults to 640 x 480
-
-    print("h:", h, "w:", w)
-    v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)
-    h_offset = int(sc_settings["h-offset"]) # horizontal offset
-    # ensures v and h offset do not collide
-    if(v_offset > (h // 2)):
-      print("v collides")
-      v_offset = (h // 2) - 1
-
-    print("set v offset to:", v_offset)
-
-    if(h_offset > (w // 2)):
-      h_offset = (w // 2) - 1
-      print("h collides")
-
-    print("set h offset to:", h_offset)
-
-    l_count = int(sc_settings["left-count"])
-    print("l_count:", l_count)
-    r_count = int(sc_settings["right-count"])
-    print("r_count:", r_count)
-    t_count = int(sc_settings["top-count"])
-    print("t_count:", t_count)
-    b_count = int(sc_settings["bottom-count"])
-    print("b_count:", b_count)
-
-    diff_asp_ratio = int(sc_settings["diff-asp-ratio"])
-    print("diff aspect ratio:", diff_asp_ratio)
-    total_h = h
-    total_w = w
-
-    # if its a different aspect ratio, it will "squeeze" the screen
-    # to represent the offsets better
-    if diff_asp_ratio >= 1:
-      total_h = h - (v_offset * 2) # adjusts h for the offsets
-      total_w = w - (h_offset * 2) #adjusts w for the offsets
-
-    # the spacing inside of the range of the offsets
-    l_spacing = total_h // l_count
-    r_spacing = total_h // r_count
-    t_spacing = total_w // t_count
-    b_spacing = total_w // b_count
-    
-     # led offsets, in index, how far in the leds will start, and how far in they will end
-     # the offset // spacing. 
-     # l_led_offset: the left side leds: the inset from the edges
-    l_led_offset = v_offset // (h // l_count)
-    r_led_offset = v_offset // (h // r_count)
-    t_led_offset = h_offset // (w // t_count)
-    b_led_offset = h_offset // (w // b_count)
-    
-    while True:
-      frame = await capture_frame(cap, w, h) # will change to await the screen capture  
-      
-      # left side
-      next_index = l_led_offset# next led index
-      start = l_led_offset
-      stop = l_count - l_led_offset
-      for i in range(stop, start, -1): # start to stop - 1, reverse because it needs to go through array reverse 
-        x_index = h_offset # starts at this
-        y_index = i * l_spacing
-        color = frame[y_index, x_index]
-        led_functions.strip.setPixelColor(next_index, Color(int(color[2]), int(color[1]), int(color[0])))
-        next_index += 1
-      next_index = l_count
-
-      # top side
-      start = t_led_offset
-      stop = t_count - t_led_offset
-      for i in range(start, stop, 1):
-        x_index = i * t_spacing
-        y_index = v_offset # starts here
-        color = frame[y_index, x_index]
-        led_functions.strip.setPixelColor(next_index, Color(int(color[2]), int(color[1]), int(color[0])))
-        next_index += 1
-      next_index  = l_count + t_count
-
-      # right side
-      start = r_led_offset
-      stop = r_count - r_led_offset
-      for i in range(start, stop, 1):
-        x_index = (frame.shape[1] - 1) - h_offset
-        y_index = i * r_spacing
-        color = frame[y_index, x_index]
-        led_functions.strip.setPixelColor(next_index, Color(int(color[2]), int(color[1]), int(color[0])))
-        next_index += 1 
-      next_index = r_count + l_count + t_count
-
-      # bottom side
-      start = b_led_offset
-      stop = b_count - b_led_offset
-      for i in range(stop, start, -1):
-        x_index = i * b_spacing
-        y_index = (frame.shape[0] - 1) - v_offset
-        color = frame[y_index, x_index]
-        led_functions.strip.setPixelColor(next_index, Color(int(color[2]), int(color[1]), int(color[0])))
-        next_index += 1
-      led_functions.strip.show()
-      await asyncio.sleep(.001) # so other actions can interrupt it
+    await main_capture_loop(cap, strip, led_dict)
 
   except asyncio.CancelledError:
       print("capture_screen was cancelled")
@@ -162,6 +52,173 @@ async def capture_screen():
     cap.release()
     cv2.destroyAllWindows()
     return
+    
+   
+"""
+Sets up screen capture led positions
+
+returns a dictionary with 
+key: led index
+value: tuple with (y, x) 
+"""
+async def setup(cap):
+  ret, frame = cap.read()
+
+  print("x: ",frame.shape[1], "y:", frame.shape[0])
+
+  if not ret:
+    print("failed to capture initial frame")
+    cap.release()
+    return
+  
+  led_dict = {}
+    
+  h, w = frame.shape[:2] # frame defaults to 640 x 480
+
+  print("h:", h, "w:", w)
+  v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)
+  h_offset = int(sc_settings["h-offset"]) # horizontal offset
+  # ensures v and h offset do not collide
+  if(v_offset < 0) or (h_offset < 0):
+    print(f"offsets less than 0, h:{h_offset}, v:{v_offset}")
+    v_offset = 0 if v_offset < 0 else v_offset
+    h_offset = 0 if h_offset < 0 else h_offset
+
+  if(v_offset > (h // 2)):
+    print("v collides")
+    v_offset = (h // 2) - 1
+
+  print("set v offset to:", v_offset)
+
+  if(h_offset > (w // 2)):
+    h_offset = (w // 2) - 1
+    print("h collides")
+
+  print("set h offset to:", h_offset)
+
+  l_count = int(sc_settings["left-count"])
+  r_count = int(sc_settings["right-count"])
+  t_count = int(sc_settings["top-count"])
+  b_count = int(sc_settings["bottom-count"])
+
+  is_fwd = int(sc_settings["fwd"])
+  is_bl = int(sc_settings["bl"]) # is bottom left
+
+  fwd_multiplier = 1
+  next_index = 0
+
+  if(is_fwd <= 1): # if it is reverse
+    fwd_multiplier = -1
+    next_index = l_count + r_count + t_count + b_count  
+  
+  if(is_bl <= 1): # if it is bottom right, clockwise, unless its reversed.
+    await setup_right_side(r_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+    next_index += r_count * fwd_multiplier
+    await setup_top_side(t_count, led_dict, w, v_offset, h_offset, next_index, fwd_multiplier)
+    next_index += t_count * fwd_multiplier
+    await setup_left_side(l_count, led_dict, h, v_offset, h_offset, next_index, fwd_multiplier)
+    next_index += l_count * fwd_multiplier
+    await setup_bottom_side(b_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+  else: # it is bottom left, counter clockwise, unless its reversed
+    await setup_left_side(l_count, led_dict, h, v_offset, h_offset, next_index, fwd_multiplier)
+    next_index += r_count * fwd_multiplier
+    await setup_top_side(t_count, led_dict, w, v_offset, h_offset, next_index, fwd_multiplier)
+    next_index += t_count * fwd_multiplier
+    await setup_right_side(r_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+    next_index += r_count * fwd_multiplier
+    await setup_bottom_side(b_count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier)
+
+  return led_dict
+
+
+"""
+set up left side of screen, and add the led data to the dictionary
+"""
+async def setup_left_side(count, led_dict, h, v_offset, h_offset, next_index, fwd_multiplier):
+  spacing = h // count # spacing in between the leds
+  led_offset = v_offset // spacing # the inset, in led index, that the leds are offset
+
+  next_index += led_offset * fwd_multiplier # next led index
+  # for the index on the screen where it starts. has to start at end because of how screen array is
+  start = count - led_offset
+  stop = led_offset
+  x_index = h_offset # starts at this
+  for i in range(start, stop, -1): # start to stop - 1
+    y_index = i * spacing
+    led_dict[next_index] = (y_index, x_index)
+    next_index += 1 * fwd_multiplier
+
+"""
+set up right side of screen, and add the led data to the dictionary
+"""
+async def setup_right_side(count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier):
+  spacing = h // count
+  led_offset = v_offset // spacing
+
+  next_index += led_offset * fwd_multiplier
+  start = led_offset
+  stop = count - led_offset
+  x_index = (w - 1) - h_offset
+  for i in range(start, stop, 1):
+    y_index = i * spacing
+    led_dict[next_index] = (y_index, x_index)
+    next_index += 1 * fwd_multiplier
+
+"""
+set up top of screen, and add the led data to the dictionary
+"""
+async def setup_top_side(count, led_dict, w, v_offset, h_offset, next_index, fwd_multiplier):
+  spacing = w // count
+  led_offset = h_offset // spacing
+
+  next_index+= led_offset * fwd_multiplier
+  start = led_offset
+  stop = count - led_offset
+  y_index = v_offset # starts here
+  for i in range(start, stop, 1):
+    x_index = i * spacing
+    led_dict[next_index] = (y_index, x_index)
+    next_index += 1 * fwd_multiplier
+
+"""
+set up bottom of screen, and add the led data to the dictionary
+"""
+async def setup_bottom_side(count, led_dict, w, h, v_offset, h_offset, next_index, fwd_multiplier):
+  spacing = w // count
+  led_offset = h_offset // spacing
+
+  next_index += led_offset * fwd_multiplier
+  start = count - led_offset
+  stop = led_offset
+  y_index = (h - 1) - v_offset
+  for i in range(start, stop, -1):
+    x_index = i * spacing
+    led_dict[next_index] = (y_index, x_index)
+    next_index += 1
+
+"""
+cap: video input
+strip: led strip object
+led: dictionary of led positions
+
+the main loop for updating and showing the 
+colors on the led strip
+"""
+async def main_capture_loop(cap, strip, led_dict):
+  while True:
+    ret, frame = cap.read()
+
+    if not ret:
+      print("failed to capture frame")
+      return
+    
+    for index, (y, x) in led_dict.items():
+      color = frame[y, x]
+      strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
+
+    strip.show()
+    await asyncio.sleep(.01) # so other actions can interrupt it
+    
 
 
 async def capture_frame(cap, w, h):
@@ -178,7 +235,7 @@ async def capture_frame(cap, w, h):
 """
 Captures Screen's average color data
 """
-async def capture_avg_screen_color():
+async def capture_avg_screen_color(strip):
   try:
     cap = cv2.VideoCapture(0) # initialize video capture
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -194,7 +251,7 @@ async def capture_avg_screen_color():
 
       color = await find_dominant_color(frame)
         
-      await led_functions.show_color(Color(color[0], color[1], color[2]))
+      await strip.show_color(Color(color[0], color[1], color[2]))
 
       await asyncio.sleep(.001)
 
