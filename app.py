@@ -127,6 +127,41 @@ async def handle_add_user_color():
     response = {"message": "Color added successfully", "colors": orig_colors['colors']}
     return jsonify(response), 200
 
+@app.route('/led/user/colors/remove', methods=['POST'])
+async def handle_remove_user_color():
+    data = await request.get_json()  # Get the JSON data from the request
+    color = data.get('color')  # Extract the color
+    if not color:
+        return jsonify({"error": "No color provided"}), 400
+
+    file_path = "json/user_colors.json"
+
+    try:
+        orig_colors = get_json_data(file_path)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error decoding JSON"}), 500
+    
+    colors =  orig_colors["colors"]
+    if color in colors:
+        colors.remove(color)
+    else:
+        return jsonify({"error": "Color not found"}), 404
+    
+    try:
+        write_json_data(file_path, orig_colors)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    # Assuming we add the color successfully
+    response = {"message": "Color removed successfully", "colors": orig_colors['colors']}
+    return jsonify(response), 200
+
+
+
 def get_json_data(file_path):
     try:
         with open(file_path, 'r') as f:

@@ -3,6 +3,8 @@
 <head>
     <title>LED Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/screen_capture.css') }}">
+
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
     <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
@@ -55,7 +57,7 @@
         </div>
     </div>
 
-    <div id="color-easy-container">
+    <div id="color-easy-container" class="color-easy-container">
 
     </div>
 
@@ -71,7 +73,7 @@
 
     
 
-    <h1>Screen capture settings</h1>
+    <div class="screen-capt-settings"><h1>Screen capture settings</h1>
     <button onClick="getCapture()" id="capture_button" style="border: 2px solid #ccc">Capture Screen</button>
 
     <label for="v-offset-input">V-Offset</label>
@@ -83,23 +85,22 @@
     <input type="checkbox" name="avg-scrn-color-check" id="avg-scrn-color-check">
     <label for="avg-scrn-color-check">Use average color</label>
 
-    <form id="capt-led-counts" onsubmit="saveCaptSettings()">
-        <legend><h3>LED counts</h3></legend>
-        <label for="left-led-count">Left </label>
-        <input type="number" name="left-led-count" id="left-led-count" min="0">
+    <div class="counts"><h3>LED counts</h3>
+    <label for="left-led-count">Left </label>
+    <input type="number" name="left-led-count" id="left-led-count" min="0">
 
-        <label for="right-led-count">Right</label>
-        <input type="number" name="right-led-count" id="right-led-count" min="0">
+    <label for="right-led-count">Right</label>
+    <input type="number" name="right-led-count" id="right-led-count" min="0">
 
-        <label for="top-led-count">Top</label>
-        <input type="number" name="top-led-count" id="top-led-count" min="0">
+    <label for="top-led-count">Top</label>
+    <input type="number" name="top-led-count" id="top-led-count" min="0">
 
-        <label for="bottom-led-count">Bottom</label>
-        <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">
+    <label for="bottom-led-count">Bottom</label>
+    <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">
+    </div>
 
-        <button type="submit">Save</button>
-    </form>
-
+    <button type="submit" onclick="saveCaptSettings()">Save</button>
+    </div>
 </body>
 </html>
 

@@ -119,6 +119,29 @@
     }
 }
 
+async function requestRemoveUserColor(color) {
+  try {
+      const response = await fetch("/led/user/colors/remove", {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ color }) // Send the color data in the request body
+      });
+      
+      if (!response.ok) {
+          const errorMessage = `Error removing color: ${response.status}`;
+          message_pop_up(TYPE.ERROR, errorMessage);
+          throw new Error(errorMessage);
+      }
+
+      return await response.json();
+  } catch (error) {
+      console.error("Error:", error);
+      message_pop_up(TYPE.ERROR, "Error removing color:", error.message);
+  }
+}
+
 async function requestChangeBrightness(brightness) {
   try {
     const response = await fetch(`/led?bri=${brightness}`, {
@@ -159,48 +182,6 @@ async function requestChangeLedCount(count) {
       console.error("Error:", error);
       message_pop_up(TYPE.ERROR, "Error changing count:", error.message);
     }
-}
-
-async function requestChangeOffset(offset, letter) {
-  try {
-    const response = await fetch(`/scrncapt?${letter}-offset=${offset}`, {
-      method:'GET',
-      headers: {
-        'Content-type' : 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      message_pop_up(TYPE.ERROR, "Error setting offset:\n", response.status);
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    return await response.json();
-  }catch (error) {
-    console.error("Error:", error);
-    message_pop_up(TYPE.ERROR, "Error setting offset:", error.message);
-  }
-}
-
-async function requestAvgColor(status) {
-  try {
-    const response = await fetch(`/scrncapt?avg-color=${status}`, {
-      method:'GET',
-      headers: {
-        'Content-type' : 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      message_pop_up(TYPE.ERROR, "Error changing color:\n", response.status);
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    return await response.json();
-  }catch (error) {
-    console.error("Error:", error);
-    message_pop_up(TYPE.ERROR, "Error changing color:", error.message);
-  }
 }
 
 async function requestChangeCapt(params) {

@@ -74,11 +74,26 @@ i {
   width: 30px;
   border-radius: 50%;
   cursor: pointer;
+  border: 2px solid rgb(170, 170, 170);
+  display: inline-block; 
+  align-self: center;
 }
 
 
 .selected {
   border: 2px solid black;
+}
+
+.space-top {
+  margin-right: 10px;
+}
+.color-easy-container {
+  display: flex;
+  gap: 5px;
+  width: 200px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 /***** Modal style *****/

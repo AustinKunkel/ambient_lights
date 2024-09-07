@@ -62,135 +62,154 @@ key: led index
 value: tuple with (y, x) 
 """
 async def setup(cap):
-  ret, frame = cap.read()
+  try:
+    ret, frame = cap.read()
 
-  print("x: ",frame.shape[1], "y:", frame.shape[0])
+    print("x: ",frame.shape[1], "y:", frame.shape[0])
 
-  if not ret:
-    print("failed to capture initial frame")
-    cap.release()
-    return
-  
-  led_dict = {}
+    if not ret:
+      print("failed to capture initial frame")
+      cap.release()
+      return
+      
+    h, w = frame.shape[:2] # frame defaults to 640 x 480
+
+    print("h:", h, "w:", w)
+    v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)
+    h_offset = int(sc_settings["h-offset"]) # horizontal offset
+    # ensures v and h offset do not collide
+    if(v_offset < 0) or (h_offset < 0):
+      print(f"offsets less than 0, h:{h_offset}, v:{v_offset}")
+      v_offset = 0 if v_offset < 0 else v_offset
+      h_offset = 0 if h_offset < 0 else h_offset
+
+    if(v_offset > (h // 2)):
+      print("v collides")
+      v_offset = (h // 2) - 1
+
+    print("set v offset to:", v_offset)
+
+    if(h_offset > (w // 2)):
+      h_offset = (w // 2) - 1
+      print("h collides")
+
+    print("set h offset to:", h_offset)
+
+    l_count = int(sc_settings["left-count"])
+    r_count = int(sc_settings["right-count"])
+    t_count = int(sc_settings["top-count"])
+    b_count = int(sc_settings["bottom-count"])
+
+    #is_fwd = int(sc_settings["fwd"])
+    is_bl = int(sc_settings["bl"]) # is bottom left
+
+    fwd_multiplier = 1
+    next_index = 0
+
+    led_dict = {}
+
+    # if(is_fwd <= 1): # if it is reverse
+    #   fwd_multiplier = -1
+    #   next_index = l_count + r_count + t_count + b_count  
     
-  h, w = frame.shape[:2] # frame defaults to 640 x 480
+    if(is_bl <= 1): # if it is bottom right, clockwise while counting backwards
+      print("is bottom right") 
+      next_index = 0
+      await setup_right_side(r_count, led_dict, w, h, h_offset, next_index, -1)
+      next_index += r_count
+      await setup_top_side(t_count, led_dict, w, v_offset, next_index, -1)
+      next_index += t_count
+      await setup_left_side(l_count, led_dict, h, h_offset, next_index, -1)
+      next_index+= l_count
+      await setup_bottom_side(b_count, led_dict, w, h, v_offset, next_index, -1)
+    else: # it is bottom left, clockwise, unless its reversed
+      await setup_left_side(l_count, led_dict, h, h_offset, next_index, 1)
+      next_index += r_count * fwd_multiplier
+      await setup_top_side(t_count, led_dict, w, v_offset, next_index, 1)
+      next_index += t_count * fwd_multiplier
+      await setup_right_side(r_count, led_dict, w, h, h_offset, next_index, 1)
+      next_index += r_count * fwd_multiplier
+      await setup_bottom_side(b_count, led_dict, w, h, v_offset, next_index, 1)
 
-  print("h:", h, "w:", w)
-  v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)
-  h_offset = int(sc_settings["h-offset"]) # horizontal offset
-  # ensures v and h offset do not collide
-  if(v_offset < 0) or (h_offset < 0):
-    print(f"offsets less than 0, h:{h_offset}, v:{v_offset}")
-    v_offset = 0 if v_offset < 0 else v_offset
-    h_offset = 0 if h_offset < 0 else h_offset
-
-  if(v_offset > (h // 2)):
-    print("v collides")
-    v_offset = (h // 2) - 1
-
-  print("set v offset to:", v_offset)
-
-  if(h_offset > (w // 2)):
-    h_offset = (w // 2) - 1
-    print("h collides")
-
-  print("set h offset to:", h_offset)
-
-  l_count = int(sc_settings["left-count"])
-  r_count = int(sc_settings["right-count"])
-  t_count = int(sc_settings["top-count"])
-  b_count = int(sc_settings["bottom-count"])
-
-  #is_fwd = int(sc_settings["fwd"])
-  is_bl = int(sc_settings["bl"]) # is bottom left
-
-  fwd_multiplier = 1
-  next_index = 0
-
-  # if(is_fwd <= 1): # if it is reverse
-  #   fwd_multiplier = -1
-  #   next_index = l_count + r_count + t_count + b_count  
-  
-  if(is_bl <= 1): # if it is bottom right, clockwise while counting backwards 
-    next_index += r_count * fwd_multiplier
-    await setup_right_side(r_count, led_dict, w, h, h_offset, next_index, -1)
-    next_index += t_count * fwd_multiplier
-    await setup_top_side(t_count, led_dict, w, v_offset, next_index, -1)
-    next_index += l_count * fwd_multiplier
-    await setup_left_side(l_count, led_dict, h, h_offset, next_index, -1)
-    next_index+= b_count * fwd_multiplier
-    await setup_bottom_side(b_count, led_dict, w, h, v_offset, next_index, -1)
-  else: # it is bottom left, clockwise, unless its reversed
-    await setup_left_side(l_count, led_dict, h, h_offset, next_index, 1)
-    next_index += r_count * fwd_multiplier
-    await setup_top_side(t_count, led_dict, w, v_offset, next_index, 1)
-    next_index += t_count * fwd_multiplier
-    await setup_right_side(r_count, led_dict, w, h, h_offset, next_index, 1)
-    next_index += r_count * fwd_multiplier
-    await setup_bottom_side(b_count, led_dict, w, h, v_offset, next_index, 1)
-
-  return led_dict
+    return led_dict
+  except Exception as e:
+    print(e)
+    return
 
 
 """
 set up left side of screen, and add the led data to the dictionary
 """
 async def setup_left_side(count, led_dict, h, h_offset, next_index, fwd_multiplier):
-  spacing = h // count # spacing in between the leds
+  try:
+    spacing = (h - 1) // (count - 2) # spacing in between the leds
 
-  #next_index += led_offset * fwd_multiplier # next led index
-  # for the index on the screen where it starts. has to start at end because of how screen array is
-  start = count
-  stop = 0
-  x_index = h_offset # starts at this
-  for i in range(start, stop, fwd_multiplier): # start to stop - 1
-    y_index = i * spacing
-    led_dict[next_index] = (y_index, x_index)
-    next_index += 1 * fwd_multiplier
+    next_index += count
+    start = count
+    stop = 0
+    x_index = 1 + h_offset # starts at this
+    print("left:",x_index)
+    for i in range(start, stop, -1): # start to stop - 1
+      y_index = i * spacing if(i * spacing) < h else h - 1
+      led_dict[(next_index) + ((count - i) + 1)*fwd_multiplier] = (y_index, x_index)
+  except Exception as e:
+    print(e)
+    return
 
 """
 set up right side of screen, and add the led data to the dictionary
 """
 async def setup_right_side(count, led_dict, w, h, h_offset, next_index, fwd_multiplier):
-  spacing = h // count
-
-  #next_index += led_offset * fwd_multiplier
-  start = 0
-  stop = count
-  x_index = (w - 1) - h_offset
-  for i in range(start, stop, fwd_multiplier):
-    y_index = i * spacing
-    led_dict[next_index] = (y_index, x_index)
-    next_index += 1 * fwd_multiplier
+  try:
+    spacing = (h - 1) // (count - 1)
+    next_index += count
+    start = 0
+    stop = count
+    x_index = (w - 1) - h_offset
+    print("right:",x_index)
+    for i in range(start, stop, 1):
+      y_index = i * spacing if(i * spacing) < h else h - 1
+      led_dict[next_index + (i + 1)*fwd_multiplier] = (y_index, x_index)
+  except Exception as e:
+    print(e)
+    return
 
 """
 set up top of screen, and add the led data to the dictionary
 """
 async def setup_top_side(count, led_dict, w, v_offset, next_index, fwd_multiplier):
-  spacing = w // count
-
-  #next_index+= led_offset * fwd_multiplier
-  start = 0
-  stop = count
-  y_index = v_offset # starts here
-  for i in range(start, stop, fwd_multiplier):
-    x_index = i * spacing
-    led_dict[next_index] = (y_index, x_index)
-    next_index += 1 * fwd_multiplier
+  try:
+    spacing = (w - 1) // (count - 1)
+    next_index += count
+    start = 0
+    stop = count
+    y_index = 1 + v_offset # starts here
+    print("top:",y_index)
+    for i in range(start, stop, 1):
+      x_index = i * spacing if(i * spacing) < w else w - 1
+      led_dict[next_index + (i + 1)*fwd_multiplier] = (y_index, x_index)
+  except Exception as e:
+    print(e)
+    return
 
 """
 set up bottom of screen, and add the led data to the dictionary
 """
 async def setup_bottom_side(count, led_dict, w, h, v_offset, next_index, fwd_multiplier):
-  spacing = w // count
-  #next_index += 1 * fwd_multiplier
-  start = count
-  stop = 0
-  y_index = (h - 1) - v_offset
-  for i in range(start, stop, fwd_multiplier):
-    x_index = i * spacing
-    led_dict[next_index] = (y_index, x_index)
-    next_index += 1 * fwd_multiplier
+  try:
+    spacing = (w - 1) // (count)
+    next_index += count
+    
+    start = count
+    stop = 0
+    y_index = (h - 1) - v_offset
+    print("bottom:",y_index)
+    for i in range(start, stop, -1):
+      x_index = i * spacing if(i * spacing) < w else w - 1
+      led_dict[next_index + ((count - i) + 1)*fwd_multiplier] = (y_index, x_index)
+  except Exception as e:
+    print(e)
+    return
 
 """
 cap: video input
@@ -201,20 +220,29 @@ the main loop for updating and showing the
 colors on the led strip
 """
 async def main_capture_loop(cap, strip, led_dict):
-  while True:
-    ret, frame = cap.read()
+  try:
+    cap.set(cv2.CAP_PROP_FPS, 40)
+    while True:
+      ret, frame = cap.read()
 
-    if not ret:
-      print("failed to capture frame")
-      return
-    
-    for index, (y, x) in led_dict.items():
-      color = frame[y, x]
-      strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
+      if not ret:
+        print("failed to capture frame")
+        return
+      
+      for index, (y, x) in led_dict.items():
+        color = frame[y, x]
+        strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
 
-    strip.show()
-    await asyncio.sleep(.01) # so other actions can interrupt it
-    
+      strip.show()
+      await asyncio.sleep(.003) # so other actions can interrupt it
+
+  except asyncio.CancelledError:
+        print("capture_screen was cancelled")
+        cap.release()
+        cv2.destroyAllWindows()
+  except Exception as e:
+    print(e)
+    return    
 
 
 async def capture_frame(cap, w, h):
@@ -255,6 +283,11 @@ async def capture_avg_screen_color(strip):
     print("capture_screen was cancelled")
     cap.release()
     cv2.destroyAllWindows()
+  except Exception as e:
+    print(e)
+    cap.release()
+    cv2.destroyAllWindows()
+    return
   finally:
     cap.release()
     cv2.destroyAllWindows()

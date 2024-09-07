@@ -94,7 +94,7 @@ async def screen_capture():
     """Update LEDs to a specific color for screen capture."""
     try:
         led_values["col"] = "00ff11"
-        await capture_functions.main()
+        await capture_functions.main(strip)
     except asyncio.CancelledError:
         print("Screen capture was cancelled")
 

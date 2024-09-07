@@ -23,29 +23,9 @@ document.addEventListener("DOMContentLoaded", async function() {
   })
 
   const vOffsetInput = document.getElementById("v-offset-input")
-  vOffsetInput.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      offset = vOffsetInput.value
-      requestChangeOffset(offset, "v")
-    }
-  })
-
   const hOffsetInput = document.getElementById("h-offset-input")
-  hOffsetInput.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      offset = hOffsetInput.value
-      requestChangeOffset(offset, "h")
-    }
-  })  
 
   const avgColorInput = document.getElementById("avg-scrn-color-check")
-  avgColorInput.addEventListener("click", function() {
-    if(avgColorInput.checked) {
-      requestAvgColor(1)
-    } else {
-      requestAvgColor(0)
-    }
-  })
 
   function updateLedSettings(data) {
     brightnessInput.value = Number(data.bri)
@@ -56,18 +36,19 @@ document.addEventListener("DOMContentLoaded", async function() {
   const rightCount = document.getElementById("right-led-count")
   const topCount = document.getElementById("top-led-count")
   const bottomCount = document.getElementById("bottom-led-count")
+
   window.saveCaptSettings = function() {
     const left = leftCount.value
     const right = rightCount.value
     const top = topCount.value
     const bottom = bottomCount.value
+    const isAvgColor = getAvgColor()
+    const hOffset = hOffsetInput.value
+    const vOffset = vOffsetInput.value
 
-    requestChangeCapt(`left-count=${left}&right-count=${right}&top-count=${top}&bottom-count=${bottom}`)
+    requestChangeCapt(`left-count=${left}&right-count=${right}&top-count=${top}&bottom-count=${bottom}&avg-color=${isAvgColor}&h-offset=${hOffset}&v-offset=${vOffset}`)
     .then(changes => {
-      leftCount.value = changes['left-count']
-      rightCount.value = changes['right-count']
-      topCount.value = changes['top-count']
-      bottomCount.value = changes['bottom-count']
+      updateCaptSettings(changes)
     })
 
   }
@@ -79,6 +60,21 @@ document.addEventListener("DOMContentLoaded", async function() {
     rightCount.value = data['right-count']
     topCount.value = data['top-count']
     bottomCount.value = data['bottom-count']
+    setAvgColor(+data['avg-color'])
+  }
 
+  function getAvgColor() {
+    if(avgColorInput.checked) {
+      return 1
+    }
+    return 0
+  }
+
+  function setAvgColor(value) {
+    if(value > 0){
+      avgColorInput.checked = true
+    } else {
+      avgColorInput.checked = false
+    }
   }
 })
