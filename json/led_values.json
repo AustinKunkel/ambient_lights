@@ -1,9 +1,9 @@
 {
-      "bri": 50, 
-      "col": "#FED403", 
-      "capt": 0,
-      "srea": 0, 
-      "fx": 0, 
-      "cnt": 299, 
-      "id": 0
+  "bri": "25",
+  "col": "ffffff",
+  "capt": "1",
+  "srea": 0,
+  "fx": "0",
+  "cnt": "206",
+  "id": 0
 }

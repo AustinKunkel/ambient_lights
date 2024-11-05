@@ -142,7 +142,7 @@ set up left side of screen, and add the led data to the dictionary
 """
 async def setup_left_side(count, led_dict, h, h_offset, next_index, fwd_multiplier):
   try:
-    spacing = (h - 1) // (count - 2) # spacing in between the leds
+    spacing = (h - 1) // (count - 1) # spacing in between the leds
 
     next_index += count
     start = count
@@ -180,6 +180,7 @@ set up top of screen, and add the led data to the dictionary
 async def setup_top_side(count, led_dict, w, v_offset, next_index, fwd_multiplier):
   try:
     spacing = (w - 1) // (count - 1)
+    spacing += 1
     next_index += count
     start = 0
     stop = count
@@ -197,9 +198,8 @@ set up bottom of screen, and add the led data to the dictionary
 """
 async def setup_bottom_side(count, led_dict, w, h, v_offset, next_index, fwd_multiplier):
   try:
-    spacing = (w - 1) // (count)
+    spacing = (w - 1) // (count - 2)
     next_index += count
-    
     start = count
     stop = 0
     y_index = (h - 1) - v_offset
@@ -256,50 +256,104 @@ async def capture_frame(cap, w, h):
 
   return resized_frame
 
-"""
-Captures Screen's average color data
-"""
+
 async def capture_avg_screen_color(strip):
-  try:
-    cap = cv2.VideoCapture(0) # initialize video capture
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-    w = 320
-    h = 240
-    if not cap.isOpened():
-      print("could not open capture card")
-      return
+    """
+    Captures Screen's average color data
+    """
+    try:
+        cap = cv2.VideoCapture(0)  # initialize video capture
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        w = 320
+        h = 240
+        if not cap.isOpened():
+            print("could not open capture card")
+            return
+
+        # Initialize previous color to black
+        prev_color = np.array([0, 0, 0])
+
+        while True:
+            frame = await capture_frame(cap=cap, w=w, h=h)
+            new_color = await find_dominant_color(frame)
+
+            # Smooth transition from previous color to new color
+            await smooth_transition(prev_color, new_color, strip, steps=60, delay=0.003)
+
+            # Update prev_color to the current color
+            prev_color = new_color
+
+            await asyncio.sleep(0.5)
+
+    except asyncio.CancelledError:
+        print("capture_screen was cancelled")
+        cap.release()
+        cv2.destroyAllWindows()
+    except Exception as e:
+        print(e)
+        cap.release()
+        cv2.destroyAllWindows()
+        return
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
+        return
 
 
-    while True:
-      frame = await capture_frame(cap=cap, w = w,  h = h)
+async def find_dominant_color(frame, k=1):
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-      color = await find_dominant_color(frame)
-        
-      await strip.show_color(Color(color[0], color[1], color[2]))
+    # Reshape frame into a 2D array of pixels
+    pixels = frame_rgb.reshape(-1, 3)
 
-      await asyncio.sleep(.001)
+    # Apply KMeans to find k clusters
+    kmeans = KMeans(n_clusters=k)
+    kmeans.fit(pixels)
 
-  except asyncio.CancelledError:
-    print("capture_screen was cancelled")
-    cap.release()
-    cv2.destroyAllWindows()
-  except Exception as e:
-    print(e)
-    cap.release()
-    cv2.destroyAllWindows()
-    return
-  finally:
-    cap.release()
-    cv2.destroyAllWindows()
-    return
-  
-async def find_dominant_color(frame, k = 1):
-  frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # Get the labels (which cluster each pixel belongs to)
+    labels = kmeans.labels_
 
-  pixels = frame_rgb.reshape(-1,3)
+    # Find the most frequent cluster label (most dominant color)
+    unique, counts = np.unique(labels, return_counts=True)
+    dominant_cluster = unique[np.argmax(counts)]
 
-  kmeans = KMeans(n_clusters=k)
-  kmeans.fit(pixels)
+    # Get the dominant color
+    dominant_color = np.round(kmeans.cluster_centers_[dominant_cluster]).astype(int)
+    return dominant_color  # Return the most dominant color as RGB
 
-  dominant_color = np.round(kmeans.cluster_centers_[0]).astype(int)
-  return dominant_color # array of rgb values
+
+async def smooth_transition(prev_color, new_color, strip, steps=50, delay=0.01):
+    """
+    Smoothly transition from prev_color to new_color over a number of steps.
+    """
+    prev_color = np.array(prev_color)
+    new_color = np.array(new_color)
+
+    # Calculate the step increment for each color channel
+    step_values = (new_color - prev_color) / steps
+
+    for i in range(steps):
+        # Calculate the intermediate color for this step
+        intermediate_color = prev_color + step_values * i
+        intermediate_color = np.clip(intermediate_color, 0, 255).astype(int)
+
+        # Set the color on the strip
+        await show_color(Color(intermediate_color[0], intermediate_color[1], intermediate_color[2]), strip)
+
+        # Wait before applying the next color step
+        await asyncio.sleep(delay)
+
+async def show_color(color, strip):
+    """Show a solid color on all LEDs."""
+    left = int(sc_settings["left-count"])
+    right = int(sc_settings["right-count"] )
+    top = int(sc_settings["top-count"])
+    bottom = int(sc_settings["bottom-count"])
+    count = left + right + top + bottom 
+    try:
+        for i in range(count):
+            strip.setPixelColor(i,color)
+        strip.show()
+        return
+    except asyncio.CancelledError:
+        print("show_color() was cancelled")

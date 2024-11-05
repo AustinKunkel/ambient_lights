@@ -1,11 +1,11 @@
 {
-      "v-offset": 0, 
-      "h-offset": 32,
-      "avg-color": 0, 
-      "left-count": 37, 
-      "top-count": 65,
-      "right-count": 37,
-      "bottom-count": 67,
-      "fwd": 0,
-      "bl": 0
+  "v-offset": "0",
+  "h-offset": "0",
+  "avg-color": "0",
+  "left-count": "38",
+  "top-count": "66",
+  "right-count": "37",
+  "bottom-count": "66",
+  "fwd": 0,
+  "bl": 0
 }

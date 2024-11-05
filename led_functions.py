@@ -1,7 +1,7 @@
 from rpi_ws281x import PixelStrip, Color
 import asyncio
 
-import screen_capture as capture_functions
+from screen_capture import main
 
 # LED strip configuration
 LED_COUNT = 299       # Number of LED pixels
@@ -94,7 +94,7 @@ async def screen_capture():
     """Update LEDs to a specific color for screen capture."""
     try:
         led_values["col"] = "00ff11"
-        await capture_functions.main(strip)
+        await main(strip)
     except asyncio.CancelledError:
         print("Screen capture was cancelled")
 

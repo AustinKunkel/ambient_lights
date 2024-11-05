@@ -1,3 +1,14 @@
 .screen-capt-settings {
-  display: flex
+  
+}
+
+#capture_button {
+  border: 2px solid #ccc
+}
+
+@media only screen and (orientation: portrait) and (max-width:500px) 
+{
+  #capture_button {
+    
+  }
 }
