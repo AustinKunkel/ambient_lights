@@ -59,13 +59,16 @@ async def handle_get_scrn_capt():
         print(f"Error: {e}")  # Log the exception
         return jsonify({"error": "An internal server error occurred"}), 500
     
-"""
-Helper function for when changing dictonary variables
-will go through params and add to dict if key in dict.
-
-will return true if there is a collision in the array
-"""
 def change_dict_vars(params, d, collision = []):
+    """
+    Helper function for when changing dictonary variables
+    will go through params and add to dict if key in dict.
+
+    Collision is there to see if a specified key from params
+    is in the dictionary
+
+    will return true if there is a collision in the array
+    """
     flag = False
     for key, value in params.items():
         if key in d:

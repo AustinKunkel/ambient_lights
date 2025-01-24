@@ -15,7 +15,9 @@ sc_settings =     {
       "right-count": 0,
       "bottom-count": 0,
       "fwd": 0,
-      "bl": 0
+      "bl": 0,
+      "res-x": 640,
+      "res-y": 480
     }
 
 
@@ -35,6 +37,10 @@ async def capture_screen(strip):
       print("could not open capture card")
       return
     
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(sc_settings["res-x"]))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(sc_settings["res-y"]))
+
+
     led_dict = await setup(cap)
 
     await main_capture_loop(cap, strip, led_dict)
@@ -65,14 +71,14 @@ async def setup(cap):
   try:
     ret, frame = cap.read()
 
-    print("x: ",frame.shape[1], "y:", frame.shape[0])
+    print("x: ",cap.get(cv2.CAP_PROP_FRAME_WIDTH), "y:", cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     if not ret:
       print("failed to capture initial frame")
       cap.release()
       return
       
-    h, w = frame.shape[:2] # frame defaults to 640 x 480
+    h, w = frame.shape[:2] # frame defaults to 640 x 480, defines the height and width
 
     print("h:", h, "w:", w)
     v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)
@@ -234,7 +240,7 @@ async def main_capture_loop(cap, strip, led_dict):
         strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
 
       strip.show()
-      await asyncio.sleep(.003) # so other actions can interrupt it
+      await asyncio.sleep(.006) # so other actions can interrupt it
 
   except asyncio.CancelledError:
         print("capture_screen was cancelled")

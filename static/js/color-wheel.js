@@ -1,12 +1,16 @@
+let isCapturing = false;
+
 document.addEventListener("DOMContentLoaded", async function() {
     const colorCodeInput = document.getElementById("color-code-input");
 
     isUpdatingFromInput = false;
 
     const colorPicker = new iro.ColorPicker('.color-picker', {
-        width: 200,
+        width: 600,
         color: "#ffffff", // Default color
-        layoutDirection: "vertical"
+        layoutDirection: "vertical",
+        sliderSize: 80,
+        handleRadius: 25
     });
 
     const color_error_label = document.getElementById('color-input-error-label');
@@ -160,7 +164,11 @@ document.addEventListener("DOMContentLoaded", async function() {
         colorContainer.appendChild(addButton);
     }
 
-    window.addUserColor = function(color = currentColor) {
+    window.addUserColor = function(color = currentColor, event = null) {
+
+        if(event) {
+            event.preventDefault();
+        }
         if(!color) {
             message_pop_up(TYPE.ERROR, "no color selected!");
             return 
@@ -196,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
         const [_, r, g, b] = rgbMatch.map(Number);
 
-        const toHex = (num) => num.toString(16).padStart(2, '0');
+        const toHex = (num) => num.toString(16).padStart(2, '0').toUpperCase();
 
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
@@ -214,7 +222,14 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
         activeColorButton = null;
 
-        request_capture();
+        isCapturing = !isCapturing;
+
+        requestCapture(isCapturing ? 1 : 0).then((data) => {
+            console.log(data);
+            isCapturing = data['capt'] >= 1;
+
+            window.updateCaptureButton(isCapturing);
+        })
     }
 
     /**
