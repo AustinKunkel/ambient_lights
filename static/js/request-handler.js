@@ -1,20 +1,29 @@
-  function request_capture() {
-    fetch(`/led?capt=1`, {
+  async function requestCapture(isCapture) {
+    try {
+      const response = await fetch(`/led?capt=${isCapture}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(message_pop_up(TYPE.OK, "Screen capture updated."))
-    .catch(error => console.error('Error:', error));
+        }
+    });
+
+    if (!response.ok) {
+      message_pop_up(TYPE.ERROR, "Error capturing screen", response.status);
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    return await response.json()
+    } catch (error) {
+      message_pop_up(TYPE.ERROR, "Error capturing screen", error);
+      console.log("Error: ", error);
+    }
   }
 
-  async function change_led_color(colorString) {
+  async function changeLedColor(colorString) {
     try {
       hexColor = colorString.slice(1);
 
-      const response = await fetch(`/led?fx=0&capt=0&col=${hexColor}`, {
+      const response = await fetch(`/led?fx=0&capt=0&srea=0&col=${hexColor}`, {
         method : 'GET', 
         headers: {
           'Content-type' : 'application/json',
@@ -26,7 +35,7 @@
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      return await (response => response.json());
+      return await response.json();
     } catch (error) {
       message_pop_up(TYPE.ERROR, "Error:", error);
       console.error("Error:", error)
@@ -184,6 +193,27 @@ async function requestChangeLedCount(count) {
     }
 }
 
+async function requestChangeSoundReact(value) {
+  try {
+    const response = await fetch(`/led?srea=${value}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type' : 'application/json',
+      }
+    })
+
+    if(!response.ok) {
+      message_pop_up(TYPE.ERROR, "Error updating sound react:", response.status);
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error:", error);
+    message_pop_up(TYPE.ERROR, "Error updating sound react:", error.message);
+  }
+}
+
 async function requestChangeCapt(params) {
   try {
     const response = await fetch(`/scrncapt?${params}`, {
@@ -226,3 +256,42 @@ async function requestGetCaptSettings() {
   }
 } 
 
+async function requestGetSoundEffects() {
+  try {
+    const response = await fetch('/sndeffects', {
+      method: 'GET',
+      headers: {
+        'Content-type' : 'application/json'
+      }
+    });
+
+    if(!response.ok) {
+      message_pop_up(TYPE.ERROR, "Error getting the sound effects")
+      throw new Error(`HTTP Error! Status: ${response.status}`);
+    } 
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error: ", error)
+  }
+}
+
+async function requestSetSoundEffect(effectName, effectPath) {
+  try {
+    const response = await fetch('/sndeffects', {
+      method: 'PUT',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({[effectName]: effectPath})
+    });
+    if(!response.ok) {
+      message_pop_up(TYPE.ERROR, "Error getting the sound effects")
+      throw new Error(`HTTP Error! Status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error: ", error.message)
+  }
+}

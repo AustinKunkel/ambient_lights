@@ -1,7 +1,10 @@
 import asyncio
+import time
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
+import threading
+import queue
 
 from rpi_ws281x import Color
 
@@ -15,26 +18,40 @@ sc_settings =     {
       "right-count": 0,
       "bottom-count": 0,
       "fwd": 0,
-      "bl": 0
+      "bl": 0,
+      "res-x": 640,
+      "res-y": 480
     }
+
+frame_queue = queue.Queue(maxsize=10)
+
+stop_capture = False
 
 
 async def main(strip):
+  global stop_capture
+  global frame_queue
+  stop_capture = False
+  while not frame_queue.empty():
+    frame_queue.get_nowait()
   await capture_screen(strip) if int(sc_settings["avg-color"]) == 0 else await capture_avg_screen_color(strip)
 
 
-"""
-captures screen, first maps the leds to their respective
-indices in the frame, and then sends it off to the main 
-loop so it can update the leds rapidly
-"""
 async def capture_screen(strip):
+  """
+  captures screen, first maps the leds to their respective
+  indices in the frame, and then sends it off to the main 
+  loop so it can update the leds rapidly
+  """
   try:
     cap = cv2.VideoCapture(0) # initialize video capture
     if not cap.isOpened():
       print("could not open capture card")
       return
-    
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(sc_settings["res-x"]))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(sc_settings["res-y"]))
+
     led_dict = await setup(cap)
 
     await main_capture_loop(cap, strip, led_dict)
@@ -53,26 +70,25 @@ async def capture_screen(strip):
     cv2.destroyAllWindows()
     return
     
-   
-"""
-Sets up screen capture led positions
-
-returns a dictionary with 
-key: led index
-value: tuple with (y, x) 
-"""
 async def setup(cap):
+  """
+  Sets up screen capture led positions
+
+  returns a dictionary with 
+  key: led index
+  value: tuple with (y, x) 
+  """
   try:
     ret, frame = cap.read()
 
-    print("x: ",frame.shape[1], "y:", frame.shape[0])
+    print("x: ",cap.get(cv2.CAP_PROP_FRAME_WIDTH), "y:", cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     if not ret:
       print("failed to capture initial frame")
       cap.release()
       return
       
-    h, w = frame.shape[:2] # frame defaults to 640 x 480
+    h, w = frame.shape[:2] # frame defaults to 640 x 480, defines the height and width
 
     print("h:", h, "w:", w)
     v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)
@@ -211,93 +227,130 @@ async def setup_bottom_side(count, led_dict, w, h, v_offset, next_index, fwd_mul
     print(e)
     return
 
-"""
-cap: video input
-strip: led strip object
-led: dictionary of led positions
 
-the main loop for updating and showing the 
-colors on the led strip
-"""
 async def main_capture_loop(cap, strip, led_dict):
+  """
+  cap: video input
+  strip: led strip object
+  led: dictionary of led positions
+
+  the main loop for updating and showing the 
+  colors on the led strip
+  """
+  global stop_capture
   try:
-    cap.set(cv2.CAP_PROP_FPS, 40)
-    while True:
-      ret, frame = cap.read()
+    cap.set(cv2.CAP_PROP_FPS, 60)
 
-      if not ret:
-        print("failed to capture frame")
-        return
-      
-      for index, (y, x) in led_dict.items():
-        color = frame[y, x]
-        strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
+    capture_thread = threading.Thread(target=video_capture_thread, args=(cap,frame_queue, .01), daemon=True)
+    capture_thread.start()
 
-      strip.show()
-      await asyncio.sleep(.003) # so other actions can interrupt it
+    time.sleep(.1) # Give it some time to start the thread
+
+    update_thread = threading.Thread(target=update_leds, args=(strip, frame_queue, led_dict), daemon=True)
+    update_thread.start()
+
+    while not stop_capture:
+      await asyncio.sleep(.1)
 
   except asyncio.CancelledError:
-        print("capture_screen was cancelled")
-        cap.release()
-        cv2.destroyAllWindows()
+    print("capture_screen was cancelled")
+    raise
   except Exception as e:
     print(e)
     return    
-
-
-async def capture_frame(cap, w, h):
-  ret, frame = cap.read()
-
-  if not ret:
-    print("failed to capture frame")
-    return
+  finally:
+    stop_capture = True
+    if capture_thread.is_alive():
+      capture_thread.join(timeout=.5)
+    if update_thread.is_alive():
+      update_thread.join(timeout=.5)
+    while not frame_queue.empty():
+      frame_queue.get_nowait()
+    cap.release()
+    cv2.destroyAllWindows()
   
-  resized_frame = cv2.resize(frame, (w,h))
+def update_leds(strip, frame_queue, led_dict):
+  """
+   Gets the next frame from the queue and updates the led
+   strip according to how the strip was set up
+   """
+  global stop_capture
+  try:
+    while not stop_capture:
+        if not frame_queue.empty():
+          frame = frame_queue.get()
+          if led_dict:
+            for index, (y, x) in led_dict.items():
+              color = frame[y, x]
+              strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
+        strip.show()
+        time.sleep(.006)
+  except Exception as e:
+     print(f"Error in update_leds: {e}")
 
-  return resized_frame
+
+
+def video_capture_thread(cap, frame_queue, delay):
+   global stop_capture
+   while not stop_capture:
+      ret, frame = cap.read()
+      if ret and not frame_queue.full():
+        frame_queue.put(frame)
+      time.sleep(delay)
 
 
 async def capture_avg_screen_color(strip):
-    """
-    Captures Screen's average color data
-    """
-    try:
-        cap = cv2.VideoCapture(0)  # initialize video capture
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        w = 320
-        h = 240
-        if not cap.isOpened():
-            print("could not open capture card")
-            return
+  """
+  Captures Screen's average color data
+  """
+  global stop_capture
+  try:
+    cap = cv2.VideoCapture(0)  # initialize video capture
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    if not cap.isOpened():
+      print("could not open capture card")
+      return
+        
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(sc_settings["res-x"]))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(sc_settings["res-y"]))
 
-        # Initialize previous color to black
-        prev_color = np.array([0, 0, 0])
+    # Initialize previous color to black
+    prev_color = np.array([0, 0, 0])
 
-        while True:
-            frame = await capture_frame(cap=cap, w=w, h=h)
-            new_color = await find_dominant_color(frame)
+    capture_thread = threading.Thread(target=video_capture_thread, args=(cap,frame_queue, .5), daemon=True)
+    capture_thread.start()
 
-            # Smooth transition from previous color to new color
-            await smooth_transition(prev_color, new_color, strip, steps=60, delay=0.003)
+    while True:
+      if not frame_queue.empty():
+        frame = await asyncio.to_thread(frame_queue.get)
+        new_color = await find_dominant_color(frame)
 
-            # Update prev_color to the current color
-            prev_color = new_color
+        # Smooth transition from previous color to new color
+        await smooth_transition(prev_color, new_color, strip, steps=60, delay=0.003)
 
-            await asyncio.sleep(0.5)
+        # Update prev_color to the current color
+        prev_color = new_color
 
-    except asyncio.CancelledError:
-        print("capture_screen was cancelled")
-        cap.release()
-        cv2.destroyAllWindows()
-    except Exception as e:
-        print(e)
-        cap.release()
-        cv2.destroyAllWindows()
-        return
-    finally:
-        cap.release()
-        cv2.destroyAllWindows()
-        return
+        await asyncio.sleep(0.4)
+
+  except asyncio.CancelledError:
+    print("capture_screen was cancelled")
+    cap.release()
+    cv2.destroyAllWindows()
+  except Exception as e:
+    print(e)
+    cap.release()
+    cv2.destroyAllWindows()
+    return
+  finally:
+    stop_capture = True
+    if(capture_thread.is_alive()):
+      capture_thread.join(timeout=1)
+    while not frame_queue.empty():
+      frame_queue.get_nowait()
+    cap.release()
+    cv2.destroyAllWindows()
+    return
 
 
 async def find_dominant_color(frame, k=1):
