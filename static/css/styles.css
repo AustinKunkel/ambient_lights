@@ -84,11 +84,6 @@ label {
 }
 
 .color-picker {
-.IroWheel, .IroSlider {
-  margin: auto;
-}
-
-.color-picker {
   display: inline-block;
   vertical-align: middle;
   width:fit-content;
@@ -139,7 +134,7 @@ label {
 }
 
 #capture_button:active {
-  transform: scale(.95)
+  transform: scale(.95);
   transition: background-color .2s, border-color .2s;
 }
 
@@ -283,7 +278,6 @@ label {
   font-size: 14pt;
 }
 
-input {
 input {
   width: fit-content;
   padding: .25em;
