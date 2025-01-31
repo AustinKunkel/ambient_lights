@@ -27,13 +27,15 @@ sc_settings =     {
 
 frame_queue = queue.Queue(maxsize=10)
 
-stop_capture = False
-
+stop_capture_event = threading.Event()
+sound_capture = False
+avg_color = None
 
 async def main(strip):
-  global stop_capture
-  global frame_queue
-  stop_capture = False
+  global stop_capture_event
+  global frame_queue, sound_capture
+  print(f"Sound capture: {sound_capture}")
+  stop_capture_event.clear()
   while not frame_queue.empty():
     frame_queue.get_nowait()
   await capture_screen(strip) if int(sc_settings["avg-color"]) == 0 else await capture_avg_screen_color(strip)
@@ -239,7 +241,7 @@ async def main_capture_loop(cap, strip, led_dict):
   the main loop for updating and showing the 
   colors on the led strip
   """
-  global stop_capture
+  global stop_capture_event
   try:
     cap.set(cv2.CAP_PROP_FPS, 60)
 
@@ -251,17 +253,23 @@ async def main_capture_loop(cap, strip, led_dict):
     update_thread = threading.Thread(target=update_leds, args=(strip, frame_queue, led_dict), daemon=True)
     update_thread.start()
 
-    while not stop_capture:
+    while not stop_capture_event.is_set():
       await asyncio.sleep(.1)
+    cap.release()
+    cv2.destroyAllWindows()
 
   except asyncio.CancelledError:
     print("capture_screen was cancelled")
+    cap.release()
+    cv2.destroyAllWindows()
     raise
   except Exception as e:
     print(e)
+    cap.release()
+    cv2.destroyAllWindows()
     return    
   finally:
-    stop_capture = True
+    stop_capture_event.set()
     if capture_thread.is_alive():
       capture_thread.join(timeout=.5)
     if update_thread.is_alive():
@@ -276,42 +284,70 @@ def update_leds(strip, frame_queue, led_dict):
    Gets the next frame from the queue and updates the led
    strip according to how the strip was set up
    """
-  global stop_capture
+  global stop_capture_event
   try:
-    while not stop_capture:
+    while not stop_capture_event.is_set():
         if not frame_queue.empty():
           frame = frame_queue.get()
           if led_dict:
             for index, (y, x) in led_dict.items():
               color = frame[y, x]
               strip.setPixelColor(index, Color(int(color[2]), int(color[1]), int(color[0])))
-        strip.show()
+        # to avoid desync between sound and screen capture, 
+        # we will let sound capture control what is showing
+        if not sound_capture:
+          strip.show()
         time.sleep(.006)
   except Exception as e:
      print(f"Error in update_leds: {e}")
 
-
-
 def video_capture_thread(cap, frame_queue, delay):
-   global stop_capture
-   while not stop_capture:
-      ret, frame = cap.read()
-      if ret and not frame_queue.full():
-        frame_queue.put(frame)
-      time.sleep(delay)
+  global stop_capture_event
+  while not stop_capture_event.is_set():
+    ret, frame = cap.read()
+    if ret and not frame_queue.full():
+      frame_queue.put(frame)
+    time.sleep(delay)
+  cap.release()
+  cv2.destroyAllWindows()
 
 
 async def capture_avg_screen_color(strip):
   """
   Captures Screen's average color data
   """
-  global stop_capture
+  global stop_capture_event
   try:
+    avg_color_thread = threading.Thread(target=run_avg_screen_color, args=(strip,), daemon=True)
+    avg_color_thread.start()
+    print("Starting average color thread")
+    await asyncio.sleep(.3)
+    while not stop_capture_event.is_set():
+      await asyncio.sleep(.1)
+
+  except asyncio.CancelledError:
+    pass
+  except Exception as e:
+    print(e)
+  finally:
+    stop_capture_event.set()
+    if(avg_color_thread.is_alive()):
+      avg_color_thread.join(timeout=1)
+    while not frame_queue.empty():
+      frame_queue.get_nowait()
+    return
+
+
+def run_avg_screen_color(strip):
+  """The thread to run the avg screen color function"""
+  global stop_capture_event
+  try:
+    print("Running average screen capture")
     cap = cv2.VideoCapture(0)  # initialize video capture
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     if not cap.isOpened():
-      print("could not open capture card")
+      print("Could not open capture card")
       return
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(sc_settings["res-x"]))
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(sc_settings["res-y"]))
@@ -319,96 +355,84 @@ async def capture_avg_screen_color(strip):
     # Initialize previous color to black
     prev_color = np.array([0, 0, 0])
 
-    capture_thread = threading.Thread(target=video_capture_thread, args=(cap,frame_queue, .5), daemon=True)
-    capture_thread.start()
-
-    while True:
-      if not frame_queue.empty():
-        frame = await asyncio.to_thread(frame_queue.get)
-        new_color = await find_dominant_color(frame)
-
-        # Smooth transition from previous color to new color
-        await smooth_transition(prev_color, new_color, strip, steps=60, delay=0.003)
-
-        # Update prev_color to the current color
-        prev_color = new_color
-
-        await asyncio.sleep(0.4)
-
-  except asyncio.CancelledError:
-    print("capture_screen was cancelled")
+    while not stop_capture_event.is_set():
+      ret, frame = cap.read()
+      if ret and frame is None:
+        print("Could not capture frame!")
+        continue
+      new_color = find_dominant_color(frame)
+      smooth_transition(prev_color, new_color, strip, steps=60, delay=.003)
+      prev_color = new_color
     cap.release()
     cv2.destroyAllWindows()
   except Exception as e:
-    print(e)
+    print("Error occurred in average screen color thread:", e)
     cap.release()
     cv2.destroyAllWindows()
     return
   finally:
-    stop_capture = True
-    if(capture_thread.is_alive()):
-      capture_thread.join(timeout=1)
+    stop_capture_event.set()
     while not frame_queue.empty():
       frame_queue.get_nowait()
     cap.release()
     cv2.destroyAllWindows()
     return
 
+def find_dominant_color(frame, k=1):
+  frame = cv2.resize(frame, (50, 50))  # Reduce processing time
+  frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-async def find_dominant_color(frame, k=1):
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+  # Reshape frame into a 2D array of pixels
+  pixels = frame_rgb.reshape(-1, 3)
 
-    # Reshape frame into a 2D array of pixels
-    pixels = frame_rgb.reshape(-1, 3)
+  # Apply KMeans to find k clusters
+  kmeans = KMeans(n_clusters=k)
+  kmeans.fit(pixels)
 
-    # Apply KMeans to find k clusters
-    kmeans = KMeans(n_clusters=k)
-    kmeans.fit(pixels)
+  # Get the labels (which cluster each pixel belongs to)
+  labels = kmeans.labels_
 
-    # Get the labels (which cluster each pixel belongs to)
-    labels = kmeans.labels_
+  # Find the most frequent cluster label (most dominant color)
+  unique, counts = np.unique(labels, return_counts=True)
+  dominant_cluster = unique[np.argmax(counts)]
 
-    # Find the most frequent cluster label (most dominant color)
-    unique, counts = np.unique(labels, return_counts=True)
-    dominant_cluster = unique[np.argmax(counts)]
-
-    # Get the dominant color
-    dominant_color = np.round(kmeans.cluster_centers_[dominant_cluster]).astype(int)
-    return dominant_color  # Return the most dominant color as RGB
+  # Get the dominant color
+  dominant_color = np.round(kmeans.cluster_centers_[dominant_cluster]).astype(int)
+  return dominant_color  # Return the most dominant color as RGB
 
 
-async def smooth_transition(prev_color, new_color, strip, steps=50, delay=0.01):
-    """
-    Smoothly transition from prev_color to new_color over a number of steps.
-    """
-    prev_color = np.array(prev_color)
-    new_color = np.array(new_color)
+def smooth_transition(prev_color, new_color, strip, steps=30, delay=0.01):
+  """
+  Smoothly transition from prev_color to new_color over a number of steps.
+  """
+  global avg_color
+  prev_color = np.array(prev_color)
+  new_color = np.array(new_color)
 
-    # Calculate the step increment for each color channel
-    step_values = (new_color - prev_color) / steps
+  # Calculate the step increment for each color channel
+  step_values = (new_color - prev_color) / steps
 
-    for i in range(steps):
-        # Calculate the intermediate color for this step
-        intermediate_color = prev_color + step_values * i
-        intermediate_color = np.clip(intermediate_color, 0, 255).astype(int)
+  for i in range(steps):
+    # Calculate the intermediate color for this step
+    intermediate_color = prev_color + step_values * i
+    intermediate_color = np.clip(intermediate_color, 0, 255).astype(int)
 
-        # Set the color on the strip
-        await show_color(Color(intermediate_color[0], intermediate_color[1], intermediate_color[2]), strip)
+    # Set the color on the strip
+    color = Color(intermediate_color[0], intermediate_color[1], intermediate_color[2])
+    avg_color = color
+    if not sound_capture:
+      show_color(color, strip)
 
-        # Wait before applying the next color step
-        await asyncio.sleep(delay)
+    # Wait before applying the next color step
+    time.sleep(delay)
 
-async def show_color(color, strip):
-    """Show a solid color on all LEDs."""
-    left = int(sc_settings["left-count"])
-    right = int(sc_settings["right-count"] )
-    top = int(sc_settings["top-count"])
-    bottom = int(sc_settings["bottom-count"])
-    count = left + right + top + bottom 
-    try:
-        for i in range(count):
-            strip.setPixelColor(i,color)
-        strip.show()
-        return
-    except asyncio.CancelledError:
-        print("show_color() was cancelled")
+def show_color(color, strip):
+  """Show a solid color on all LEDs."""
+  left = int(sc_settings["left-count"])
+  right = int(sc_settings["right-count"] )
+  top = int(sc_settings["top-count"])
+  bottom = int(sc_settings["bottom-count"])
+  count = left + right + top + bottom 
+  for i in range(count):
+    strip.setPixelColor(i,color)
+  strip.show()

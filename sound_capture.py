@@ -4,9 +4,8 @@ import sounddevice as sd
 import queue
 import threading
 import time
-import os
+import traceback
 import json
-
 effect_name = "Brightness on Volume"
 
 async def main(strip):
@@ -17,6 +16,10 @@ async def main(strip):
     spec = importlib.util.spec_from_file_location("effect_module", effect_filepath)
     effect_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(effect_module)
+
+    if hasattr(effect_module, 'setup'):
+      effect_module.setup(strip)
+
     if not hasattr(effect_module, 'run'):
       raise ImportError(f"Module '{effect_name}' does not have a 'run' method.")
     device = 0
@@ -47,17 +50,18 @@ async def main(strip):
     def process_audio():
        while not stop_event.is_set():
           try: 
+            time.sleep(.01)
             indata = audio_queue.get(timeout=.05)
             effect_module.run(indata, strip)
-            time.sleep(.01)
           except Exception as e:
             print(f"Error with effects: {type(e).__name__} - {e}")
+            traceback.print_exc()  # Print the full traceback
           
     # Thread that reads the audio stream and adds the data to the queue
     audio_thread = threading.Thread(target=start_audio_stream, daemon=True)
     audio_thread.start()
 
-    time.sleep(.15)
+    time.sleep(.25)
 
     # The processing thread that handles the effects
     processing_thread = threading.Thread(target=process_audio, daemon=True)

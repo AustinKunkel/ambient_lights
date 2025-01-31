@@ -54,12 +54,14 @@ async def update_leds():
         LED_COUNT = new_count
         
     strip.setBrightness(LED_BRIGHTNESS)
+    screen_capt.sound_capture = False
 
     # Create and await the new task based on led_values
     if int(led_values["capt"]) == 1:
         print("creating task: screen capture")
         current_task = asyncio.create_task(screen_capture())
         if int(led_values["srea"]) == 1:
+            screen_capt.sound_capture = True
             print("starting sound react alongside screen capture")
             sound_effect_task = asyncio.create_task(sound_react())
 
