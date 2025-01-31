@@ -1,5 +1,7 @@
 let isCapturing = false;
 
+let isCapturing = false;
+
 document.addEventListener("DOMContentLoaded", async function() {
     const colorCodeInput = document.getElementById("color-code-input");
 
@@ -7,7 +9,11 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     const colorPicker = new iro.ColorPicker('.color-picker', {
         width: 600,
+        width: 600,
         color: "#ffffff", // Default color
+        layoutDirection: "vertical",
+        sliderSize: 80,
+        handleRadius: 25
         layoutDirection: "vertical",
         sliderSize: 80,
         handleRadius: 25
@@ -173,6 +179,11 @@ document.addEventListener("DOMContentLoaded", async function() {
         if(event) {
             event.preventDefault();
         }
+    window.addUserColor = function(color = currentColor, event = null) {
+
+        if(event) {
+            event.preventDefault();
+        }
         if(!color) {
             message_pop_up(TYPE.ERROR, "no color selected!");
             return 
@@ -208,6 +219,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
         const [_, r, g, b] = rgbMatch.map(Number);
 
+        const toHex = (num) => num.toString(16).padStart(2, '0').toUpperCase();
         const toHex = (num) => num.toString(16).padStart(2, '0').toUpperCase();
 
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;

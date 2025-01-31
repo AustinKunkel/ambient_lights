@@ -3,6 +3,8 @@ import asyncio
 
 import screen_capture as screen_capt
 import sound_capture as sound_capt
+import screen_capture as screen_capt
+import sound_capture as sound_capt
 
 # LED strip configuration
 LED_COUNT = 299       # Number of LED pixels
@@ -24,6 +26,7 @@ led_values = {"bri": 50, "col": "#FED403", "capt": 0, "srea": 0, "fx": 0, "cnt":
 # Store the current task globally
 current_task = None
 sound_effect_task = None
+sound_effect_task = None
 
 def hex_to_color(hex_color):
     """Convert hex color to Color object."""
@@ -34,6 +37,7 @@ async def update_leds():
     """Update LED strip with current brightness and color values."""
     print("updated leds")
     global current_task
+    global sound_effect_task
     global sound_effect_task
     global LED_COUNT
     global strip
@@ -59,7 +63,13 @@ async def update_leds():
             print("starting sound react alongside screen capture")
             sound_effect_task = asyncio.create_task(sound_react())
 
+        if int(led_values["srea"]) == 1:
+            print("starting sound react alongside screen capture")
+            sound_effect_task = asyncio.create_task(sound_react())
+
     elif int(led_values["srea"]) == 1:
+        print("Creating task: sound capture")
+        sound_effect_task = asyncio.create_task(sound_react())
         print("Creating task: sound capture")
         sound_effect_task = asyncio.create_task(sound_react())
     elif int(led_values["fx"]) > 0:
@@ -103,6 +113,7 @@ async def screen_capture():
     try:
         led_values["col"] = "00ff11"
         await screen_capt.main(strip)
+        await screen_capt.main(strip)
     except asyncio.CancelledError:
         print("Screen capture was cancelled")
 
@@ -112,12 +123,15 @@ async def sound_react():
         await sound_capt.main(strip)
     except asyncio.CancelledError:
         print("Cancelled sound react")
+        print("Cancelled sound react")
 
 async def stop_curr_task():
     global current_task
     global sound_effect_task
+    global sound_effect_task
     # If there is an existing task, cancel it
     if current_task:
+        print("Cancelling current task")
         print("Cancelling current task")
         current_task.cancel()
         try:
@@ -125,6 +139,16 @@ async def stop_curr_task():
         except asyncio.CancelledError:
             print("Previous LED update task was cancelled")
         current_task = None
+        current_task = None
+
+    if sound_effect_task:
+        print("Cancelling sound task")
+        sound_effect_task.cancel()
+        try:
+            await sound_effect_task
+        except asyncio.CancelledError:
+            print("Sound Effect Task cancelled")
+        sound_effect_task = None
 
     if sound_effect_task:
         print("Cancelling sound task")

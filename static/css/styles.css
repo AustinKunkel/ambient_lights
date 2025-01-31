@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
 
 * {
+  font-family: 'Oswald', sans-serif;
   font-family: 'Oswald', sans-serif;
   cursor: default;
 }
@@ -10,6 +12,7 @@ body {
   display: flex;
   justify-content: center;
   flex-direction: column;
+  font-size: 40px;
   font-size: 40px;
 }
 
@@ -50,6 +53,30 @@ label {
   font-size: 45px;
 }
 
+.stop-option {
+  background-color: rgb(255, 169, 169);
+  border-color: rgb(255, 105, 105) !important;
+}
+
+h1 {
+  font-size: 100px;
+}
+
+h3 {
+  font-size: 60px;
+}
+
+h4 {
+  font-size: 50px;
+  margin: 0;
+  padding: 0;
+  font-weight: 500;
+}
+
+label {
+  font-size: 45px;
+}
+
 /***** Color picker *****/
 
 .IroWheel, .IroSlider {
@@ -57,8 +84,15 @@ label {
 }
 
 .color-picker {
+.IroWheel, .IroSlider {
+  margin: auto;
+}
+
+.color-picker {
   display: inline-block;
   vertical-align: middle;
+  width:fit-content;
+  margin: auto;
   width:fit-content;
   margin: auto;
 }
@@ -86,8 +120,11 @@ label {
 .input-field {
   display: flex;
   justify-content: center;
+  justify-content: center;
   align-items: center;
   flex-direction: row;
+  flex-wrap: wrap;
+  margin: 5px 0;
   flex-wrap: wrap;
   margin: 5px 0;
   padding: .25em;
@@ -103,6 +140,11 @@ label {
 
 #capture_button:active {
   transform: scale(.95)
+  transition: background-color .2s, border-color .2s;
+}
+
+#capture_button:active {
+  transform: scale(.95)
 }
 
 .color {
@@ -111,10 +153,29 @@ label {
   cursor: pointer;
 
   border: 4px solid rgb(170, 170, 170);
+  height: 75px;
+  width: 75px;
+  cursor: pointer;
+
+  border: 4px solid rgb(170, 170, 170);
   border-radius: 50%;
+
 
   display: inline-block; 
   align-self: center;
+
+  transition: width .25s, height .25s;
+  transition-timing-function: ease-in;
+
+  font-size: 30px;
+  text-align: center;
+  vertical-align: baseline;
+}
+
+.color:hover {
+  height: 80px;
+  width: 80px;
+  border-color: rgb(146, 146, 146);
 
   transition: width .25s, height .25s;
   transition-timing-function: ease-in;
@@ -134,6 +195,8 @@ label {
 .selected {
   height: 32px;
   width: 32px;
+  height: 32px;
+  width: 32px;
   border: 2px solid black;
 }
 
@@ -148,12 +211,31 @@ label {
   text-align: center;
   vertical-align: middle;
 }
+
+#color-code-input {
+  width: 135px; 
+  height: 60px; 
+  font-size: 40px;
+  text-align: center;
+  vertical-align: middle;
+}
 .color-easy-container {
   display: flex;
   gap: 5px;
   width: 600px;
   height: fit-content;
+  width: 600px;
+  height: fit-content;
   flex-wrap: wrap;
+  align-content: start;
+  justify-content: center;
+  margin: 8px auto;
+}
+
+/***** Add color menu *****/
+#add-color-menu {
+  width: fit-content;
+  margin: auto;
   align-content: start;
   justify-content: center;
   margin: 8px auto;
@@ -201,6 +283,7 @@ label {
   font-size: 14pt;
 }
 
+input {
 input {
   width: fit-content;
   padding: .25em;

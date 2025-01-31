@@ -20,6 +20,8 @@ sc_settings =     {
       "fwd": 0,
       "bl": 0,
       "res-x": 640,
+      "res-y": 480,
+      "res-x": 640,
       "res-y": 480
     }
 
@@ -88,7 +90,7 @@ async def setup(cap):
       cap.release()
       return
       
-    h, w = frame.shape[:2] # frame defaults to 640 x 480, defines the height and width
+    h, w = frame.shape[:2] # frame defaults to 640 x 480, defines the height and width, defines the height and width
 
     print("h:", h, "w:", w)
     v_offset = int(sc_settings["v-offset"]) # vertical offset (pixels from top and bottom)

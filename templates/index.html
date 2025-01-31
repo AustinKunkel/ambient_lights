@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Ambient LED Control</title>
+    <title>Ambient LED Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/screen_capture.css') }}">
 
@@ -18,9 +19,11 @@
 </head>
 <body>
     <div id="add-color-menu" style="display: none;">
+    <div id="add-color-menu" style="display: none;">
         <button onclick="closeAddColorMenu()"><i class="fa-regular fa-circle-xmark"></i></button>
         
         <button onclick="addUserColor()">Add current color</button>
+        <form onsubmit="addUserColor(document.getElementById('add-user-color-input').value, event)">
         <form onsubmit="addUserColor(document.getElementById('add-user-color-input').value, event)">
             <div class="input-field">
                 <input type="text" placeholder="#FFFFFF" value="#FFFFFF" id="add-user-color-input" oninput="checkUserColor()">
@@ -39,6 +42,8 @@
         <div id="modal-message"></div>
     </div>
 
+    <div class="color-picker">
+        <i class="fa-solid fa-power-off"></i>
     <div class="color-picker">
         <i class="fa-solid fa-power-off"></i>
         <script src="{{ url_for('static', filename='js/color-wheel.js') }}"></script>
@@ -68,8 +73,32 @@
             min="0" 
             max="400"
             step="1">
+        <input 
+            type="number" 
+            name="count-input" 
+            id="count-input" 
+            min="0" 
+            max="400"
+            step="1">
     </div>
 
+    <div class="screen-capt-settings">
+        <h1>Screen capture settings</h1>
+        <button onclick="getCapture()" id="capture_button">Capture Screen</button>
+        
+        <div class="offsets">
+            <div>
+                <label for="v-offset-input">V-Offset</label>
+                <input 
+                    class="offsets-input"
+                    type="number" 
+                    name="v-offset-input" 
+                    id="v-offset-input" 
+                    placeholder="0"
+                    min="0"
+                    max="500"
+                    step="1">
+            </div>
     <div class="screen-capt-settings">
         <h1>Screen capture settings</h1>
         <button onclick="getCapture()" id="capture_button">Capture Screen</button>
@@ -126,12 +155,24 @@
                 <label for="right-led-count">Right</label>
                 <input type="number" name="right-led-count" id="right-led-count" min="0">
             </div>
+            <div class="led-count-input-group">
+                <label for="right-led-count">Right</label>
+                <input type="number" name="right-led-count" id="right-led-count" min="0">
+            </div>
 
             <div class="led-count-input-group">
                 <label for="top-led-count">Top</label>
                 <input type="number" name="top-led-count" id="top-led-count" min="0">
             </div>
+            <div class="led-count-input-group">
+                <label for="top-led-count">Top</label>
+                <input type="number" name="top-led-count" id="top-led-count" min="0">
+            </div>
 
+            <div class="led-count-input-group">
+                <label for="bottom-led-count">Bottom</label>
+                <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">
+            </div>
             <div class="led-count-input-group">
                 <label for="bottom-led-count">Bottom</label>
                 <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">

@@ -6,8 +6,11 @@
   "top-count": "66",
   "right-count": "37",
   "bottom-count": "65",
+  "bottom-count": "65",
   "fwd": 0,
   "bl": 0,
+  "res-x": "640",
+  "res-y": "480",
   "res-x": "640",
   "res-y": "480"
 }
