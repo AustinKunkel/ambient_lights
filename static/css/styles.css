@@ -318,7 +318,7 @@ input {
   vertical-align: middle;
 }
 
-#avg-scrn-color-check, #snd-rct-check {
+input[type="checkbox"] {
   height: 40px;
   width: 40px;
 }
@@ -337,7 +337,7 @@ input {
   justify-content: space-between;
 }
 
-.led-count-input-group input {
+input[type="number"] {
   font-size: 40px;
   width: 75px;
   height: 50px;
@@ -374,4 +374,13 @@ input {
   font-size: 40px;
   padding: 10px;
   margin: auto;
+}
+
+/*** Sound effect ***/
+.selected-effect {
+  border: 2px solid #ccc !important;
+}
+
+#sound-effect-select {
+  font-size: 40px;
 }

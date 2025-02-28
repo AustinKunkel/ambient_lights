@@ -27,7 +27,9 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const avgColorInput = document.getElementById("avg-scrn-color-check")
   const soundWithScreenInput = document.getElementById("snd-rct-check")
+  const blendModeActive = document.getElementById('blend-mode-check');
   const captureButton = document.getElementById('capture_button');
+  const blendDepthInput = document.getElementById('blend-depth-input');
 
   function updateLedSettings(data) {
     brightnessInput.value = Number(data.bri)
@@ -63,21 +65,23 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.saveCaptSettings = function() {
-    const left = leftCount.value
-    const right = rightCount.value
-    const top = topCount.value
-    const bottom = bottomCount.value
-    const isAvgColor = getAvgColor()
+    const left = leftCount.value;
+    const right = rightCount.value;
+    const top = topCount.value;
+    const bottom = bottomCount.value;
+    const isAvgColor = getAvgColor();
+    const blendMode = getBlendMode();
     const isSoundWithScreen = soundWithScreenInput.checked ? 1 : 0;
-    const hOffset = hOffsetInput.value
-    const vOffset = vOffsetInput.value
+    const hOffset = hOffsetInput.value;
+    const vOffset = vOffsetInput.value;
+    const blendDepth = blendDepthInput.value;
 
     if(isUsingCustomRes) {
       resX = customResXInput.value
       resY = customResYInput.value
     }
 
-    requestChangeCapt(`left-count=${left}&right-count=${right}&top-count=${top}&bottom-count=${bottom}&avg-color=${isAvgColor}&h-offset=${hOffset}&v-offset=${vOffset}&res-x=${resX}&res-y=${resY}`)
+    requestChangeCapt(`left-count=${left}&right-count=${right}&top-count=${top}&bottom-count=${bottom}&avg-color=${isAvgColor}&h-offset=${hOffset}&v-offset=${vOffset}&res-x=${resX}&res-y=${resY}&blend-mode=${blendMode}&blend-depth=${blendDepth}`)
     .then(changes => {
       updateCaptSettings(changes)
       requestChangeSoundReact(isSoundWithScreen)
@@ -105,28 +109,31 @@ document.addEventListener("DOMContentLoaded", async function() {
     rightCount.value = data['right-count']
     topCount.value = data['top-count']
     bottomCount.value = data['bottom-count']
+    blendDepthInput.value = data['blend-depth']
 
     resX = data['res-x']
     resY = data['res-y']
     customResXInput.value = resX;
     customResYInput.value = resY;
     
-    setAvgColor(+data['avg-color'])
+    setAvgColor(+data['avg-color']);
+    setBlendMode(+data['blend-mode']);
   }
 
   function getAvgColor() {
-    if(avgColorInput.checked) {
-      return 1
-    }
-    return 0
+    return avgColorInput.checked ? 1 : 0;
   }
 
   function setAvgColor(value) {
-    if(value > 0){
-      avgColorInput.checked = true
-    } else {
-      avgColorInput.checked = false
-    }
+    avgColorInput.checked = value > 0;
+  }
+
+  function getBlendMode() {
+    return blendModeActive.checked ? 1 : 0;
+  }
+
+  function setBlendMode(value) {
+    blendModeActive.checked = value > 0;
   }
 
   window.showScrnAndSndReactOptions = function() {

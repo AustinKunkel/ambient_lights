@@ -19,7 +19,7 @@
     }
   }
 
-  async function change_led_color(colorString) {
+  async function changeLedColor(colorString) {
     try {
       hexColor = colorString.slice(1);
 
@@ -256,3 +256,42 @@ async function requestGetCaptSettings() {
   }
 } 
 
+async function requestGetSoundEffects() {
+  try {
+    const response = await fetch('/sndeffects', {
+      method: 'GET',
+      headers: {
+        'Content-type' : 'application/json'
+      }
+    });
+
+    if(!response.ok) {
+      message_pop_up(TYPE.ERROR, "Error getting the sound effects")
+      throw new Error(`HTTP Error! Status: ${response.status}`);
+    } 
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error: ", error)
+  }
+}
+
+async function requestSetSoundEffect(effectName, effectPath) {
+  try {
+    const response = await fetch('/sndeffects', {
+      method: 'PUT',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({[effectName]: effectPath})
+    });
+    if(!response.ok) {
+      message_pop_up(TYPE.ERROR, "Error getting the sound effects")
+      throw new Error(`HTTP Error! Status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error: ", error.message)
+  }
+}

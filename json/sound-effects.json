@@ -1,0 +1,5 @@
+{
+  "Brightness on Volume" : "brightness-on-volume.py",
+  "Seperated Visualizer" : "seperated-equalizer.py",
+  "Pulse Visualizer": "pulse_visualizer.py"
+}

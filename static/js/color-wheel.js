@@ -48,7 +48,11 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
         color_error_label.style="display: none";
         currentColor = hexColor;
-        change_led_color(hexColor);
+        changeLedColor(hexColor).then((data) => {
+            isCapturing = data['capt'] >= 1;
+
+            window.updateCaptureButton(isCapturing);
+        })
 
         if(activeColorButton != null) {
             activeColorButton.classList.remove("selected");
@@ -225,7 +229,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         isCapturing = !isCapturing;
 
         requestCapture(isCapturing ? 1 : 0).then((data) => {
-            console.log(data);
             isCapturing = data['capt'] >= 1;
 
             window.updateCaptureButton(isCapturing);

@@ -13,6 +13,7 @@
     <script src="{{ url_for('static', filename='js/request-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sound_effects.js') }}"></script>
 
 </head>
 <body>
@@ -109,8 +110,16 @@
             <label for="snd-rct-check">React to sound</label>
         </div>
 
+        <div>
+            <input type="checkbox" name="blend-mode-check" id="blend-mode-check">
+            <label for="blend-mode-check">Blend Mode</label>
+            <input type="number" name="blend-depth-input" id="blend-depth-input" min="1" step="1">
+            <label for="blend-depth-input">Blend Depth</label>
+        </div>
+
         <div id="scrn-sound-react-options" style="display: none;">
-            These are the options of effects to use with sound react while screen capturing. Defalt is brightness
+            <select name="sound-effect-select" id="sound-effect-select">
+            </select>
         </div>
 
         <h3>LED counts</h3>
@@ -158,8 +167,9 @@
                     min="480"
                     step="1"
                     onchange="handleCustomResolutionChange()">
+                <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
             </div>
-            <h4>Default 16x9 Capture Resolutions:</h4>
+            <h4>16x9 Capture Resolutions:</h4>
             <select name="resolutions" id="resolution-dropdown" onchange="handleDefaultResolutionChange(this)">
                 <option value="640x480">640x480</option>
                 <option value="720x480">720x480</option>
@@ -174,7 +184,7 @@
                 <option value="1920x1080">1920x1080</option>
             </select>
             <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
-        </div>
+        </div> 
 
         <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
     </div>

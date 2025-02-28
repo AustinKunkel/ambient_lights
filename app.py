@@ -6,6 +6,7 @@ import json
 # import led_functions
 import led_functions as lf
 import screen_capture as sc
+import sound_capture
 
 
 app = Quart(__name__, static_folder='static')
@@ -163,7 +164,32 @@ async def handle_remove_user_color():
     response = {"message": "Color removed successfully", "colors": orig_colors['colors']}
     return jsonify(response), 200
 
+@app.route('/sndeffects', methods=['GET'])
+async def handle_get_all_sound_effects():
+    """Handles GET sound effects"""
+    file_path = "json/sound-effects.json"
 
+    try:
+        effects = get_json_data(file_path)
+        return jsonify(effects)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error decoding JSON"}), 500
+    
+@app.route('/sndeffects', methods=['PUT'])
+async def handle_set_sound_effect():
+    try:
+        data = await request.get_json()
+        if len(data) < 1:
+            return jsonify({'error', 'Invalid JSON'}), 400
+        effect = list(data.keys())[0]
+
+        sound_capture.effect_name = effect
+
+        return jsonify({'success': 'effect successfully set', 'effect_name': effect}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def get_json_data(file_path):
     try:
@@ -195,8 +221,6 @@ def update_all_vars():
     
 
 async def main():
-
-    
     # Update LEDs at startup
     await lf.update_leds()
 
