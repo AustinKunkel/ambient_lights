@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 import threading
 import queue
-from config import LED_COUNT
+import config
 
 from rpi_ws281x import Color
 
@@ -127,7 +127,7 @@ async def setup(cap):
     fwd_multiplier = 1
     next_index = 0
 
-    led_list = [(0, 0)] * LED_COUNT # list containing the indexes and a Tuple (y, x) values to read from
+    led_list = [(0, 0)] * config.LED_COUNT # list containing the indexes and a Tuple (y, x) values to read from
 
     print("led count:", len(led_list))
 
@@ -406,7 +406,7 @@ def run_avg_screen_color(strip):
       if ret and frame is None:
         print("Could not capture frame!")
         continue
-      new_color = find_dominant_color(frame, k=5)
+      new_color = find_dominant_color(frame)
       smooth_transition(prev_color, new_color, strip, steps=60, delay=.003)
       prev_color = new_color
     cap.release()

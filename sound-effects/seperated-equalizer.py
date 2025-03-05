@@ -6,6 +6,8 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 import traceback
 
+NUM_CHANNELS = 1 # constant for number of audio channels (sound_capture.py reads)
+
 l_count = int(sc.sc_settings["left-count"])
 r_count = int(sc.sc_settings["right-count"])
 t_count = int(sc.sc_settings["top-count"])
@@ -24,13 +26,9 @@ is_capt = False
 
 decay_rate = .8 # ratio that the size of the bars will be at after they go
 
-sound_scalars = []
-current_led_colors = []
-
 def setup(strip):
   global l_count, r_count, t_count, b_count
   global is_static_color, strip_color, change_brightness, capturing_with_avg, is_capt
-  global sound_scalars, current_led_colors
   l_count = int(sc.sc_settings["left-count"])
   r_count = int(sc.sc_settings["right-count"])
   t_count = int(sc.sc_settings["top-count"])
@@ -39,9 +37,6 @@ def setup(strip):
   is_capt = int(lf.led_values['capt']) == 1
   is_fx = int(lf.led_values['fx']) == 1
   is_avg_color = int(sc.sc_settings['avg-color']) == 1
-
-  sound_scalars = sc.sound_scalars
-  current_led_colors = list(sc.led_colors)
 
   print(f"capt: {is_capt}, fx: {is_fx}, avg: {is_avg_color}")
 
@@ -134,7 +129,7 @@ def bandpass_filter(data, lowcut, highcut, fs, order=3):
 
 def update_led_brightness(strip, start, end, brightness_factor=1, passed_color=None):
   global is_static_color, capturing_with_avg, is_capt
-  global strip_color, sound_scalars, current_led_colors
+  global strip_color
   for i in range(start, end):
     # if is_capt and not is_static_color:
     #   if not sc.in_update_loop:
@@ -191,7 +186,7 @@ def run(indata, strip):
   """
   global l_count, r_count, t_count, b_count
   global past_high_rms, past_low_rms, past_mid_rms, decay_rate
-  global capturing_with_avg, current_led_colors
+  global capturing_with_avg
   fs = 48000 # sample rate
 
   # Check if the input data is valid (not empty)
@@ -232,7 +227,6 @@ def run(indata, strip):
     low_rms = decay_rate * past_low_rms + (1 - decay_rate) * low_rms
     mid_rms = decay_rate * past_mid_rms + (1 - decay_rate) * mid_rms
     high_rms = decay_rate * past_high_rms + (1 - decay_rate) * high_rms
-
     # Store current RMS values for next pass
     past_low_rms = low_rms
     past_mid_rms = mid_rms

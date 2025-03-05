@@ -6,6 +6,8 @@ import led_functions as lf
 from scipy.signal import butter, filtfilt
 import traceback
 
+NUM_CHANNELS = 1 # constant for number of audio channels (sound_capture.py reads)
+
 l_count = int(sc.sc_settings["left-count"])
 r_count = int(sc.sc_settings["right-count"])
 t_count = int(sc.sc_settings["top-count"])
@@ -157,10 +159,10 @@ class Pulse:
   def __init__(self, start_position, end_index, width, color, direction=1):
     """
     Parameters:
-    - start_position: starting index in the led strip
-    - end_index: index that the pulse goes to
-    - width: how long the pulse is
-    - color: the color of the pulse
+    - start_position (int): starting index in the led strip
+    - end_index (int): index that the pulse goes to
+    - width (int): how long the pulse is
+    - color (tuple): the color of the pulse
     - direction: the multiplier (1 if forward, -1 if backward)
     """
     global LED_COUNT
@@ -168,7 +170,7 @@ class Pulse:
     self.end_index = end_index
     self.width = width
     self.direction = direction
-    self.color = getRGBFromColor(color) # tuple of r, g, b values
+    self.color = color
 
     self.end_position = max(0, min(LED_COUNT, self.start_position - (self.width * self.direction)))
     self.iteration = 1
@@ -202,12 +204,12 @@ class Pulse:
     
     Parameters:
     - strip: The LED strip object
-    - color: the Color object
     """
     
     for i in range(int(self.end_position), int(self.start_position + (1 * self.direction)), int(self.direction)):
       current_r, current_g, current_b = getRGBFromColor(strip.getPixelColor(i))
 
+      # simulate constructive interference
       r = int(min(255, current_r + self.color[0]))
       g = int(min(255, current_g + self.color[1]))
       b = int(min(255, current_b + self.color[2]))
@@ -258,7 +260,7 @@ def run(indata, strip):
 
   try:
     def wipe_colors(r, g, b):
-      new_color = Color(int(r * .4), int(g * .4), int(b * .4))
+      new_color = Color(int(r * .5), int(g * .5), int(b * .5))
       for i in range(LED_COUNT):
         strip.setPixelColor(i, new_color)
 
@@ -280,21 +282,21 @@ def run(indata, strip):
     mid_rms = np.sqrt(np.mean(mid_freq_signal_smoothed**2))
     high_rms = np.sqrt(np.mean(high_freq_signal_smoothed**2))
 
-    if past_low_rms is None:
-      past_low_rms = low_rms
+    # if past_low_rms is None:
+    #   past_low_rms = low_rms
     if past_mid_rms is None:
       past_mid_rms = mid_rms
     if past_high_rms is None:
       past_high_rms = high_rms
 
     # Apply decay to RMS values
-    decay_rate = .8
-    low_rms = decay_rate * past_low_rms + (1 - decay_rate) * low_rms
+    decay_rate = .9
+    # low_rms = decay_rate * past_low_rms + (1 - decay_rate) * low_rms
     mid_rms = decay_rate * past_mid_rms + (1 - decay_rate) * mid_rms
     high_rms = decay_rate * past_high_rms + (1 - decay_rate) * high_rms
 
     # Store current RMS values for next pass
-    past_low_rms = low_rms
+    # past_low_rms = low_rms
     past_mid_rms = mid_rms
     past_high_rms = high_rms
 
@@ -321,7 +323,7 @@ def run(indata, strip):
       calculated_iteration = calculate_width(low_ratio, 0.95, 0, 15)
       iteration = calculated_iteration if iteration > calculated_iteration else iteration
       width = calculate_width(low_ratio, .95, 16, 8)
-      color = Color(int(r*low_ratio), int(g*.5*low_ratio), int(b*low_ratio*low_ratio))
+      color = (int(r*low_ratio), int(g*.5*low_ratio), int(b*low_ratio*low_ratio))
       pulse_1 = Pulse((r_count + t_count - 1), end_index=0, width=width, color=color, direction=-1)
       pulse_2 = Pulse((r_count + t_count), LED_COUNT - 1,width, color, 1)
       pulse_list.append(pulse_1)
@@ -347,15 +349,19 @@ def run(indata, strip):
       pulse_list.append(pulse_2)
 
     """
+    # ensures that any pulse that reached the end is removed from the list
     pulse_list = [pulse for pulse in pulse_list if pulse.increment_position()]
 
     PULSE_SPEED = inverse_square(iteration)
-    r = low_ratio
-    g = mid_ratio
-    b = high_ratio
-    
+
+    # r = max(50, int(high_ratio * 205))
+    # g = max(50, int(low_ratio * 205))
+    # b = max(50, int(mid_ratio * 205))
+    # color = (r, g, b)
     for pulse in pulse_list: 
-      pulse.draw(strip, color)
+      pulse.draw(strip)
+
+    strip.setBrightness(min(255, max(50, int(mid_ratio * 205))))
 
     """
     # Lower value to smooth more

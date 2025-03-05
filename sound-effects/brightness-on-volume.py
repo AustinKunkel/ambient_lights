@@ -1,6 +1,8 @@
 import numpy as np
 import time
 
+NUM_CHANNELS = 1 # constant for number of audio channels (sound_capture.py reads)
+
 smoothed_rms = None
 max_volume = 7000 # the max volume we want to create the ratio from
 min_volume = 300 # the minimum volume we want to read from
