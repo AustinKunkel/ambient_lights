@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/9dc6d823-4615-40ac-94d6-a4984a3fb36c
 
 ## How Screen Capture Works
 ### 1. **Capturing the Screen**
-- Frames are captured from an HDMI capture card and read using OpenCV *(cv2.VideoCapture)*.
+- Frames are captured from an HDMI capture card and read using OpenCV *(`cv2.VideoCapture`)*.
 - Frames are continuously read to keep the LEDs updated in real time.
 - The captured frames are then downscaled to reduce processing time and maintain color accuracy.
 ### 2. **Mapping LEDs to the Screen**
@@ -64,15 +64,10 @@ https://github.com/user-attachments/assets/9dc6d823-4615-40ac-94d6-a4984a3fb36c
 
 ### 5. **Optimizing for Low Latency**
 - Asynchronous processing minimizes lag, and keeps the server responsive.
-- Using arrays with direct indexing speeds up overall calculations
-- Other capture settings that the user can change can affect the latency (resolution, blend mode, LED count)
+- Using arrays with direct indexing speeds up overall calculations.
+- Other capture settings that the user can change can affect the latency (resolution, blend mode, LED count).
 
-
-## Development & Contribution
-Guidelines for developers interested in contributing to the project, including project structure and coding standards.
-
-## Troubleshooting & FAQs
-Common issues, debugging tips, and frequently asked questions to help users resolve problems.
+## How Sound Capture Works
 
 ## Future Plans & Roadmap
-A list of upcoming features, improvements, and areas where contributions are needed.
+
