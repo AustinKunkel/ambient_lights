@@ -1,6 +1,11 @@
 import numpy as np
+import time
+
+NUM_CHANNELS = 1 # constant for number of audio channels (sound_capture.py reads)
 
 smoothed_rms = None
+max_volume = 7000 # the max volume we want to create the ratio from
+min_volume = 300 # the minimum volume we want to read from
 
 def raised_cosine_filter(signal, alpha=0.5, num_taps=21):
     # Generate Raised Cosine filter coefficients
@@ -12,7 +17,7 @@ def raised_cosine_filter(signal, alpha=0.5, num_taps=21):
     return np.convolve(signal, rc_filter, mode='same')
 
 def run(indata, strip):
-    global smoothed_rms
+    global smoothed_rms, max_volume, min_volume
     alpha = .2
 
     if indata is None or len(indata) == 0:
@@ -34,13 +39,14 @@ def run(indata, strip):
             smoothed_rms = (1 - alpha) * smoothed_rms + alpha * rms
 
         # Normalize and calculate brightness
-        normalized_volume = (smoothed_rms - 300) / 5700
+        normalized_volume = (smoothed_rms - min_volume) / (max_volume - min_volume)
         normalized_volume = max(0, min(normalized_volume, 1))
-        brightness = int(10 + (normalized_volume * 120))
+        brightness = int(10 + (normalized_volume * 200))
 
         # Update LEDs
         strip.setBrightness(brightness)
         strip.show()
+        time.sleep(.01)
 
     except Exception as e:
         print(f"Error in brightness on volume run method: {e}")

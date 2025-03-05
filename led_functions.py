@@ -3,20 +3,10 @@ import asyncio
 
 import screen_capture as screen_capt
 import sound_capture as sound_capt
-import screen_capture as screen_capt
-import sound_capture as sound_capt
-
-# LED strip configuration
-LED_COUNT = 299       # Number of LED pixels
-LED_PIN = 18         # GPIO pin connected to the pixels (18 uses PWM)
-LED_FREQ_HZ = 800000 # LED signal frequency in hertz (usually 800kHz)
-LED_DMA = 10         # DMA channel to use for generating signal (try 10)
-LED_BRIGHTNESS = 255 # Set to 0 for darkest and 255 for brightest
-LED_INVERT = False   # True to invert the signal (when using NPN transistor level shift)
-LED_CHANNEL = 0      # Set to 1 for GPIOs 13, 19, 41, 45 or 53
+import config
 
 # Create NeoPixel object with appropriate configuration
-strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+strip = PixelStrip(config.LED_COUNT, config.LED_PIN, config.LED_FREQ_HZ, config.LED_DMA, config.LED_INVERT, config.LED_BRIGHTNESS, config.LED_CHANNEL)
 # Initialize the library (must be called once before other functions)
 strip.begin()
 
@@ -25,7 +15,6 @@ led_values = {"bri": 50, "col": "#FED403", "capt": 0, "srea": 0, "fx": 0, "cnt":
 
 # Store the current task globally
 current_task = None
-sound_effect_task = None
 sound_effect_task = None
 
 def hex_to_color(hex_color):
@@ -38,22 +27,20 @@ async def update_leds():
     print("updated leds")
     global current_task
     global sound_effect_task
-    global sound_effect_task
-    global LED_COUNT
     global strip
 
     # Cancel any existing task
     await stop_curr_task()
 
     new_count = int(led_values["cnt"])
-    if(LED_COUNT != new_count):
+    if(config.LED_COUNT != new_count):
         strip.setBrightness(0)
         strip.show()
         await asyncio.sleep(.05)
         create_strip(new_count)
-        LED_COUNT = new_count
+        config.LED_COUNT = new_count
         
-    strip.setBrightness(LED_BRIGHTNESS)
+    strip.setBrightness(config.LED_BRIGHTNESS)
     screen_capt.sound_capture = False
 
     # Create and await the new task based on led_values
@@ -65,13 +52,7 @@ async def update_leds():
             print("starting sound react alongside screen capture")
             sound_effect_task = asyncio.create_task(sound_react())
 
-        if int(led_values["srea"]) == 1:
-            print("starting sound react alongside screen capture")
-            sound_effect_task = asyncio.create_task(sound_react())
-
     elif int(led_values["srea"]) == 1:
-        print("Creating task: sound capture")
-        sound_effect_task = asyncio.create_task(sound_react())
         print("Creating task: sound capture")
         sound_effect_task = asyncio.create_task(sound_react())
     elif int(led_values["fx"]) > 0:
@@ -81,18 +62,16 @@ async def update_leds():
         current_task = asyncio.create_task(show_color(color))
 
 async def update_led_vars():
-
-    global LED_BRIGHTNESS
-    LED_BRIGHTNESS = int(led_values['bri'])
+    config.LED_BRIGHTNESS = int(led_values['bri'])
 
     global strip
-    strip.setBrightness(LED_BRIGHTNESS)
+    strip.setBrightness(config.LED_BRIGHTNESS)
     strip.show()  
 
 async def show_color(color):
     """Show a solid color on all LEDs."""
     try:
-        for i in range(LED_COUNT):
+        for i in range(config.LED_COUNT):
             strip.setPixelColor(i,color)
         strip.show()
         return
@@ -103,7 +82,7 @@ async def show_fx():
     """Show a color effect on the LEDs."""
     try:
         for i in range(256):
-            for j in range(LED_COUNT):
+            for j in range(config.LED_COUNT):
                 strip.setPixelColor(j, Color(i, 0, 0))
             strip.show()
             await asyncio.sleep(0.02)  # Allow for other tasks to run
@@ -115,7 +94,6 @@ async def screen_capture():
     try:
         led_values["col"] = "00ff11"
         await screen_capt.main(strip)
-        await screen_capt.main(strip)
     except asyncio.CancelledError:
         print("Screen capture was cancelled")
 
@@ -125,15 +103,12 @@ async def sound_react():
         await sound_capt.main(strip)
     except asyncio.CancelledError:
         print("Cancelled sound react")
-        print("Cancelled sound react")
 
 async def stop_curr_task():
     global current_task
     global sound_effect_task
-    global sound_effect_task
     # If there is an existing task, cancel it
     if current_task:
-        print("Cancelling current task")
         print("Cancelling current task")
         current_task.cancel()
         try:
@@ -141,16 +116,6 @@ async def stop_curr_task():
         except asyncio.CancelledError:
             print("Previous LED update task was cancelled")
         current_task = None
-        current_task = None
-
-    if sound_effect_task:
-        print("Cancelling sound task")
-        sound_effect_task.cancel()
-        try:
-            await sound_effect_task
-        except asyncio.CancelledError:
-            print("Sound Effect Task cancelled")
-        sound_effect_task = None
 
     if sound_effect_task:
         print("Cancelling sound task")
@@ -164,7 +129,7 @@ async def stop_curr_task():
 def create_strip(led_count):
     global strip
     """Create and initialize the PixelStrip object."""
-    strip = PixelStrip(led_count, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, 0, LED_CHANNEL)
+    strip = PixelStrip(led_count, config.LED_PIN, config.LED_FREQ_HZ, config.LED_DMA, config.LED_INVERT, 0, config.LED_CHANNEL)
     strip.begin()
     strip.show()
     return strip

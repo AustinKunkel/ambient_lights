@@ -20,6 +20,11 @@ async def main(strip):
     if hasattr(effect_module, 'setup'):
       effect_module.setup(strip)
 
+    if hasattr(effect_module, 'NUM_CHANNELS'):
+      num_channels = effect_module.NUM_CHANNELS
+    else:
+      num_channels = 1
+
     if not hasattr(effect_module, 'run'):
       raise ImportError(f"Module '{effect_name}' does not have a 'run' method.")
     device = 0
@@ -36,7 +41,7 @@ async def main(strip):
       """Thread to capture audio"""
       with sd.InputStream(
        device = device,
-       channels=1,
+       channels=num_channels,
        samplerate=sample_rate,
        callback=callback,
        blocksize=chunk_size,
