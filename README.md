@@ -10,7 +10,7 @@ By using a Raspberry Pi Zero 2 W, an affordable capture card, an individually ad
 - **Web-based Control**: Adjust settings via and interactive UI, accessible from any browser.
 - **Custom LED and resolution mapping**: Configure LED positions and resolutions to fit any screen size.
 - **Sound Reactive Mode**: Sync LEDs to audio with multiple different effects (can be paired with screen capture).
-- **Low-Latency Updates**: LEnsure minimal delay when updating LEDs, maintaining an immersive experience.
+- **Low-Latency Updates**: Ensure minimal delay when updating LEDs, maintaining an immersive experience.
 
 ## Demonstration
 Check out the project in action!
@@ -63,11 +63,21 @@ https://github.com/user-attachments/assets/9dc6d823-4615-40ac-94d6-a4984a3fb36c
 - The **`rpi_ws281x`** library is used to update the LED strip.
 
 ### 5. **Optimizing for Low Latency**
-- Asynchronous processing minimizes lag, and keeps the server responsive.
+- Asynchronous and multithreaded processing minimizes lag, and keeps the server responsive.
 - Using arrays with direct indexing speeds up overall calculations.
 - Other capture settings that the user can change can affect the latency (resolution, blend mode, LED count).
 
 ## How Sound Capture Works
+### 1. **Capturing the Audio**
+- The audio stream is captured using **`sounddevice.InputStream`**, and each frame is added to a `queue`.
+- Each sound effect is dynamically imported and processes the audio from the `queue`.
+  
+### 2. **Processing the sound effect**
+- Each sound effect runs in a seperate thread inside **`sound_capture.py`**.
+- Every sound effect contains a **`run`** method, which is called every time an audio frame is read from the `queue`.
+- In the **`run`** method, the audio data is parsed, and the LED strip updates accordingly.
 
-## Future Plans & Roadmap
-
+## Future Plans
+- Revamp the UI for a cleaner design and additional customization options.
+- Implement full-screen capture alongside sound effects (beyond just average color).
+- Refactor the code to better align with industry standards.
