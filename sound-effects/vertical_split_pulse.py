@@ -289,12 +289,12 @@ def ease_in_out(x, b=10):
     c = x / b
     denominator = c**a + (1 - c)**a
     return (c**a)/denominator
-  if x > b and x < (LED_COUNT / 2) - (b/2): 
+  if x > b and x < (LED_COUNT / 2): 
     # in the high spot
     return 1
-  elif x >= (LED_COUNT / 2) - (b/2) and x < (LED_COUNT / 2) + (b/2):
+  elif x >= (LED_COUNT / 2) and x < (LED_COUNT / 2) + b:
     # coming down
-    x %= (LED_COUNT/2) - (b/2)
+    x %= (LED_COUNT/2)
     c = x / b
     denominator = c**a + (1 - c)**a
     return 1 - ((c**a)/denominator)
@@ -467,11 +467,11 @@ def run(indata, strip):
     strip.setBrightness(min(255, max(30, int(brightness_ratio * 225))))
     """
 
-    ease_in_out_length = 10 # used in ease_in_out()
+    ease_in_out_length = 20 # used in ease_in_out()
 
     # starting indices for the ease-in-out function
-    left_index = LED_COUNT - top_middle - (ease_in_out_length//2) # -(b/2) for a little crossover
-    right_index = LED_COUNT - bottom_middle - (ease_in_out_length//2)
+    left_index = LED_COUNT - top_middle + (ease_in_out_length/2) # +(b/2) for a little crossover
+    right_index = LED_COUNT - bottom_middle + (ease_in_out_length/2)
 
     for i in range(LED_COUNT):
       left_opacity_scalar = ease_in_out(left_index, ease_in_out_length)
@@ -484,6 +484,9 @@ def run(indata, strip):
       combined_right = mid_right_ratio * right_opacity_scalar
 
       r, g, b = getRGBFromColor(strip.getPixelColor(i))
+
+      # if i >= bottom_middle - ease_in_out_length/2 and i <= bottom_middle + ease_in_out_length/2:
+        # print(f"i: {i}\tleft index: {left_index} left opacity: {left_opacity_scalar} combined_left: {combined_left}\tright index: {right_index} right opacity: {right_opacity_scalar} combined_right: {combined_right}")
 
       r = int(min(255, r * (combined_left + combined_right)))
       g = int(min(255, g * (combined_left + combined_right)))
@@ -499,7 +502,7 @@ def run(indata, strip):
     """
     strip.show()
 
-    time.sleep(.001)
+    # time.sleep(.001)
 
   except Exception as e:
     print(f"Error in pulse visualizer: {e}")
