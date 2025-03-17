@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   const hOffsetInput = document.getElementById("h-offset-input")
 
   const avgColorInput = document.getElementById("avg-scrn-color-check")
-  const soundWithScreenInput = document.getElementById("snd-rct-check")
+  const soundReact = document.getElementById("snd-rct-check")
   const blendModeActive = document.getElementById('blend-mode-check');
   const captureButton = document.getElementById('capture_button');
   const blendDepthInput = document.getElementById('blend-depth-input');
@@ -34,7 +34,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   function updateLedSettings(data) {
     brightnessInput.value = Number(data.bri)
     countInput.value = Number(data.cnt)
-    soundWithScreenInput.checked = data.srea >= 1;
+    soundReact.checked = data.srea >= 1;
+    showScrnAndSndReactOptions()
     isCapturing = data.capt >= 1;
     updateCaptureButton(isCapturing)
   }
@@ -71,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const bottom = bottomCount.value;
     const isAvgColor = getAvgColor();
     const blendMode = getBlendMode();
-    const isSoundWithScreen = soundWithScreenInput.checked ? 1 : 0;
+    const isSoundWithScreen = soundReact.checked ? 1 : 0;
     const hOffset = hOffsetInput.value;
     const vOffset = vOffsetInput.value;
     const blendDepth = blendDepthInput.value;
@@ -86,7 +87,8 @@ document.addEventListener("DOMContentLoaded", async function() {
       updateCaptSettings(changes)
       requestChangeSoundReact(isSoundWithScreen)
       .then(changes => {
-        soundWithScreenInput.checked = changes['srea'] >= 1;
+        soundReact.checked = changes['srea'] >= 1;
+        showScrnAndSndReactOptions()
       })
     })
 
@@ -96,10 +98,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     if(isCapturing) { // if it is current capturing
       captureButton.innerHTML = 'Stop Capturing Screen';
       captureButton.classList.add('stop-option');
-  } else {
-      captureButton.innerHTML = 'Capture Screen';
-      captureButton.classList.remove('stop-option');
-  }
+    } else {
+        captureButton.innerHTML = 'Capture Screen';
+        captureButton.classList.remove('stop-option');
+    }
   }
 
   function updateCaptSettings(data) {
@@ -134,15 +136,5 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function setBlendMode(value) {
     blendModeActive.checked = value > 0;
-  }
-
-  window.showScrnAndSndReactOptions = function() {
-    const checkbox = document.getElementById("snd-rct-check");
-    const options = document.getElementById("scrn-sound-react-options");
-    if(checkbox.checked) {
-      options.style.display = 'block';
-    } else {
-      options.style.display = 'none';
-    }
   }
 })

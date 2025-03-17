@@ -16,8 +16,18 @@ document.addEventListener("DOMContentLoaded", async function() {
     const selectedEffectPath = event.target.value;
 
     requestSetSoundEffect(selectedEffectName, selectedEffectPath)
-    .then(data => {
-      message_pop_up(TYPE.OK, `Sound effect seleected: ${selectedEffectName}`)
+    .then(() => {
+      message_pop_up(TYPE.OK, `Sound effect selected: ${selectedEffectName}`)
     })
   })
+
+  window.showScrnAndSndReactOptions = function() {
+    const checkbox = document.getElementById("snd-rct-check");
+    const options = document.getElementById("scrn-sound-react-options");
+    if(checkbox.checked) {
+      options.style.display = 'block';
+    } else {
+      options.style.display = 'none';
+    }
+  }
 })

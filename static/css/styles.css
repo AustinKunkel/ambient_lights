@@ -50,6 +50,24 @@ label {
   font-size: 45px;
 }
 
+.message-container {
+  padding: 10px;
+  width: fit-content;
+  height: fit-content;
+  position: fixed;
+  top: 2em;
+  left: 50%;
+  margin-top: -1em;
+  transform: translate(-50%, 0);
+  z-index: 100;
+  margin: auto;
+  justify-content: center;
+  background-color: white;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  transition: all 1s ease-in
+}
+
 /***** Color picker *****/
 
 .IroWheel, .IroSlider {
