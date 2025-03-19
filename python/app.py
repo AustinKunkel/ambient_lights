@@ -4,9 +4,9 @@ import asyncio
 import json
 
 # import led_functions
-import led_functions as lf
-import screen_capture as sc
-import sound_capture
+import python.led_functions as lf
+import python.screen_capture as sc
+import python.sound_capture as sound_capture
 
 
 app = Quart(__name__, static_folder='static')

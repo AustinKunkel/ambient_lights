@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import threading
 import queue
-from config import LED_COUNT
+from python.config import LED_COUNT
 
 from rpi_ws281x import Color
 

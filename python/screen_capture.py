@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 import threading
 import queue
-import config
+import python.config as config
 
 from rpi_ws281x import Color
 
@@ -279,21 +279,23 @@ def update_led_colors(strip, cap, led_list):
    """
   global stop_capture_event, blend_mode_active, sound_capture
   try:
+    x_resolution = int(sc_settings['res-x'])
+    y_resolution = int(sc_settings['res-y'])
+    depth = sc_settings["blend-depth"] if blend_mode_active else 3
+    depth = int(depth) if depth else 3
     while not stop_capture_event.is_set():
         # print("update_colors started")
         # time_1 = time.time()
         ret, frame = cap.read()
         if not ret: continue
-        frame = cv2.resize(frame, (int(sc_settings['res-x']), int(sc_settings['res-y'])))
+        frame = cv2.resize(frame, (x_resolution, y_resolution), interpolation=cv2.INTER_LINEAR)
+
         if led_list:
-          precomputed_colors = {} # dictionary with index as keys (only used with blend mode)
-          if blend_mode_active:
-            precomputed_colors = precompute_blended_colors(led_list, frame, depth=3) # precompute the colors for fast lookup
-    
           for index, (y, x) in enumerate(led_list):
-            color = frame[y, x]
             if blend_mode_active: # use blended colors if blend mode is on
-              color = precomputed_colors[index]
+              color = blend_colors(led_list, frame, index, depth=depth)
+            else:
+              color = frame[y, x]
             b, g, r = color
             strip.setPixelColor(index, Color(r, g, b))
           # time_2 = time.time()
@@ -301,30 +303,11 @@ def update_led_colors(strip, cap, led_list):
           if not sound_capture:
             strip.show()
           if not blend_mode_active:
-            time.sleep(.006)
+            time.sleep(.003)
     cap.release()
     cv2.destroyAllWindows()
   except Exception as e:
     print(f"Error in update_led_colors: {e}")
-
-def precompute_blended_colors(led_list, frame, depth=3):
-  """
-  Precompute blended colors for all LEDs before updating them.
-
-  :param led_list: Dictionary mapping LED indices to (y, x) pixel locations
-  :param frame: The captured screen frame (NumPy array)
-  :param depth: Number of previous LEDs to blend
-  :return: Dictionary mapping LED indices to (b, g, r) blended colors
-  """
-  blended_colors = {}
-  depth = sc_settings["blend-depth"]
-
-  depth = int(depth) if depth else 3
-
-  for index in range(len(led_list)):
-     blended_colors[index] = blend_colors(led_list, frame, index, depth)
-
-  return blended_colors
 
 def blend_colors(led_list, frame, index, depth=3):
   """Blends an LED's color by averaging previous and next LED colors up to a given depth.
