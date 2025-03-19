@@ -1,9 +1,9 @@
 from rpi_ws281x import PixelStrip, Color
 import asyncio
 
-import python.screen_capture as screen_capt
-import python.sound_capture as sound_capt
-import python.config as config
+import screen_capture as screen_capt
+import sound_capture as sound_capt
+import config as config
 
 # Create NeoPixel object with appropriate configuration
 strip = PixelStrip(config.LED_COUNT, config.LED_PIN, config.LED_FREQ_HZ, config.LED_DMA, config.LED_INVERT, config.LED_BRIGHTNESS, config.LED_CHANNEL)

@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 import threading
 import queue
-import python.config as config
+import config as config
 
 from rpi_ws281x import Color
 

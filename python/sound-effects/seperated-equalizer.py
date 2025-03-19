@@ -1,7 +1,7 @@
 from rpi_ws281x import Color
-import python.screen_capture as sc
+import screen_capture as sc
 import time
-import python.led_functions as lf
+import led_functions as lf
 import numpy as np
 from scipy.signal import butter, filtfilt
 import traceback
