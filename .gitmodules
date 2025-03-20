@@ -1,3 +1,0 @@
-[submodule "c/libwebsockets"]
-	path = c/libwebsockets
-	url = https://github.com/warmcat/libwebsockets.git
