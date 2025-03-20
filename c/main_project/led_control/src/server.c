@@ -35,10 +35,12 @@ int main(int argc, char **argv) {
             "demo-protocol", // Protocol name, should match the WebSocket protocol in the frontend code
             callback, // Callback function pointer
             sizeof(struct per_session_data), // Size of data for each session (connection)
-            0, // No additional protocol parameters
-            0, NULL, NULL
+            0,                 // rx_buffer_size (size_t)
+            0,                 // id (unsigned int)
+            0,                 // tx_packet_size (size_t)
+            NULL               // user (struct lws_protocol_vhost_options *)
         },
-        { NULL, NULL, 0, 0 } // Protocol list ends with NULL
+        { NULL, NULL, 0, 0, 0, 0, NULL }  // Ensure all fields are properly initialized
     };
 
     // Create the WebSocket context
