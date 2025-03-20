@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
             callback, // Callback function pointer
             sizeof(struct per_session_data), // Size of data for each session (connection)
             0, // No additional protocol parameters
-            NULL, NULL, NULL
+            0, NULL, NULL
         },
         { NULL, NULL, 0, 0 } // Protocol list ends with NULL
     };
