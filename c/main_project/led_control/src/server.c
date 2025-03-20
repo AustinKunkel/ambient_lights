@@ -31,14 +31,16 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
 int main(int argc, char **argv) {
     // Create the WebSocket protocol
     static struct lws_protocols protocols[] = {
-        {
-            "demo-protocol", // Protocol name, should match the WebSocket protocol in the frontend code
-            callback, // Callback function pointer
-            sizeof(struct per_session_data), // Size of data for each session (connection)
-            0, // No additional protocol parameters
-            NULL, NULL, NULL
-        },
-        { NULL, NULL, 0, 0 } // Protocol list ends with NULL
+      {
+        "demo-protocol", // Protocol name, should match the WebSocket protocol in the frontend code
+        callback,        // Callback function pointer
+        sizeof(struct per_session_data), // Size of data for each session (connection)
+        0,               // Protocol id, set to 0 (or another valid integer if needed)
+        0,               // tx_packet_size, set to 0 (or another valid size if needed)
+        NULL,            // User data, can be NULL or valid pointer
+        NULL             // Protocol extensions, can be NULL if not needed
+    },
+    { NULL, NULL, 0, 0, 0, NULL, NULL } // Protocol list ends with NULL
     };
 
     // Create the WebSocket context
