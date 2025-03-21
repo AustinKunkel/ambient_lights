@@ -2,8 +2,17 @@ function showMessage() {
   alert("Hello from MicroHTTPD!");
 }
 
+function setGet() {
+  fetch("/get", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  })
+  .then(response => response.text())
+  .then(data => console.log(data));
+}
+
 function sendPost() {
-  fetch("/data.json", {
+  fetch("/api", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: "Hello, server!" })
@@ -14,7 +23,7 @@ function sendPost() {
 
 
 function sendDelete() {
-  fetch("/data.json", { method: "DELETE" })
+  fetch("/api", { method: "DELETE" })
   .then(response => response.text())
   .then(data => console.log(data));
   
