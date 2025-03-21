@@ -2,7 +2,7 @@ function showMessage() {
   alert("Hello from MicroHTTPD!");
 }
 
-function setGet() {
+function sendGet() {
   fetch("/get", {
     method: "GET",
     headers: { "Content-Type": "application/json" }
