@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#define WEB_ROOT "./www"  // Directory containing HTML, CSS, JS files
+#define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
 
 // Function to check if a file exists
 int file_exists(const char *filename) {
