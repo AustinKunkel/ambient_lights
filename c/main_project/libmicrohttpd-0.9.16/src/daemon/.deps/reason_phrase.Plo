@@ -1,4 +1,0 @@
-reason_phrase.lo: reason_phrase.c /usr/include/stdc-predef.h \
- reason_phrase.h
-/usr/include/stdc-predef.h:
-reason_phrase.h:
