@@ -50,7 +50,7 @@ int main(int argc,
 	   argv[0]);
     return 1;
   }
-  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
+  d = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
 		       atoi(argv[1]),
 		       NULL,
 		       NULL,
