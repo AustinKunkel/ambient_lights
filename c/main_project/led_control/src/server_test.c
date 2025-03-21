@@ -2,22 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
-#define PORT 8080  // Default port
-#define WEB_ROOT "./led_control/www"  // Directory to serve files from
+#define WEB_ROOT "./www"  // Directory containing HTML, CSS, JS files
 
-// Function to get the MIME type based on file extension
-const char *get_mime_type(const char *path) {
-    if (strstr(path, ".html")) return "text/html";
-    if (strstr(path, ".css")) return "text/css";
-    if (strstr(path, ".js")) return "application/javascript";
-    return "application/octet-stream"; // Default binary type
+// Function to check if a file exists
+int file_exists(const char *filename) {
+    struct stat buffer;
+    return (stat(filename, &buffer) == 0);
 }
 
-// HTTP request handler
+// Request handler function
 static enum MHD_Result ahc_echo(void *cls,
                                 struct MHD_Connection *connection,
                                 const char *url,
@@ -29,76 +24,96 @@ static enum MHD_Result ahc_echo(void *cls,
     static int dummy;
     struct MHD_Response *response;
     int ret;
+    char filepath[512];
 
-    if (0 != strcmp(method, "GET"))
-        return MHD_NO; // Reject non-GET requests
-
+    // First time only headers are received, do nothing
     if (&dummy != *ptr) {
         *ptr = &dummy;
         return MHD_YES;
     }
 
-    *ptr = NULL; // Clear context pointer
-
-    // Construct full file path
-    char filepath[512];
-    snprintf(filepath, sizeof(filepath), "%s%s", WEB_ROOT, url);
-
-    // Default to index.html if requesting root "/"
-    if (strcmp(url, "/") == 0) {
-        snprintf(filepath, sizeof(filepath), "%s/index.html", WEB_ROOT);
+    if (*upload_data_size != 0) {
+        *upload_data_size = 0;  // Reset data size
+        return MHD_YES;
     }
 
-    // Open file
-    int fd = open(filepath, O_RDONLY);
-    if (fd < 0) {
-        // File not found, return 404
-        const char *not_found = "404 Not Found";
-        response = MHD_create_response_from_buffer(strlen(not_found),
-                                                   (void *)not_found,
+    *ptr = NULL;  // Clear context pointer
+
+    // **Serve Static Files (HTML, CSS, JS)**
+    if (strcmp(url, "/") == 0) {
+        snprintf(filepath, sizeof(filepath), "%s/index.html", WEB_ROOT);
+    } else {
+        snprintf(filepath, sizeof(filepath), "%s%s", WEB_ROOT, url);
+    }
+
+    if (file_exists(filepath)) {
+        FILE *file = fopen(filepath, "rb");
+        if (file) {
+            fseek(file, 0, SEEK_END);
+            long file_size = ftell(file);
+            rewind(file);
+
+            char *file_content = malloc(file_size);
+            fread(file_content, 1, file_size, file);
+            fclose(file);
+
+            response = MHD_create_response_from_buffer(file_size, file_content, MHD_RESPMEM_MUST_FREE);
+            ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+            MHD_destroy_response(response);
+            return ret;
+        }
+    }
+
+    // **API Handling (GET, POST, DELETE)**
+    if (strncmp(url, "/api", 4) == 0) {
+        const char *response_text;
+        
+        if (strcmp(method, "GET") == 0) {
+            response_text = "{\"message\": \"GET request received!\"}";
+        } else if (strcmp(method, "POST") == 0) {
+            response_text = "{\"message\": \"POST request received!\"}";
+        } else if (strcmp(method, "DELETE") == 0) {
+            response_text = "{\"message\": \"DELETE request received!\"}";
+        } else {
+            return MHD_NO;  // Unsupported method
+        }
+
+        response = MHD_create_response_from_buffer(strlen(response_text),
+                                                   (void *)response_text,
                                                    MHD_RESPMEM_PERSISTENT);
-        ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+        ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
         MHD_destroy_response(response);
         return ret;
     }
 
-    // Get file size
-    struct stat st;
-    fstat(fd, &st);
-
-    // Read file content
-    char *buffer = malloc(st.st_size);
-    read(fd, buffer, st.st_size);
-    close(fd);
-
-    // Get correct MIME type
-    const char *mime = get_mime_type(filepath);
-
-    // Send response
-    response = MHD_create_response_from_buffer(st.st_size, buffer, MHD_RESPMEM_MUST_FREE);
-    MHD_add_response_header(response, "Content-Type", mime);
-    ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    // **Return 404 Not Found**
+    response = MHD_create_response_from_buffer(strlen("404 Not Found"),
+                                               (void *)"404 Not Found",
+                                               MHD_RESPMEM_PERSISTENT);
+    ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
     MHD_destroy_response(response);
-
     return ret;
 }
 
 int main(int argc, char **argv) {
-    struct MHD_Daemon *d;
-
-    // Start the HTTP daemon
-    d = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
-                         PORT, NULL, NULL,
-                         &ahc_echo, NULL,
-                         MHD_OPTION_END);
-
-    if (d == NULL) {
-        printf("Failed to start server\n");
+    struct MHD_Daemon *daemon;
+    if (argc != 2) {
+        printf("Usage: %s PORT\n", argv[0]);
         return 1;
     }
 
-    printf("Server running on http://localhost:%d/\n", PORT);
-    getchar(); // Wait for user input
-    MHD_stop_daemon(d);
+    daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
+                              atoi(argv[1]),
+                              NULL,
+                              NULL,
+                              &ahc_echo,
+                              NULL,
+                              MHD_OPTION_END);
+    if (daemon == NULL)
+        return 1;
+
+    (void)getc(stdin);  // Wait for user input before exiting
+    MHD_stop_daemon(daemon);
+    
     return 0;
 }
