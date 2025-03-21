@@ -44,23 +44,43 @@ static int request_handler(void *cls, struct MHD_Connection *connection,
   return MHD_NO;
 }
 
+// Signal handler to stop the server
+void stop_server(int signo) {
+    printf("\nStopping server...\n");
+    if (server) {
+        MHD_stop_daemon(server);
+    }
+    exit(0);
+}
+
 
 int main() {
-    struct MHD_Daemon *server;
+    // Register signal handler for CTRL+C
+    signal(SIGINT, stop_server);
+    signal(SIGTERM, stop_server);
 
-    // Start the HTTP server
-    server = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, PORT, NULL, NULL,
-                              &request_handler, NULL, MHD_OPTION_END);
+    // Start the server
+    server = MHD_start_daemon(
+        MHD_USE_INTERNAL_POLLING_THREAD,  // Use polling mode
+        PORT, NULL, NULL,
+        &request_handler, NULL,
+        MHD_OPTION_END
+    );
+
     if (!server) {
         printf("Failed to start server\n");
         return 1;
     }
 
     printf("Server running on http://localhost:%d/\n", PORT);
-    getchar(); // Wait for user input to stop the server
+    printf("Press CTRL+C to stop the server.\n");
 
-    MHD_stop_daemon(server);
-    return 0;
+    // Keep the server running until stopped
+    while (1) {
+        sleep(1);
+    }
+
+    return 0;  // (This line is never reached)
 }
 
 int handle_get_request(struct MHD_Connection *connection, const char *url) {
