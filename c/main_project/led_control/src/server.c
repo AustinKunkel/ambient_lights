@@ -5,9 +5,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define PORT 8080
 #define WEB_ROOT "./www" // Serve files from the "www" directory
+
+static struct MHD_Daemon *server;  // Declare server globally
 
 int handle_get_request(struct MHD_Connection*, const char*);
 int handle_post_request(struct MHD_Connection*, const char*, const char*, size_t*);
