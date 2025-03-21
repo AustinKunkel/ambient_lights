@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #define PORT 8080  // Default port
-#define WEB_ROOT "./www"  // Directory to serve files from
+#define WEB_ROOT "./led_control/www"  // Directory to serve files from
 
 // Function to get the MIME type based on file extension
 const char *get_mime_type(const char *path) {
