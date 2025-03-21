@@ -95,29 +95,32 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
 }
 
 int handle_post_request(struct MHD_Connection *connection, const char *url,
-  const char *upload_data, size_t *upload_data_size) {
-if (*upload_data_size == 0) {
-return MHD_NO;
+    const char *upload_data, size_t *upload_data_size) {
+
+static char post_data[1024]; // Buffer to store received data
+
+// Check if this is the first call or subsequent call
+if (*upload_data_size > 0) {
+strncpy(post_data, upload_data, *upload_data_size);
+post_data[*upload_data_size] = '\0'; // Ensure null termination
+
+printf("Received POST data: %s\n", post_data);
+
+*upload_data_size = 0; // Reset to indicate data has been processed
+return MHD_YES; // Return YES to indicate more data may come
 }
 
-printf("Received POST data: %s\n", upload_data);
-
-// Example: Save to a file
-FILE *file = fopen("post_data.txt", "w");
-if (file) {
-fwrite(upload_data, 1, *upload_data_size, file);
-fclose(file);
-}
-
+// Send a response back to the client
 const char *response_text = "POST request received!";
 struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
-                                              (void *)response_text, 
-                                              MHD_RESPMEM_PERSISTENT);
+                                                (void *)response_text, 
+                                                MHD_RESPMEM_PERSISTENT);
 int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 MHD_destroy_response(response);
 
-return ret;
+return ret; // Ensure a response is returned
 }
+
 
 int handle_delete_request(struct MHD_Connection *connection, const char *url) {
   char file_path[512];
