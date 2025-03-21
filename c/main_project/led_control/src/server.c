@@ -9,6 +9,10 @@
 #define PORT 8080
 #define WEB_ROOT "./www" // Serve files from the "www" directory
 
+int handle_get_request(struct MHD_Connection*, const char*);
+int handle_post_request(struct MHD_Connection*, const char*, const char*, size_t*);
+int handle_delete_request(struct MHD_Connection*, const char*);
+
 // Function to determine the Content-Type based on file extension
 const char *get_content_type(const char *path) {
     if (strstr(path, ".html")) return "text/html";
