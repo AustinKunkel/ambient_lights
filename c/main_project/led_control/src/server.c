@@ -26,47 +26,20 @@ static int request_handler(void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
                            size_t *upload_data_size, void **con_cls) {
-    char file_path[512];
-    struct stat file_stat;
-    int fd;
-    
-    // Default to "index.html" if root URL is requested
-    if (strcmp(url, "/") == 0) 
-        snprintf(file_path, sizeof(file_path), "%s/index.html", WEB_ROOT);
-    else 
-        snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT, url);
-    
-    // Check if file exists
-    if (stat(file_path, &file_stat) != 0) {
-        const char *not_found = "404 Not Found";
-        struct MHD_Response *response = MHD_create_response_from_buffer(strlen(not_found),
-                                                                        (void *)not_found, 
-                                                                        MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        return ret;
-    }
 
-    // Open the file for reading
-    fd = open(file_path, O_RDONLY);
-    if (fd < 0) return MHD_NO;
+  if (strcmp(method, "GET") == 0) {
+  return handle_get_request(connection, url);
+  } 
+  else if (strcmp(method, "POST") == 0) {
+  return handle_post_request(connection, url, upload_data, upload_data_size);
+  } 
+  else if (strcmp(method, "DELETE") == 0) {
+  return handle_delete_request(connection, url);
+  }
 
-    // Create an HTTP response from the file
-    struct MHD_Response *response = MHD_create_response_from_fd(file_stat.st_size, fd);
-    if (!response) {
-        close(fd);
-        return MHD_NO;
-    }
-
-    // Set the appropriate Content-Type
-    MHD_add_response_header(response, "Content-Type", get_content_type(file_path));
-
-    // Send the response
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-
-    return ret;
+  return MHD_NO;
 }
+
 
 int main() {
     struct MHD_Daemon *server;
