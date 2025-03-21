@@ -3,7 +3,7 @@ function showMessage() {
 }
 
 function sendGet() {
-  fetch("/get", {
+  fetch("/api", {
     method: "GET",
     headers: { "Content-Type": "application/json" }
   })
