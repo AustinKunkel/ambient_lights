@@ -73,7 +73,7 @@ static enum MHD_Result ahc_echo(void *cls,
             response_text = led_test();
            // response_text = "{\"message\": \"GET request received!\"}";
         } else if (strcmp(method, "POST") == 0) {
-            response = turn_led_off_test();
+            response_text = turn_led_off_test();
             // response_text = "{\"message\": \"POST request received!\"}";
         } else if (strcmp(method, "DELETE") == 0) {
             response_text = "{\"message\": \"DELETE request received!\"}";
