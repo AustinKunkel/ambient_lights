@@ -49,7 +49,7 @@ char *turn_led_off_test()
 
 char *led_test()
 {
-
+  set_brightness(125);
   set_strip_color(255, 0, 0); // set strip color to red
 
   ws2811_render(&ledstring);
