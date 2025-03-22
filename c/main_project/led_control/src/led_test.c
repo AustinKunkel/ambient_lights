@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include "ws2811.h"
 
-#define LED_COUNT 3  // Number of LEDs
+#define LED_COUNT 200  // Number of LEDs
 #define GPIO_PIN 12   // GPIO pin for PWM output
 
 void set_led_color(int, uint8_t, uint8_t, uint8_t);
 void set_strip_color(uint8_t, uint8_t, uint8_t);
+void set_brightness(int);
 
 
 ws2811_t ledstring = {
@@ -23,30 +24,64 @@ ws2811_t ledstring = {
   },
 };
 
+void set_brightness(int brightness) {
+  if (brightness < 0) brightness = 0;
+  if (brightness > 255) brightness = 255;  // Max brightness is 255
 
-char *led_test() {
-  if (ws2811_init(&ledstring) != WS2811_SUCCESS) {
+  ledstring.channel[0].brightness = brightness;
+  ws2811_render(&ledstring);  // Apply changes
+}
+
+int setup_strip() 
+{
+  if (ws2811_init(&ledstring) != WS2811_SUCCESS) 
+  {
     printf("Failed to initialize LEDs!\n");
     return "{\"message\": \"Failed to initialize LEDs\"}";
   }
+}
+
+void cleanup_strip()
+{
+  ws2811_fini(&ledstring);
+}
+
+char *turn_led_off_test()
+{
+  set_brightness(0);
+  ws2811_render(&ledstring);  // Apply changes
+  return "{\"message\": \"Turned LEDs off\"}";
+}
+
+
+char *led_test()
+{
 
   set_strip_color(255, 0, 0); // set strip color to red
 
   ws2811_render(&ledstring);
 
-  ws2811_fini(&ledstring);
   return "{\"message\": \"Turned on LEDs\"}";
 }
 
 
-void set_led_color(int index, uint8_t r, uint8_t g, uint8_t b) {
+void set_led_color(int index, uint8_t r, uint8_t g, uint8_t b)
+{
     ledstring.channel[0].leds[index] = (r << 16) | (g << 8) | b;
 }
 
-void set_strip_color(uint8_t r, uint8_t g, uint8_t b) {
+void set_strip_color(uint8_t r, uint8_t g, uint8_t b)
+{
   for (int i = 0; i < LED_COUNT; i++) {
     set_led_color(i, 255, 0, 0); // Set to red
   }
+}
+
+void set_brightness(int brightness) {
+  if (brightness < 0) brightness = 0;
+  if (brightness > 255) brightness = 255;  // Max brightness is 255
+
+  ledstring.channel[0].brightness = brightness;
 }
 
 // int main() {

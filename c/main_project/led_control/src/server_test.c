@@ -73,7 +73,8 @@ static enum MHD_Result ahc_echo(void *cls,
             response_text = led_test();
            // response_text = "{\"message\": \"GET request received!\"}";
         } else if (strcmp(method, "POST") == 0) {
-            response_text = "{\"message\": \"POST request received!\"}";
+            response = turn_led_off_test();
+            // response_text = "{\"message\": \"POST request received!\"}";
         } else if (strcmp(method, "DELETE") == 0) {
             response_text = "{\"message\": \"DELETE request received!\"}";
         } else {
@@ -104,6 +105,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if(setup_strip() != 0) {
+        printf("Problem setting up strip...\n");
+        return 1;
+    }
+
     daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
                               atoi(argv[1]),
                               NULL,
@@ -116,6 +122,8 @@ int main(int argc, char **argv) {
 
     (void)getc(stdin);  // Wait for user input before exiting
     MHD_stop_daemon(daemon);
+
+    cleanup_strip();
     
     return 0;
 }
