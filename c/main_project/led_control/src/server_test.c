@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include "led_test.h"
 
 #define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
 
@@ -69,7 +70,8 @@ static enum MHD_Result ahc_echo(void *cls,
         const char *response_text;
         
         if (strcmp(method, "GET") == 0) {
-            response_text = "{\"message\": \"GET request received!\"}";
+            response_text = led_test();
+           // response_text = "{\"message\": \"GET request received!\"}";
         } else if (strcmp(method, "POST") == 0) {
             response_text = "{\"message\": \"POST request received!\"}";
         } else if (strcmp(method, "DELETE") == 0) {
