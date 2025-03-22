@@ -24,21 +24,14 @@ ws2811_t ledstring = {
   },
 };
 
-void set_brightness(int brightness) {
-  if (brightness < 0) brightness = 0;
-  if (brightness > 255) brightness = 255;  // Max brightness is 255
-
-  ledstring.channel[0].brightness = brightness;
-  ws2811_render(&ledstring);  // Apply changes
-}
-
 int setup_strip() 
 {
   if (ws2811_init(&ledstring) != WS2811_SUCCESS) 
   {
     printf("Failed to initialize LEDs!\n");
-    return "{\"message\": \"Failed to initialize LEDs\"}";
+    return 1;
   }
+  return 0;
 }
 
 void cleanup_strip()
