@@ -118,7 +118,7 @@ int main() {
         yuyv_to_rgb(y2, u, v, &r2, &g2, &b2);
     
         total_r += r1 + r2;
-          otal_g += g1 + g2;
+        total_g += g1 + g2;
         total_b += b1 + b2;
       }
     
