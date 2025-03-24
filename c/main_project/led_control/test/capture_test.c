@@ -6,6 +6,7 @@
 #include <linux/videodev2.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <time.h>
 
 #define DEVICE "/dev/video0"
 #define WIDTH  640
@@ -85,47 +86,58 @@ int main() {
         return 1;
     }
 
+    struct timespec start, end;
+
     // Capture loop
     while (1) {
-        // Dequeue buffer (waits for frame)
-        if (ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
-            perror("Failed to dequeue buffer");
-            break;
-        }
 
-        // printf("Captured a frame of %d bytes\n", buf.bytesused);
+      clock_gettime(CLOCK_MONOTONIC, &start);  // Start timer
+      // Dequeue buffer (waits for frame)
+      if (ioctl(fd, VIDIOC_DQBUF, &buf) == -1) 
+      {
+        perror("Failed to dequeue buffer");
+        break;
+      }
 
-        // Process the frame (stored in `buffer`)
-        unsigned char *frame_data = (unsigned char *)buffer;
-        long long total_r = 0, total_g = 0, total_b = 0;
-        int pixel_count = (format.fmt.pix.width * format.fmt.pix.height);
-    
-        for (int i = 0; i < buf.bytesused; i += 4) {
-            unsigned char y1 = frame_data[i];
-            unsigned char u = frame_data[i + 1];
-            unsigned char y2 = frame_data[i + 2];
-            unsigned char v = frame_data[i + 3];
-    
-            unsigned char r1, g1, b1, r2, g2, b2;
-            yuyv_to_rgb(y1, u, v, &r1, &g1, &b1);
-            yuyv_to_rgb(y2, u, v, &r2, &g2, &b2);
-    
-            total_r += r1 + r2;
-            total_g += g1 + g2;
-            total_b += b1 + b2;
-        }
-    
-        unsigned char avg_r = total_r / pixel_count;
-        unsigned char avg_g = total_g / pixel_count;
-        unsigned char avg_b = total_b / pixel_count;
-    
-        printf("Average Color: R=%d, G=%d, B=%d\n", avg_r, avg_g, avg_b);
+      // printf("Captured a frame of %d bytes\n", buf.bytesused);
 
-        // Requeue the buffer for next frame
-        if (ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
-            perror("Failed to requeue buffer");
-            break;
-        }
+      // Process the frame (stored in `buffer`)
+      unsigned char *frame_data = (unsigned char *)buffer;
+      long long total_r = 0, total_g = 0, total_b = 0;
+      int pixel_count = (format.fmt.pix.width * format.fmt.pix.height);
+    
+      for (int i = 0; i < buf.bytesused; i += 4) 
+      {
+        unsigned char y1 = frame_data[i];
+        unsigned char u = frame_data[i + 1];
+        unsigned char y2 = frame_data[i + 2];
+        unsigned char v = frame_data[i + 3];
+    
+        unsigned char r1, g1, b1, r2, g2, b2;
+        yuyv_to_rgb(y1, u, v, &r1, &g1, &b1);
+        yuyv_to_rgb(y2, u, v, &r2, &g2, &b2);
+    
+        total_r += r1 + r2;
+          otal_g += g1 + g2;
+        total_b += b1 + b2;
+      }
+    
+      unsigned char avg_r = total_r / pixel_count;
+      unsigned char avg_g = total_g / pixel_count;
+      unsigned char avg_b = total_b / pixel_count;
+
+      clock_gettime(CLOCK_MONOTONIC, &end);  // End timer
+
+      double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    
+      printf("Average Color: R=%d, G=%d, B=%d\tTime:%.6f\n", avg_r, avg_g, avg_b, time_taken);
+
+      // Requeue the buffer for next frame
+      if (ioctl(fd, VIDIOC_QBUF, &buf) == -1) 
+      {
+        perror("Failed to requeue buffer");
+        break;
+      }
     }
 
     // Cleanup
