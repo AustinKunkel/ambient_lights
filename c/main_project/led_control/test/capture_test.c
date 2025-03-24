@@ -89,9 +89,33 @@ int main() {
             break;
         }
 
-        printf("Captured a frame of %d bytes\n", buf.bytesused);
+        // printf("Captured a frame of %d bytes\n", buf.bytesused);
 
         // Process the frame (stored in `buffer`)
+        unsigned char *frame_data = (unsigned char *)buffer;
+        long long total_r = 0, total_g = 0, total_b = 0;
+        int pixel_count = (fmt.fmt.pix.width * fmt.fmt.pix.height);
+    
+        for (int i = 0; i < buf.bytesused; i += 4) {
+            unsigned char y1 = frame_data[i];
+            unsigned char u = frame_data[i + 1];
+            unsigned char y2 = frame_data[i + 2];
+            unsigned char v = frame_data[i + 3];
+    
+            unsigned char r1, g1, b1, r2, g2, b2;
+            yuyv_to_rgb(y1, u, v, &r1, &g1, &b1);
+            yuyv_to_rgb(y2, u, v, &r2, &g2, &b2);
+    
+            total_r += r1 + r2;
+            total_g += g1 + g2;
+            total_b += b1 + b2;
+        }
+    
+        unsigned char avg_r = total_r / pixel_count;
+        unsigned char avg_g = total_g / pixel_count;
+        unsigned char avg_b = total_b / pixel_count;
+    
+        printf("Average Color: R=%d, G=%d, B=%d\n", avg_r, avg_g, avg_b);
 
         // Requeue the buffer for next frame
         if (ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
