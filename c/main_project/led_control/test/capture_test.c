@@ -11,6 +11,10 @@
 #define WIDTH  640
 #define HEIGHT 480
 
+void yuyv_to_rgb(unsigned char y, unsigned char u, unsigned char v, 
+  unsigned char *r, unsigned char *g, unsigned char *b);
+
+
 int main() {
     int fd = open(DEVICE, O_RDWR);
     if (fd == -1) {
@@ -94,7 +98,7 @@ int main() {
         // Process the frame (stored in `buffer`)
         unsigned char *frame_data = (unsigned char *)buffer;
         long long total_r = 0, total_g = 0, total_b = 0;
-        int pixel_count = (fmt.fmt.pix.width * fmt.fmt.pix.height);
+        int pixel_count = (format.fmt.pix.width * format.fmt.pix.height);
     
         for (int i = 0; i < buf.bytesused; i += 4) {
             unsigned char y1 = frame_data[i];
@@ -129,4 +133,20 @@ int main() {
     munmap(buffer, buf.length);
     close(fd);
     return 0;
+}
+
+
+void yuyv_to_rgb(unsigned char y, unsigned char u, unsigned char v, 
+  unsigned char *r, unsigned char *g, unsigned char *b) {
+int c = y - 16;
+int d = u - 128;
+int e = v - 128;
+
+int r_temp = (298 * c + 409 * e + 128) >> 8;
+int g_temp = (298 * c - 100 * d - 208 * e + 128) >> 8;
+int b_temp = (298 * c + 516 * d + 128) >> 8;
+
+*r = (r_temp < 0) ? 0 : (r_temp > 255) ? 255 : r_temp;
+*g = (g_temp < 0) ? 0 : (g_temp > 255) ? 255 : g_temp;
+*b = (b_temp < 0) ? 0 : (b_temp > 255) ? 255 : b_temp;
 }
