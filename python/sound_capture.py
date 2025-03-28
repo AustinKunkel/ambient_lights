@@ -29,8 +29,8 @@ async def main(strip):
       raise ImportError(f"Module '{effect_name}' does not have a 'run' method.")
     device = 0
     sample_rate = 48000
-    chunk_size = 1024
-    audio_queue = queue.Queue(maxsize=10)
+    chunk_size = 512
+    audio_queue = queue.Queue(maxsize=5)
     stop_event = threading.Event()
 
     def callback(indata, frames, time, status):
@@ -46,7 +46,7 @@ async def main(strip):
        callback=callback,
        blocksize=chunk_size,
        dtype='int16',
-       latency= .01
+       latency=None
       ):
         print("Audio capture started")
         while not stop_event.is_set():
