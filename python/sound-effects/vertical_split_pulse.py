@@ -408,7 +408,7 @@ def run(indata, strip):
     bottom_middle = r_count + t_count + l_count + (b_count // 2)
     
     if low_left_ratio > 0:
-      calculated_iteration = calculate_width(low_left_ratio, 0.95, 0, 15)
+      calculated_iteration = calculate_width(low_left_ratio, 0.90, 0, 15)
       left_iteration = calculated_iteration if left_iteration > calculated_iteration else left_iteration
       width = calculate_width(low_left_ratio, .95, 12, 4)
       color = (int(r*low_left_ratio), int(g*.5*low_left_ratio), int(b*low_left_ratio*low_left_ratio))
@@ -418,7 +418,7 @@ def run(indata, strip):
       left_pulse_list.append(pulse_2)
     
     if low_right_ratio > 0:
-      calculated_iteration = calculate_width(low_right_ratio, .95, 0, 15)
+      calculated_iteration = calculate_width(low_right_ratio, 0.90, 0, 15)
       right_iteration = calculated_iteration if right_iteration > calculated_iteration else right_iteration
       width = calculate_width(low_right_ratio, .95, 12, 4)
       color = (int(r*low_right_ratio), int(g*.5*low_right_ratio), int(b*low_right_ratio*low_right_ratio))
