@@ -234,7 +234,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
    
     if(strncmp(url, "/api", 4) == 0) {
       return handle_get_api_request(connection, url);
-    } else (strcmp(url, "/") == 0) {
+    } else {
       return handle_serve_static_files(connection, url);
     }
   }
