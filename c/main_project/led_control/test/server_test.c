@@ -234,16 +234,8 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
    
     if(strncmp(url, "/api", 4) == 0) {
       return handle_get_api_request(connection, url);
-    } else if(strcmp(url, "/") == 0) {
+    } else (strcmp(url, "/") == 0) {
       return handle_serve_static_files(connection, url);
-    } else {
-      const char *error_text = "Failed to delete file";
-      struct MHD_Response *response = MHD_create_response_from_buffer(strlen(error_text),
-                                                                      (void *)error_text, 
-                                                                      MHD_RESPMEM_PERSISTENT);
-      int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
-      MHD_destroy_response(response);
-      return ret;
     }
   }
   
