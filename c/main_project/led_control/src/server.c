@@ -86,35 +86,68 @@ int main() {
     return 0;  // (This line is never reached)
 }
 
+int handle_get_api_request(struct MHD_connection *connection, const char *url) {
+    const char *json_response = led_test();
+
+    struct MHD_Response *response = MHD_create_response_from_buffer(
+        strlen(json_response), (void *)json_response, MHD_RESPMEM_PERSISTENT);
+    
+    MHD_add_response_header(response, "Content-Type", "application/json");
+    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    
+    MHD_destroy_response(response);
+    return ret;
+}
+
+int handle_serve_static_files(struct MHD_Connection *connection, const char *url) {
+    char file_path[512];
+    struct stat file_stat;
+    int fd;
+
+    if (strcmp(url, "/") == 0) 
+        snprintf(file_path, sizeof(file_path), "%s/index.html", WEB_ROOT);
+    else 
+        snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT, url);
+
+    if (stat(file_path, &file_stat) != 0) {
+        const char *not_found = "404 Not Found";
+        struct MHD_Response *response = MHD_create_response_from_buffer(strlen(not_found),
+                                                                        (void *)not_found, 
+                                                                        MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+        MHD_destroy_response(response);
+        return ret;
+    }
+
+    fd = open(file_path, O_RDONLY);
+    if (fd < 0) return MHD_NO;
+
+    struct MHD_Response *response = MHD_create_response_from_fd(file_stat.st_size, fd);
+    MHD_add_response_header(response, "Content-Type", get_content_type(file_path));
+    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    MHD_destroy_response(response);
+
+    return ret;
+}
+
 int handle_get_request(struct MHD_Connection *connection, const char *url) {
   char file_path[512];
   struct stat file_stat;
   int fd;
-
-  if (strcmp(url, "/") == 0) 
-      snprintf(file_path, sizeof(file_path), "%s/index.html", WEB_ROOT);
-  else 
-      snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT, url);
-
-  if (stat(file_path, &file_stat) != 0) {
-      const char *not_found = "404 Not Found";
-      struct MHD_Response *response = MHD_create_response_from_buffer(strlen(not_found),
-                                                                      (void *)not_found, 
-                                                                      MHD_RESPMEM_PERSISTENT);
-      int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
-      MHD_destroy_response(response);
-      return ret;
+ 
+  if(strncmp(url, "/api", 4) == 0) {
+    return handle_api_request(connection, url);
+  } else if(strncmp(url, "/") == 0) {
+    return handle_serve_static_files(connection, url);
+  } else {
+    const char *error_text = "Failed to delete file";
+    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(error_text),
+                                                                    (void *)error_text, 
+                                                                    MHD_RESPMEM_PERSISTENT);
+    int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+    MHD_destroy_response(response);
+    return ret;
   }
-
-  fd = open(file_path, O_RDONLY);
-  if (fd < 0) return MHD_NO;
-
-  struct MHD_Response *response = MHD_create_response_from_fd(file_stat.st_size, fd);
-  MHD_add_response_header(response, "Content-Type", get_content_type(file_path));
-  int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-  MHD_destroy_response(response);
-
-  return ret;
 }
 
 int handle_post_request(struct MHD_Connection *connection, const char *url,
@@ -158,7 +191,7 @@ int handle_delete_request(struct MHD_Connection *connection, const char *url) {
       MHD_destroy_response(response);
       return ret;
   } else {
-      const char *error_text = "Failed to delete file";
+      const char *error_text = "Bad request";
       struct MHD_Response *response = MHD_create_response_from_buffer(strlen(error_text),
                                                                       (void *)error_text, 
                                                                       MHD_RESPMEM_PERSISTENT);

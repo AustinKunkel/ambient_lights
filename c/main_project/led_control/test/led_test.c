@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include "ws2811.h"
 
-#define LED_COUNT 200  // Number of LEDs
-#define GPIO_PIN 12   // GPIO pin for PWM output
+#define LED_COUNT 206  // Number of LEDs
+#define GPIO_PIN 18   // GPIO pin for PWM output
 
 void set_led_color(int, uint8_t, uint8_t, uint8_t);
 void set_strip_color(uint8_t, uint8_t, uint8_t);
