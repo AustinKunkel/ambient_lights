@@ -120,7 +120,7 @@ static enum MHD_Result ahc_echo(void *cls,
 }
 
 // Function to serve files from the "www" directory
-int request_handler(void *cls, struct MHD_Connection *connection,
+enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
     const char *version, const char *upload_data,
     long unsigned int *upload_data_size, void **con_cls) {
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-int handle_get_api_request(struct MHD_connection *connection, const char *url) {
+int handle_get_api_request(struct MHD_Connection *connection, const char *url) {
     const char *json_response = led_test();
 
     struct MHD_Response *response = MHD_create_response_from_buffer(
@@ -233,7 +233,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
     int fd;
    
     if(strncmp(url, "/api", 4) == 0) {
-      return handle_api_request(connection, url);
+      return handle_get_api_request(connection, url);
     } else if(strcmp(url, "/") == 0) {
       return handle_serve_static_files(connection, url);
     } else {
