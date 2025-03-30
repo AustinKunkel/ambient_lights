@@ -10,7 +10,7 @@ By using a Raspberry Pi Zero 2 W, an affordable capture card, an individually ad
 - **Web-based Control**: Adjust settings via and interactive UI, accessible from any browser.
 - **Custom LED and resolution mapping**: Configure LED positions and resolutions to fit any screen size.
 - **Sound Reactive Mode**: Sync LEDs to audio with multiple different effects (can be paired with screen capture).
-- **Low-Latency Updates**: LEnsure minimal delay when updating LEDs, maintaining an immersive experience.
+- **Low-Latency Updates**: Ensure minimal delay when updating LEDs, maintaining an immersive experience.
 
 ## Demonstration
 Check out the project in action!
