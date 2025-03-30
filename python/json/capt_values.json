@@ -1,6 +1,6 @@
 {
-  "v-offset": "0",
-  "h-offset": "2",
+  "v-offset": "5",
+  "h-offset": "0",
   "avg-color": "1",
   "left-count": "36",
   "top-count": "66",
@@ -8,8 +8,8 @@
   "bottom-count": "67",
   "fwd": 0,
   "bl": 0,
-  "res-x": "22",
-  "res-y": "12",
+  "res-x": "66",
+  "res-y": "36",
   "blend-mode": "1",
-  "blend-depth": "6"
+  "blend-depth": "5"
 }
