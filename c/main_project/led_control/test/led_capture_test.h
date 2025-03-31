@@ -3,7 +3,7 @@
 #define LED_CAPTURE_TEST_H
 
 
-char *start_capturing(void *);
+char *start_capturing(ws2811_t);
 char *stop_capturing();
 
 #endif

@@ -20,7 +20,7 @@
 volatile bool stop_capture = false;
 pthread_t capture_thread;
 
-void *capture_loop(ws2811_t);
+void *capture_loop(void *);
 
 struct Settings {
   int v_offset;
@@ -70,7 +70,7 @@ char *start_capturing(ws2811_t strip) {
   }
 
   stop_capture = false;
-  if(pthread_create(&capture_thread, NULL, capture_loop, NULL) != 0) {
+  if(pthread_create(&capture_thread, NULL, capture_loop, (void *)&strip) != 0) {
     cleanup_strip();
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
@@ -79,9 +79,9 @@ char *start_capturing(ws2811_t strip) {
   return "{\"Success: \"Capturing started\"}";
 }
 
-void *capture_loop(ws2811 strip) {
+void *capture_loop(void *strip) {
   while(!stop_capture) {
-    int led_count = strip.channel[0].count;
+    int led_count = strip->channel[0]->count;
     for(int i = 0; i < led_count; i++) {
       set_led_color(i, 255, 0, 0);
       sleep(.01);
