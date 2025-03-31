@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include "led_test.h"
+#include "led_capture_test.h"
 
 #define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
 #define PORT 8080
@@ -177,8 +178,6 @@ int main(int argc, char **argv) {
     while (1) {
         sleep(1);
     }
-
-    cleanup_strip();
     
     return 0;
 }
@@ -256,7 +255,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   }
   
   // Send a response back to the client
-  const char *response_text =  led_test();
+  const char *response_text =  start_capturing(ledstring);
   struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
                                                   (void *)response_text, 
                                                   MHD_RESPMEM_PERSISTENT);
@@ -268,7 +267,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   
   int handle_delete_request(struct MHD_Connection *connection, const char *url) {
     if (strncmp(url, "/api", 4) == 0) {
-        const char *response_text = turn_led_off_test();
+        const char *response_text = stop_capturing();
         struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
                                                                         (void *)response_text, 
                                                                         MHD_RESPMEM_PERSISTENT);
