@@ -8,6 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include "led_test.h"
 #include "ws2811.h"
 
@@ -22,18 +23,20 @@ pthread_t capture_thread;
 void *capture_loop(ws2811_t);
 
 struct Settings {
-  int v_offset = 0;
-  int h_offset = 0;
-  int avg_color = 0;
-  int left_count = 36;
-  int top_count = 66;
-  int right_count = 37;
-  int bottom_count = 67;
-  int res_x = 640;
-  int res_y = 480;
-  short blend_mode = 0;
-  int blend_depth = 5;
-} sc_settings;
+  int v_offset;
+  int h_offset;
+  int avg_color;
+  int left_count;
+  int top_count;
+  int right_count;
+  int bottom_count;
+  int res_x;
+  int res_y;
+  short blend_mode;
+  int blend_depth;
+};
+
+struct Settings sc_settings;
 
 /**
  * Uses the sc_settings variable and initailizes the struct based on json file
@@ -41,21 +44,24 @@ struct Settings {
  * currently uses default values
  */
 bool initialize_settings() {
-  sc_settings.v_offset = 0;
-  sc_settings.h_offset = 0;
-  sc_settings.avg_color = 0;
-  sc_settings.left_count = 36;
-  sc_settings.top_count = 66;
-  sc_settings.right_count = 37;
-  sc_settings.bottom_count = 67;
-  sc_settings.res_x = 640;
-  sc_settings.res_y = 480;
-  sc_settings.blend_depth = 5;
-  sc_settings.blend_mode = 0;
+  sc_settings = (struct Settings){
+    .h_offset = 0,
+    .avg_color = 0,
+    .left_count = 36,
+    .top_count = 66,
+    .right_count = 37,
+    .bottom_count = 67,
+    .res_x = 640,
+    .res_y = 480,
+    .blend_depth = 5,
+    .blend_mode = 0
+  };
+
+  return true;
 }
 
 char *start_capturing(ws2811_t strip) {
-  if(initalize_settings()) {
+  if(!initialize_settings()) {
     return "{\"Error\": \"Failed to initialize sc_settings\"}";
   }
 
@@ -73,12 +79,12 @@ char *start_capturing(ws2811_t strip) {
   return "{\"Success: \"Capturing started\"}";
 }
 
-void *capture_loop(ws2811_t strip) {
+void *capture_loop(void *strip) {
   while(!stop_capture) {
-    int led_count = strip.channel[0].count;
+    int led_count = ((ws2811_t)strip).channel[0].count;
     for(int i = 0; i < led_count; i++) {
       set_led_color(i, 255, 0, 0);
-      sleep(.01)
+      sleep(.01);
     }
     for(int i = 0; i < led_count; i++) {
       set_led_color(i, 0, 0, 255);
