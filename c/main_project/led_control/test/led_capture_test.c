@@ -79,7 +79,8 @@ char *start_capturing(ws2811_t strip) {
   return "{\"Success: \"Capturing started\"}";
 }
 
-void *capture_loop(void *strip) {
+void *capture_loop(void *strip_ptr) {
+  ws2811_t *strip = (ws2811_t *)strip_ptr;
   while(!stop_capture) {
     int led_count = strip->channel[0]->count;
     for(int i = 0; i < led_count; i++) {
