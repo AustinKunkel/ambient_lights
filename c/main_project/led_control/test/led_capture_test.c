@@ -133,6 +133,3 @@ char *stop_capturing() {
   printf("Capture thread joined.\n");
   return "{\"Success: \"Capture Thread stopped\"}";
 }
-
-void yuyv_to_rgb(unsigned char y, unsigned char u, unsigned char v, 
-  unsigned char *r, unsigned char *g, unsigned char *b);
