@@ -49,6 +49,9 @@ char *turn_led_off_test()
 
 char *led_test()
 {
+  if(setup_strip()){
+    return "{\"Error\": \"Failed to Initialize LEDs\"}";
+  }
   set_brightness(125);
   set_strip_color(255, 0, 0); // set strip color to red
 

@@ -84,7 +84,7 @@ void *capture_loop(void *strip_ptr) {
   while(!stop_capture) {
     int led_count = strip->channel[0].count;
     for(int i = 0; i < led_count; i++) {
-      set_led_color(i, 255, 0, 0);
+      set_led_color(i, 0, 255, 0);
       ws2811_render(strip);
       sleep(.01);
     }
