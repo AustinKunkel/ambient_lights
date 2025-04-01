@@ -255,7 +255,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   }
   
   // Send a response back to the client
-  const char *response_text =  start_capturing(ledstring);
+  const char *response_text =  start_capturing(&ledstring);
   struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
                                                   (void *)response_text, 
                                                   MHD_RESPMEM_PERSISTENT);

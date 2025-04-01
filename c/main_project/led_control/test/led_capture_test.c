@@ -60,7 +60,7 @@ bool initialize_settings() {
   return true;
 }
 
-char *start_capturing(ws2811_t strip) {
+char *start_capturing(ws2811_t *strip) {
   if(!initialize_settings()) {
     return "{\"Error\": \"Failed to initialize sc_settings\"}";
   }
@@ -70,7 +70,7 @@ char *start_capturing(ws2811_t strip) {
   }
 
   stop_capture = false;
-  if(pthread_create(&capture_thread, NULL, capture_loop, (void *)&strip) != 0) {
+  if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
     cleanup_strip();
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
