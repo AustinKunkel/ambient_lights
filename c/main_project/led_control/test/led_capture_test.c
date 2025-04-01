@@ -36,6 +36,13 @@ struct Settings {
   int blend_depth;
 };
 
+struct led_position {
+  int x;
+  int y;
+};
+
+struct led_position *led_positions;
+
 struct Settings sc_settings;
 
 /**
@@ -60,6 +67,20 @@ bool initialize_settings() {
   return true;
 }
 
+/**
+ * Sets up the LEDs with screen capture.
+ */
+int setup_capture(ws2811_t *strip) {
+  int led_count = strip->channel[0].count;
+  led_positions = malloc(sizeof(struct led_position) * led_count);
+
+  if (led_positions == NULL) {
+    printf("Memory allocation failed!\n");
+    return 1;
+  }
+  return 0;
+}
+
 char *start_capturing(ws2811_t *strip) {
   if(!initialize_settings()) {
     return "{\"Error\": \"Failed to initialize sc_settings\"}";
@@ -67,6 +88,10 @@ char *start_capturing(ws2811_t *strip) {
 
   if(setup_strip()) {
     return "{\"Error\": \"Failed to initialize LED strip\"}";
+  }
+
+  if(setup_capture()) {
+    return "{\"Error\": \"Failed to set up screen capture\"}";
   }
 
   stop_capture = false;
@@ -111,8 +136,3 @@ char *stop_capturing() {
 
 void yuyv_to_rgb(unsigned char y, unsigned char u, unsigned char v, 
   unsigned char *r, unsigned char *g, unsigned char *b);
-
-int setup() {
-
-  
-}
