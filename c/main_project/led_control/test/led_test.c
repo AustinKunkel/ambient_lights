@@ -10,7 +10,7 @@ void set_strip_color(uint8_t, uint8_t, uint8_t);
 void set_brightness(int);
 
 
-ws2811_t ledstring = {
+ledstring = {
   .freq = WS2811_TARGET_FREQ,
   .dmanum = 10,
   .channel = {
