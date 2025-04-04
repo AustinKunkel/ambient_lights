@@ -20,9 +20,8 @@ struct capture_device {
 };
 
 struct capture_device dev; 
-
-void yuyv_to_rgb(unsigned char y, unsigned char u, unsigned char v, 
-  unsigned char *r, unsigned char *g, unsigned char *b);
+int WIDTH = 640;
+int HEIGHT = 480;
 
 int setup_capture(int width, int height) {
 
@@ -33,12 +32,15 @@ int setup_capture(int width, int height) {
     return 1;
   }
 
+  WIDTH = width;
+  HEIGHT = height;
+
   // Configure device format
   struct v4l2_format format;
   memset(&format, 0, sizeof(format));
   format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  format.fmt.pix.width = width;
-  format.fmt.pix.height = height;
+  format.fmt.pix.width = WIDTH;
+  format.fmt.pix.height = HEIGHT;
   format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
 
   // Apply video format
@@ -105,7 +107,40 @@ int setup_capture(int width, int height) {
   return 0;  // Success
 }
 
-int capture_frame() {
+void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t frame_size) {
+    int x;
+    int z=0;
+    unsigned char *ptr = rgb_buffer;
+    unsigned char *yuyv= yuv_buffer;
+    for (x = 0; x < frame_size; x++)
+    {
+        int r, g, b;
+        int y, u, v;
+ 
+        if (!z)
+        y = yuyv[0] << 8;
+        else
+        y = yuyv[2] << 8;
+        u = yuyv[1] - 128;
+        v = yuyv[3] - 128;
+ 
+        r = (y + (359 * v)) >> 8;
+        g = (y - (88 * u) - (183 * v)) >> 8;
+        b = (y + (454 * u)) >> 8;
+ 
+        *(ptr++) = (r > 255) ? 255 : ((r < 0) ? 0 : r);
+        *(ptr++) = (g > 255) ? 255 : ((g < 0) ? 0 : g);
+        *(ptr++) = (b > 255) ? 255 : ((b < 0) ? 0 : b);
+ 
+        if(z++)
+        {
+            z = 0;
+            yuyv += 4;
+        }
+    }
+}
+
+unsigned char *capture_frame() {
   struct v4l2_buffer buf;
   memset(&buf, 0, sizeof(buf));
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -121,19 +156,29 @@ int capture_frame() {
   void *frame_data = dev.buffers[buf.index];
   size_t frame_size = buf.bytesused;
 
+  unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
+  if(!rgb_buffer) {
+    perror("Failed to allocate memory for RGB buffer...");
+    return NULL;
+  }
+
+  yuyv_to_rgb(frame_data, rgb_buffer, frame_size);
+
   // Do something with the frame (e.g., process it, convert, etc.)
-  process_frame(frame_data, frame_size);
+  //process_frame(frame_data, frame_size);
 
   // Requeue the buffer for future use
   if (ioctl(dev.device_id, VIDIOC_QBUF, &buf) == -1) {
       perror("Failed to requeue buffer");
-      return -1;
+      return NULL;
   }
 
-  return 0;  // Success
+  // return array of "24" bit numbers
+
+  return rgb_buffer;  // Success
 }
 
-int stop_capture() {
+int stop_video_capture() {
   // Stop streaming
   if (ioctl(dev.device_id, VIDIOC_STREAMOFF, &V4L2_BUF_TYPE_VIDEO_CAPTURE) == -1) {
       perror("Failed to stop streaming");

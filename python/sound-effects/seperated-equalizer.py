@@ -24,8 +24,6 @@ past_high_rms = None
 
 is_capt = False
 
-decay_rate = .8 # ratio that the size of the bars will be at after they go
-
 def setup(strip):
   global l_count, r_count, t_count, b_count
   global is_static_color, strip_color, change_brightness, capturing_with_avg, is_capt
@@ -174,6 +172,8 @@ lowcut_mids = 500.0
 highcut_mids = 3000.0
 lowcut_highs = 6000.0
 highcut_highs = 17500.0
+
+decay_rate = .9 # ratio that the size of the bars will be at after they go
 
 def run(indata, strip):
   """
