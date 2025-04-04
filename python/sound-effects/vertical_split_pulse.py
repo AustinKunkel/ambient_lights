@@ -372,7 +372,7 @@ def run(indata, strip):
     #   past_high_right_rms = high_right_rms
 
     # Apply decay to RMS values
-    decay_rate = .9
+    decay_rate = .85
     # low_rms = decay_rate * past_low_rms + (1 - decay_rate) * low_rms
     mid_left_rms = decay_rate * past_mid_left_rms + (1 - decay_rate) * mid_left_rms
     mid_right_rms = decay_rate * past_mid_right_rms + (1 - decay_rate) * mid_right_rms

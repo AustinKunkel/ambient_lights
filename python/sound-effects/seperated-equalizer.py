@@ -173,7 +173,7 @@ highcut_mids = 3000.0
 lowcut_highs = 6000.0
 highcut_highs = 17500.0
 
-decay_rate = .9 # ratio that the size of the bars will be at after they go
+decay_rate = .85 # ratio that the size of the bars will be at after they go
 
 def run(indata, strip):
   """
