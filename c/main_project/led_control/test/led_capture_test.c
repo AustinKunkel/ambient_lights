@@ -203,6 +203,7 @@ char *start_capturing(ws2811_t *strip) {
 
 void *capture_loop(void *strip_ptr) {
   ws2811_t *strip = (ws2811_t *)strip_ptr;
+  printf("Mallocing rgb buffer...\n");
   unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
   if(!rgb_buffer) {
     perror("Failed to allocate rgb_buffer...");
@@ -212,7 +213,6 @@ void *capture_loop(void *strip_ptr) {
 
   while(!stop_capture) {
     capture_frame(rgb_buffer);
-    printf("Capturing frame...\n");
     for(int i = 0; i < led_count; i++) {
       int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
       int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
