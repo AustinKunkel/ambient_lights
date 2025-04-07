@@ -11,7 +11,8 @@ LDFLAGS = -I$(LIB_DIR) -lmicrohttpd -lws2811 -pthread -lrt -lgnutls -lm
 # Source Files
 SRV_TST_SRC = led_control/test/server_test.c \
 							led_control/test/led_test.c \
-							led_control/test/led_capture_test.c
+							led_control/test/led_capture_test.c \
+							led_control/test/screen_capture_functions.c
 
 CAPTURE_SRC = led_control/test/capture_test.c \
 							led_control/test/screen_capture_functions.c
