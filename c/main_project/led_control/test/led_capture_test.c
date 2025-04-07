@@ -201,7 +201,7 @@ void *capture_loop(void *strip_ptr) {
   unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
   if(!rgb_buffer) {
     perror("Failed to allocate rgb_buffer...");
-    return;
+    return NULL;
   }
   int led_count = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
 
