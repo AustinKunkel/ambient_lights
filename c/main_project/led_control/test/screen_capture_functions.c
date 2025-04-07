@@ -182,9 +182,10 @@ void capture_frame(unsigned char *rgb_buffer) {
 
 int stop_video_capture() {
   // Stop streaming
-  if (ioctl(dev.device_id, VIDIOC_STREAMOFF, &V4L2_BUF_TYPE_VIDEO_CAPTURE) == -1) {
+  enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (ioctl(dev.device_id, VIDIOC_STREAMOFF, &type) == -1) {
       perror("Failed to stop streaming");
-      return;
+      return -1;
   }
 
   // Unmap buffers
@@ -194,4 +195,5 @@ int stop_video_capture() {
 
   // Close the device
   close(dev.device_id);
+  return 0;  // Success
 }
