@@ -212,7 +212,7 @@ void *capture_loop(void *strip_ptr) {
   int led_count = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
 
   while(!stop_capture) {
-    printf("Capturing frame...\n");
+    // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
     for(int i = 0; i < led_count; i++) {
       int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;

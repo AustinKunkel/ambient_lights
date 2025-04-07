@@ -174,9 +174,9 @@ void capture_frame(unsigned char *rgb_buffer) {
   void *frame_data = dev.buffers[buf.index];
   size_t frame_size = buf.bytesused;
 
-  if(frame_size == (WIDTH * HEIGHT * 2)) {
-    printf("Frame size matches expected");
-  }
+  // if(frame_size == (WIDTH * HEIGHT * 2)) {
+  //   printf("Frame size matches expected");
+  // }
 
   yuyv_to_rgb(frame_data, rgb_buffer, frame_size);
 
