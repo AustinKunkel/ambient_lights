@@ -79,6 +79,7 @@ void setup_bottom_side(int, struct led_position*, int, int, int, int, int);
  */
 int setup_strip_capture(ws2811_t *strip) {
   int led_count = strip->channel[0].count;
+  printf("Mallocing led positions...\n");
   led_positions = malloc(sizeof(struct led_position) * led_count);
   if (led_positions == NULL) {
     printf("Memory allocation failed!\n");
@@ -86,12 +87,16 @@ int setup_strip_capture(ws2811_t *strip) {
   }
 
   int next_index = 0;
+  printf("Setting up right side...\n");
   setup_right_side(sc_settings.right_count, led_positions, WIDTH, HEIGHT, 0, next_index, -1);
   next_index += sc_settings.right_count;
+  printf("Setting up top side...\n");
   setup_top_side(sc_settings.top_count, led_positions, WIDTH, 0, next_index, -1);
   next_index += sc_settings.top_count;
+  printf("Setting up left side...\n");
   setup_left_side(sc_settings.left_count, led_positions, HEIGHT, 0, next_index, -1);
   next_index += sc_settings.left_count;
+  printf("Setting up bottom side...\n");
   setup_bottom_side(sc_settings.bottom_count, led_positions, WIDTH, HEIGHT, 0, next_index, -1);
 
   return 0;
@@ -177,8 +182,8 @@ char *start_capturing(ws2811_t *strip) {
 
   if(setup_strip()) {
     return "{\"Error\": \"Failed to initialize LED strip\"}";
-  }
-
+  } 
+  printf("Setting up strip capture");
   if(setup_strip_capture(&ledstring)) {
     return "{\"Error\": \"Failed to set up strip screen capture\"}";
   }
