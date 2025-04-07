@@ -13,7 +13,7 @@ SRV_TST_SRC = led_control/test/server_test.c \
 							led_control/test/led_test.c \
 							led_control/test/led_capture_test.c
 
-CAPTURE_SRC = led_control/test/capture_test.capture_test \
+CAPTURE_SRC = led_control/test/capture_test.c \
 							led_control/test/capture_functions.c
 
 # Object Files (replace .c with .o)
