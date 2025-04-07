@@ -183,15 +183,15 @@ char *start_capturing(ws2811_t *strip) {
   if(setup_strip()) {
     return "{\"Error\": \"Failed to initialize LED strip\"}";
   } 
-  printf("Setting up strip capture");
+  printf("Setting up strip capture\n");
   if(setup_strip_capture(&ledstring)) {
     return "{\"Error\": \"Failed to set up strip screen capture\"}";
   }
-
+  printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
     return "{\"Error\": \"Failed to set up screen capture\"}";
   }
-
+  printf("Creating capture loop thread...\n");
   stop_capture = false;
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
     cleanup_strip();
