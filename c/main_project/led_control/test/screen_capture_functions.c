@@ -160,6 +160,11 @@ void capture_frame(unsigned char *rgb_buffer) {
   memset(&buf, 0, sizeof(buf));
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;
+
+  if (buf.index >= NUM_BUFFERS) {
+    fprintf(stderr, "Invalid buffer index: %d\n", buf.index);
+    return;
+  }
   
   // Dequeue a buffer (retrieve a frame)
   if (ioctl(dev.device_id, VIDIOC_DQBUF, &buf) == -1) {
