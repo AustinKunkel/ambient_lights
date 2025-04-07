@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "led_test.h"
 #include "ws2811.h"
+#include "screen_capture_functions.h"
 
 #define DEVICE "/dev/video0"
 #define WIDTH  640
@@ -67,18 +68,106 @@ bool initialize_settings() {
   return true;
 }
 
+void setup_left_side(int, struct led_position*, int, int, int, int);
+void setup_right_side(int, struct led_position*, int, int, int, int, int);
+void setup_top_side(int, struct led_position*, int, int, int, int);
+void setup_bottom_side(int, struct led_position*, int, int, int, int, int);
+
+
 /**
  * Sets up the LEDs with screen capture.
  */
-int setup_capture(ws2811_t *strip) {
+int setup_strip_capture(ws2811_t *strip) {
   int led_count = strip->channel[0].count;
   led_positions = malloc(sizeof(struct led_position) * led_count);
-
   if (led_positions == NULL) {
     printf("Memory allocation failed!\n");
     return 1;
   }
+
+  int next_index = 0;
+  setup_right_side(sc_settings.right_count, led_positions, WIDTH, HEIGHT, 0, next_index, -1);
+  next_index += sc_settings.right_count;
+  setup_top_side(sc_settings.top_count, led_positions, WIDTH, 0, next_index, -1);
+  next_index += sc_settings.top_count;
+  setup_left_side(sc_settings.left_count, led_positions, HEIGHT, 0, next_index, -1);
+  next_index += sc_settings.left_count;
+  setup_bottom_side(sc_settings.bottom_count, led_positions, WIDTH, HEIGHT, 0, next_index, -1);
+
   return 0;
+}
+
+void setup_left_side(int count, struct led_position* led_list, int h, 
+                     int h_offset, int next_index, int fwd_multiplier) {
+  
+  float spacing = (h - 1) / (count - 1);
+
+  next_index += count;
+  int start = count;
+  int stop = 0;
+  int x_index = 1 + h_offset;
+  for(int i = start; i > stop; i--) {
+    int y_index = i * spacing;
+    if(y_index >= h) y_index = h - 1;
+    int index = (next_index) + ((count - i) + 1)*fwd_multiplier;
+
+    led_list[index].x = x_index;
+    led_list[index].y = y_index;
+  }
+}
+
+void setup_right_side(int count, struct led_position* led_list, int w, int h, 
+                      int h_offset, int next_index, int fwd_multiplier) {
+  
+  if(count < 2) return;
+  float spacing = (h - 1) / (count - 1);
+  next_index += count;
+  int start = 0;
+  int stop = count;
+  int x_index = (w - 1) - h_offset;
+  for(int i = start; i < stop; i++) {
+    int y_index = (int)(i * spacing);
+    if (y_index >= h) y_index = h - 1;
+
+    int index = next_index + (i + 1)*fwd_multiplier;
+
+    led_list[index].x = x_index;
+    led_list[index].y = y_index;
+  }
+}
+
+void setup_top_side(int count, struct led_position* led_list, int w, 
+                    int v_offset, int next_index, int fwd_multiplier) {
+  float spacing = (w - 1) / (count - 1);
+  next_index += count;
+  int start = 0;
+  int stop = count;
+  int y_index = 1 + v_offset;
+  for(int i = start; i < stop; i++) {
+    int x_index = i * spacing;
+    if(x_index >= w) x_index = w - 1;
+
+    int index = next_index + (i + 1)*fwd_multiplier;
+
+    led_list[index].x = x_index;
+    led_list[index].y = y_index;
+  }
+}
+
+void setup_bottom_side(int count, struct led_position* led_list, int w, int h, int v_offset, int next_index, int fwd_multiplier) {
+  float spacing = (w - 1) / (count - 1);
+  next_index += count;
+  int start = count;
+  int stop = 0;
+  int y_index = (h - 1) - v_offset;
+  for(int i = start; i > stop; i--) {
+    int x_index = i * spacing;
+    if(x_index >= w) x_index = w - 1;
+    int index = next_index + ((count - i) + 1)*fwd_multiplier;
+
+    led_list[index].x = x_index;
+    led_list[index].y = y_index;
+  }
 }
 
 char *start_capturing(ws2811_t *strip) {
@@ -90,7 +179,11 @@ char *start_capturing(ws2811_t *strip) {
     return "{\"Error\": \"Failed to initialize LED strip\"}";
   }
 
-  if(setup_capture()) {
+  if(setup_strip_capture(&ledstring)) {
+    return "{\"Error\": \"Failed to set up strip screen capture\"}";
+  }
+
+  if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
     return "{\"Error\": \"Failed to set up screen capture\"}";
   }
 
@@ -100,36 +193,53 @@ char *start_capturing(ws2811_t *strip) {
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
 
-
   return "{\"Success: \"Capturing started\"}";
 }
 
 void *capture_loop(void *strip_ptr) {
   ws2811_t *strip = (ws2811_t *)strip_ptr;
-  while(!stop_capture) {
-    int led_count = strip->channel[0].count;
-    for(int i = 0; i < led_count; i++) {
-      set_led_color(i, 0, 255, 0);
-      ws2811_render(strip);
-      sleep(.01);
-    }
-    for(int i = 0; i < led_count; i++) {
-      set_led_color(i, 0, 0, 255);
-      ws2811_render(strip);
-      sleep(.01);
-    }
+  unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
+  if(!rgb_buffer) {
+    perror("Failed to allocate rgb_buffer...");
+    return;
   }
+  int led_count = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
+
+  while(!stop_capture) {
+    capture_frame(rgb_buffer);
+    for(int i = 0; i < led_count; i++) {
+      int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+      int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
+      set_led_color(i, r, g, b);
+    }
+    ws2811_render(strip);
+  }
+
+  // while(!stop_capture) {
+  //   int led_count = strip->channel[0].count;
+  //   for(int i = 0; i < led_count; i++) {
+  //     set_led_color(i, 0, 255, 0);
+  //     ws2811_render(strip);
+  //     sleep(.01);
+  //   }
+  //   for(int i = 0; i < led_count; i++) {
+  //     set_led_color(i, 0, 0, 255);
+  //     ws2811_render(strip);
+  //     sleep(.01);
+  //   }
+  // }
+  free(rgb_buffer);
   cleanup_strip();
   printf("Capture stopped...\n");
-  return NULL;
 }
 
 char *stop_capturing() {
   stop_capture = true;  // Signal thread to stop
-
   if(pthread_join(capture_thread, NULL)) { // Wait for thread to finish
     return "{\"Error\": \"Failed to join capture thread\"}";
   } 
+  free(led_positions);
+  stop_video_capture();
   printf("Capture thread joined.\n");
   return "{\"Success: \"Capture Thread stopped\"}";
 }

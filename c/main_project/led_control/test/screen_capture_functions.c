@@ -73,7 +73,7 @@ int setup_capture(int width, int height) {
     if (ioctl(dev.device_id, VIDIOC_QUERYBUF, &dev.buf[i]) == -1) {
       perror("Failed to query buffer");
       close(dev.device_id);
-      return -1;
+      return 1;
     }
 
     // Map the buffer
@@ -81,7 +81,7 @@ int setup_capture(int width, int height) {
     if (dev.buffers[i] == MAP_FAILED) {
       perror("Failed to mmap buffer");
       close(dev.device_id);
-      return -1;
+      return 1;
     }
 
     dev.buffer_lengths[i] = dev.buf[i].length;
@@ -92,7 +92,7 @@ int setup_capture(int width, int height) {
     if (ioctl(dev.device_id, VIDIOC_QBUF, &dev.buf[i]) == -1) {
         perror("Failed to queue buffer");
         close(dev.device_id);
-        return -1;
+        return 1;
     }
   }
 
@@ -101,7 +101,7 @@ int setup_capture(int width, int height) {
   if (ioctl(dev.device_id, VIDIOC_STREAMON, &type) == -1) {
     perror("Failed to start streaming");
     close(dev.device_id);
-    return -1;
+    return 1;
   }
 
   return 0;  // Success
