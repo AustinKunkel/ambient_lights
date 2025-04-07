@@ -3,5 +3,5 @@
 
 int setup_capture(int, int);
 int stop_video_capture();
-unsigned char *capture_frame();
+void capture_frame(unsigned char*);
 #endif
