@@ -26,7 +26,7 @@ int HEIGHT = 480;
 int setup_capture(int width, int height) {
 
   // Open device
-  dev.device_id = open(DEVICE, O_RDWR)
+  dev.device_id = open(DEVICE, O_RDWR);
   if(dev.device_id == -1) {
     perror("Failed to open capture device");
     return 1;
@@ -164,7 +164,7 @@ void capture_frame(unsigned char *rgb_buffer) {
   // Dequeue a buffer (retrieve a frame)
   if (ioctl(dev.device_id, VIDIOC_DQBUF, &buf) == -1) {
       perror("Failed to dequeue buffer");
-      return -1;
+      return;
   }
 
   // Process the frame data (dev.buffers[buf.index] contains the frame)
@@ -176,7 +176,7 @@ void capture_frame(unsigned char *rgb_buffer) {
   // Requeue the buffer for future use
   if (ioctl(dev.device_id, VIDIOC_QBUF, &buf) == -1) {
       perror("Failed to requeue buffer");
-      return NULL;
+      return;
   }
 }
 
@@ -184,7 +184,7 @@ int stop_video_capture() {
   // Stop streaming
   if (ioctl(dev.device_id, VIDIOC_STREAMOFF, &V4L2_BUF_TYPE_VIDEO_CAPTURE) == -1) {
       perror("Failed to stop streaming");
-      return -1;
+      return;
   }
 
   // Unmap buffers
@@ -194,5 +194,4 @@ int stop_video_capture() {
 
   // Close the device
   close(dev.device_id);
-  return 0;  // Success
 }
