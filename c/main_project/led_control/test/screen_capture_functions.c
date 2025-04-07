@@ -11,6 +11,7 @@
 
 #define DEVICE "/dev/video0"
 #define NUM_BUFFERS 4
+#define CLAMP(x) ((x) > 255 ? 255 : ((x) < 0 ? 0 : (x)))
 
 struct capture_device {
   int device_id; // the id of the **open** device
@@ -108,36 +109,33 @@ int setup_capture(int width, int height) {
 }
 
 void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t frame_size) {
-  int x;
-  int z=0;
   unsigned char *ptr = rgb_buffer;
-  unsigned char *yuyv= yuv_buffer;
-  for (x = 0; x < frame_size; x++)
-  {
-    int r, g, b;
-    int y, u, v;
- 
-    if (!z)
-      y = yuyv[0] << 8;
-    else
-      y = yuyv[2] << 8;
-    u = yuyv[1] - 128;
-    v = yuyv[3] - 128;
- 
-    r = (y + (359 * v)) >> 8;
-    g = (y - (88 * u) - (183 * v)) >> 8;
-    b = (y + (454 * u)) >> 8;
- 
-    *(ptr++) = (r > 255) ? 255 : ((r < 0) ? 0 : r);
-    *(ptr++) = (g > 255) ? 255 : ((g < 0) ? 0 : g);
-    *(ptr++) = (b > 255) ? 255 : ((b < 0) ? 0 : b);
- 
-    if(z++)
-    {
-      z = 0;
-      yuyv += 4;
-    }
+
+  for (size_t x = 0; x < frame_size; x += 4) {
+      int y0 = yuv_buffer[x + 0];
+      int u  = yuv_buffer[x + 1] - 128;
+      int y1 = yuv_buffer[x + 2];
+      int v  = yuv_buffer[x + 3] - 128;
+
+      int r, g, b;
+
+      // First pixel
+      r = (298 * y0 + 409 * v + 128) >> 8;
+      g = (298 * y0 - 100 * u - 208 * v + 128) >> 8;
+      b = (298 * y0 + 516 * u + 128) >> 8;
+      *(ptr++) = CLAMP(r);
+      *(ptr++) = CLAMP(g);
+      *(ptr++) = CLAMP(b);
+
+      // Second pixel
+      r = (298 * y1 + 409 * v + 128) >> 8;
+      g = (298 * y1 - 100 * u - 208 * v + 128) >> 8;
+      b = (298 * y1 + 516 * u + 128) >> 8;
+      *(ptr++) = CLAMP(r);
+      *(ptr++) = CLAMP(g);
+      *(ptr++) = CLAMP(b);
   }
+
 }
 
 /**
@@ -175,6 +173,10 @@ void capture_frame(unsigned char *rgb_buffer) {
   // Process the frame data (dev.buffers[buf.index] contains the frame)
   void *frame_data = dev.buffers[buf.index];
   size_t frame_size = buf.bytesused;
+
+  if(frame_size == (WIDTH * HEIGHT * 2)) {
+    printf("Frame size matches expected");
+  }
 
   yuyv_to_rgb(frame_data, rgb_buffer, frame_size);
 
