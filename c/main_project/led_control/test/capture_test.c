@@ -29,7 +29,7 @@ int main() {
 
       capture_frame(rgb_buffer);
 
-      int r, g, b;
+      int r, g, b, c=3;
       // (0, 0)
       int index = 0;
       r = rgb_buffer[index];
