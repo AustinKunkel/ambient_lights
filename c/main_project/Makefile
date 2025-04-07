@@ -13,14 +13,22 @@ SRV_TST_SRC = led_control/test/server_test.c \
 							led_control/test/led_test.c \
 							led_control/test/led_capture_test.c
 
+CAPTURE_SRC = led_control/test/capture_test.capture_test \
+							led_control/test/capture_functions.c
+
 # Object Files (replace .c with .o)
 SRV_TEST_OBJ = $(SRV_TST_SRC:.c=.o)
+CAPTURE_OBJ = $(CAPTURE_SRC:.c=.o)
 
 # Output Executable
 SRV_TEST_TARGET = server_test
+CAPTURE_TARGET = test_screen_capture
 
 # Build the executable
 $(SRV_TEST_TARGET): $(SRV_TEST_OBJ)
+
+$(CAPTURE_TARGET): $(CAPTURE_OBJ)
+	$(CC) $(CAPTURE_OBJ) -o $(CAPTURE_TARGET) $(LDFLAGS)
 
 all: %(SRV_TEST_TARGET)
 
