@@ -32,25 +32,25 @@ int main() {
       int r, g, b;
       // (0, 0)
       int index = 0;
-      r = *rgb_buffer[index];
-      g = *rgb_buffer[index + 1];
-      b = *rgb_buffer[index + 2];
+      r = rgb_buffer[index];
+      g = rgb_buffer[index + 1];
+      b = rgb_buffer[index + 2];
       printf("Color at (0, 0):(%d, %d, %d)\t", r, g, b);
 
       int x = (int)(WIDTH / 2);
       int y = (int)(HEIGHT / 2);
       index = (y * WIDTH + x) * c;
-      r = *rgb_buffer[index];
-      g = *rgb_buffer[index + 1];
-      b = *rgb_buffer[index + 2];
+      r = rgb_buffer[index];
+      g = rgb_buffer[index + 1];
+      b = rgb_buffer[index + 2];
       printf("Color at (WIDTH/2, HEIGHT/2):(%d, %d, %d)\t", r, g, b);
 
       x = WIDTH - 1;
       y = HEIGHT - 1;
       index = (y * WIDTH + x) * c;
-      r = *rgb_buffer[index];
-      g = *rgb_buffer[index + 1];
-      b = *rgb_buffer[index + 2];
+      r = rgb_buffer[index];
+      g = rgb_buffer[index + 1];
+      b = rgb_buffer[index + 2];
       printf("Color at (WIDTH - 1, HEIGHT - 1):(%d, %d, %d)\t", r, g, b);
 
       clock_gettime(CLOCK_MONOTONIC, &end);  // End timer
