@@ -198,7 +198,7 @@ char *start_capturing(ws2811_t *strip) {
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
 
-  return "{\"Success: \"Capturing started\"}";
+  return "{\"Success\": \"Capturing started\"}";
 }
 
 void *capture_loop(void *strip_ptr) {
