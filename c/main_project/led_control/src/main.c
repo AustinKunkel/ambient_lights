@@ -31,8 +31,9 @@ void stop_current_task();
 char *update_leds() {
     printf("Updating the LEDs...\n");
     stop_current_task();
-    printf("Stopping current task...\n");
+    printf("Stopped current task...\n");
     if(get_led_count() != led_settings.count) {
+        printf("Resetting the strip...\n");
         cleanup_strip();
         if(setup_strip(led_settings.count)) {
             return "{\"Error\": \"Failed to set up the strip with the count\"}";
@@ -77,7 +78,6 @@ void stop_current_task() {
     if(screen_capture_task.task_status == 1) {
         stop_capturing();
     }
-    printf("Not screen capture...\n");
     if(sound_effect_task.task_status == 1) {
         pthread_join(sound_effect_task.thread_id, NULL);
         sound_effect_task.task_status = 0;
