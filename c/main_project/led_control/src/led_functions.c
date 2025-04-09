@@ -19,7 +19,6 @@ int setup_strip(int led_count)
   ledstring.channel[0].count = led_count;
   if (ws2811_init(&ledstring) != WS2811_SUCCESS) 
   {
-    printf("Failed to initialize LEDs!\n");
     return 1;
   }
   return 0;

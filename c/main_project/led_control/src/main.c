@@ -26,6 +26,8 @@ typedef struct {
 task_info screen_capture_task;
 task_info sound_effect_task;
 
+void stop_current_task();
+
 char *update_leds() {
     printf("Updating the LEDs...\n");
     stop_current_task();
