@@ -190,14 +190,14 @@ char *start_capturing(ws2811_t *strip) {
   }
   printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
-    free(led_positions());
+    free(led_positions);
     return "{\"Error\": \"Failed to set up screen capture\"}";
   }
   printf("Creating capture loop thread...\n");
   stop_capture = false;
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
     cleanup_strip();
-    free(led_positions());
+    free(led_positions);
     stop_video_capture();
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
