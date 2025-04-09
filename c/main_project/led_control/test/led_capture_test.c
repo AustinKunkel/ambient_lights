@@ -223,6 +223,7 @@ void *capture_loop(void *strip_ptr) {
     if(blend_mode_active) {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+        printf("index:%d", index);
         uint32_t color = blend_colors(led_positions, rgb_buffer, i, 10);
         set_led_32int_color(i, color);
       }
