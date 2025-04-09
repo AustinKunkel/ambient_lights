@@ -31,7 +31,7 @@ void stop_current_task();
 char *update_leds() {
     printf("Updating the LEDs...\n");
     stop_current_task();
-
+    printf("Stopping current task...\n");
     if(get_led_count() != led_settings.count) {
         cleanup_strip();
         if(setup_strip(led_settings.count)) {
