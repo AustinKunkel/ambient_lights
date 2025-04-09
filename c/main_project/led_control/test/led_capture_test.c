@@ -223,7 +223,6 @@ void *capture_loop(void *strip_ptr) {
     if(blend_mode_active) {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        printf("index:%d", index);
         uint32_t color = blend_colors(led_positions, rgb_buffer, i, 10);
         set_led_32int_color(i, color);
       }
@@ -259,6 +258,7 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
   int count = 0;
   for(int i = -depth; i < depth + 1; i++) {
     int check_index = (index + i) % LED_COUNT;
+    printf("check index: %d\t", check_index);
     struct led_position check_pixel_location = led_list[check_index];
 
     int buffer_index = (check_pixel_location.y * WIDTH + check_pixel_location.x) * 3;
