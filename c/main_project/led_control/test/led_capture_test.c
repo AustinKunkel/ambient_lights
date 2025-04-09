@@ -258,10 +258,10 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
   int count = 0;
   for(int i = -depth; i < depth + 1; i++) {
     int check_index = (index + i) % LED_COUNT;
-    printf("check index: %d\t", check_index);
     struct led_position check_pixel_location = led_list[check_index];
 
     int buffer_index = (check_pixel_location.y * WIDTH + check_pixel_location.x) * 3;
+    printf("buffer index: %d, count: %d\t", buffer_index, count);
     r_total += rgb_buffer[buffer_index];
     g_total += rgb_buffer[buffer_index + 1];
     b_total += rgb_buffer[buffer_index + 2];
