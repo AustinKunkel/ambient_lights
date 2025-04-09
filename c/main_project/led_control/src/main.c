@@ -32,38 +32,37 @@ char *update_leds() {
     printf("Updating the LEDs...\n");
     stop_current_task();
     printf("Stopped current task...\n");
-    get_led_count();
-    printf("Got led count\n");
     if(get_led_count() != led_settings.count) {
         cleanup_strip();
         if(setup_strip(led_settings.count)) {
             return "{\"Error\": \"Failed to set up the strip with the count\"}";
         }
-
-        set_brightness(led_settings.brightness);
-
-        if(led_settings.capture_screen) {
-            printf("Creating task: Screen Capture...\n");
-            if(start_capturing(get_ledstring())) {
-                printf("Error starting screen capture!\n");
-                return"{\"Error\": \"Error starting screen capture!\"}";
-            }
-            screen_capture_task.task_status = 1;
-        } else if(led_settings.sound_react) { // TODO: Sound Effect functions
-            printf("Creating task: Sound Capture...\n");
-            if(pthread_create(&sound_effect_task.thread_id, NULL, NULL, NULL)) {
-                printf("Error creating Sound Effect thread!\n");
-                return"{\"Error\": \"Error creating Sound Effect thread!\"}";
-            }
-        } else if(led_settings.fx_num > 0) {
-            printf("Creating task: Effect...\n");
-            // TODO: Effect functions
-            //if(pthread_create())
-        } else {
-            set_strip_32int_color(led_settings.color);
-            show_strip();
-        }
     }
+    set_brightness(led_settings.brightness);
+
+    if(led_settings.capture_screen) {
+        printf("Creating task: Screen Capture...\n");
+        if(start_capturing(get_ledstring())) {
+            printf("Error starting screen capture!\n");
+            return"{\"Error\": \"Error starting screen capture!\"}";
+        }
+        screen_capture_task.task_status = 1;
+    } else if(led_settings.sound_react) { // TODO: Sound Effect functions
+        printf("Creating task: Sound Capture...\n");
+        if(pthread_create(&sound_effect_task.thread_id, NULL, NULL, NULL)) {
+            printf("Error creating Sound Effect thread!\n");
+            return"{\"Error\": \"Error creating Sound Effect thread!\"}";
+        }
+    } else if(led_settings.fx_num > 0) {
+           printf("Creating task: Effect...\n");
+        // TODO: Effect functions
+        //if(pthread_create())
+    } else {
+        set_strip_32int_color(led_settings.color);
+        show_strip();
+    }
+
+    return"{\"Success\": \"LEDs updated!\"}";
 }
 
 /** 
