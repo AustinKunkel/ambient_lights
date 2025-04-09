@@ -6,6 +6,7 @@
 #define GPIO_PIN 18   // GPIO pin for PWM output
 
 void set_led_color(int, uint8_t, uint8_t, uint8_t);
+void set_led_32int_color(int, uint32_t);
 void set_strip_color(uint8_t, uint8_t, uint8_t);
 void set_brightness(int);
 
@@ -64,6 +65,10 @@ char *led_test()
 void set_led_color(int index, uint8_t r, uint8_t g, uint8_t b)
 {
     ledstring.channel[0].leds[index] = (r << 16) | (g << 8) | b;
+}
+
+void set_led_32int_color(int index, uint32_t color) {
+  ledstring.channel[0].leds[index] = color;
 }
 
 void set_strip_color(uint8_t r, uint8_t g, uint8_t b)

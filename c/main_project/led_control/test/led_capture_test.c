@@ -16,9 +16,10 @@
 #define DEVICE "/dev/video0"
 #define WIDTH  640
 #define HEIGHT 480
-#define LED_COUNT 206  // Number of LEDs
+int LED_COUNT = 206  // Number of LEDs
 
 volatile bool stop_capture = false;
+bool blend_mode_active = true;
 pthread_t capture_thread;
 
 void *capture_loop(void *);
@@ -78,9 +79,9 @@ void setup_bottom_side(int, struct led_position*, int, int, int, int, int);
  * Sets up the LEDs with screen capture.
  */
 int setup_strip_capture(ws2811_t *strip) {
-  int led_count = strip->channel[0].count;
+  int LED_COUNT = strip->channel[0].count;
   printf("Mallocing led positions...\n");
-  led_positions = malloc(sizeof(struct led_position) * led_count);
+  led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
   if (led_positions == NULL) {
     printf("Memory allocation failed!\n");
     return 1;
@@ -195,11 +196,14 @@ char *start_capturing(ws2811_t *strip) {
   stop_capture = false;
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
     cleanup_strip();
+    stop_capture();
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
 
   return "{\"Success\": \"Capturing started\"}";
 }
+
+uint32_t blend_colors(struct led_position*, unsigned char*, int, int);
 
 void *capture_loop(void *strip_ptr) {
   ws2811_t *strip = (ws2811_t *)strip_ptr;
@@ -209,19 +213,26 @@ void *capture_loop(void *strip_ptr) {
     perror("Failed to allocate rgb_buffer...");
     return NULL;
   }
-  int led_count = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
+  //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
 
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
-    for(int i = 0; i < led_count; i++) {
-      int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-      int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
-      set_led_color(i, r, g, b);
+    if(blend_mode_active) {
+      for(int i = 0; i < LED_COUNT; i++) {
+        int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+        uint32_t color = blend_colors(led_positions, rgb_buffer, i, 10);
+        set_led_32int_color(i, color);
+      }
+    } else {
+      for(int i = 0; i < LED_COUNT; i++) {
+        int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+        int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
+        set_led_color(i, r, g, b);
+      }
     }
     ws2811_render(strip);
   }
-
   // while(!stop_capture) {
   //   int led_count = strip->channel[0].count;
   //   for(int i = 0; i < led_count; i++) {
@@ -238,6 +249,27 @@ void *capture_loop(void *strip_ptr) {
   free(rgb_buffer);
   cleanup_strip();
   printf("Capture stopped...\n");
+}
+
+uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, int index, int depth) {
+  int r_total = 0, g_total = 0, b_total = 0;
+  int count = 0;
+  for(int i = -depth; i < depth + 1; i++) {
+    int check_index = (index + i) % LED_COUNT;
+    struct led_position check_pixel_location = led_list[check_index];
+
+    int buffer_index = (check_pixel_location.y * WIDTH + check_pixel_location.x) * 3;
+    r_total += rgb_buffer[buffer_index];
+    g_total += rgb_buffer[buffer_index + 1];
+    b_total += rgb_buffer[buffer_index + 2];
+    count++;
+    }
+  }
+  if(count == 0) {
+    return 0;
+  }
+
+  return ((int)(r_total / count) << 16) | ((int)(g_total / count) << 8) | (int)(b_total / count);
 }
 
 char *stop_capturing() {
