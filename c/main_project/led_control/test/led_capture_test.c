@@ -16,7 +16,7 @@
 #define DEVICE "/dev/video0"
 #define WIDTH  640
 #define HEIGHT 480
-int LED_COUNT = 206  // Number of LEDs
+int LED_COUNT = 206;  // Number of LEDs
 
 volatile bool stop_capture = false;
 bool blend_mode_active = true;
@@ -190,13 +190,15 @@ char *start_capturing(ws2811_t *strip) {
   }
   printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
+    free(led_positions());
     return "{\"Error\": \"Failed to set up screen capture\"}";
   }
   printf("Creating capture loop thread...\n");
   stop_capture = false;
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
     cleanup_strip();
-    stop_capture();
+    free(led_positions());
+    stop_video_capture();
     return  "{\"Error\": \"Failed to create capture thread\"}";
   }
 
@@ -263,8 +265,8 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     g_total += rgb_buffer[buffer_index + 1];
     b_total += rgb_buffer[buffer_index + 2];
     count++;
-    }
   }
+
   if(count == 0) {
     return 0;
   }
