@@ -40,13 +40,16 @@ $(CAPTURE_TARGET): $(CAPTURE_OBJ)
 	$(CC) $(CAPTURE_OBJ) -o $(CAPTURE_TARGET) $(LDFLAGS)
 
 $(MAIN_TARGET): $(MAIN_OBJ)
-	$(CC) $(MAIN_OBJ) -o $(MAIN_TARGET) $(LDFLAGS)
 
 all: %(SRV_TEST_TARGET)
 
 # Build server_test
 $(SRV_TEST_TARGET): $(SRV_TEST_OBJ)
 	$(CC) $(SRV_TEST_OBJ) -o $(SRV_TEST_TARGET) $(LDFLAGS)
+
+# Build server
+$(MAIN_TARGET): $(MAIN_OBJ)
+	$(CC) $(MAIN_OBJ) -o $(MAIN_TARGET) $(LDFLAGS)
 
 # Compile source files into objects
 %.o: %.c 
