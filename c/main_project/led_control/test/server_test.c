@@ -238,7 +238,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
     }
   }
   
-  int handle_post_request(struct MHD_Connection *connection, const char *url,
+int handle_post_request(struct MHD_Connection *connection, const char *url,
       const char *upload_data, size_t *upload_data_size) {
   
   static char post_data[1024]; // Buffer to store received data
@@ -263,9 +263,9 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   MHD_destroy_response(response);
   
   return ret; // Ensure a response is returned
-  }
+}
   
-  int handle_delete_request(struct MHD_Connection *connection, const char *url) {
+int handle_delete_request(struct MHD_Connection *connection, const char *url) {
     if (strncmp(url, "/api", 4) == 0) {
         const char *response_text = stop_capturing();
         struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
@@ -283,4 +283,4 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
         MHD_destroy_response(response);
         return ret;
     }
-  }
+}

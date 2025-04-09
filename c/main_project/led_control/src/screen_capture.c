@@ -9,8 +9,8 @@
 #include <time.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include "led_test.h"
-#include "ws2811.h"
+#include "led_functions.h"
+#include "screen_capture.h"
 #include "screen_capture_functions.h"
 
 #define DEVICE "/dev/video0"
@@ -176,33 +176,38 @@ void setup_bottom_side(int count, struct led_position* led_list, int w, int h, i
   }
 }
 
-char *start_capturing(ws2811_t *strip) {
+int start_capturing(ws2811_t *strip) {
   if(!initialize_settings()) {
-    return "{\"Error\": \"Failed to initialize sc_settings\"}";
+    printf("Failed to initialize sc_settings!\n");
+    return 1;
   }
 
   if(setup_strip()) {
-    return "{\"Error\": \"Failed to initialize LED strip\"}";
+    printf("Failed to initialize LED strip!\n");
+    return 1;
   } 
   printf("Setting up strip capture\n");
-  if(setup_strip_capture(&ledstring)) {
-    return "{\"Error\": \"Failed to set up strip screen capture\"}";
+  if(setup_strip_capture(strip)) {
+    printf("Failed to set up strip screen capture!\n");
+    return 1;
   }
   printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
     free(led_positions);
-    return "{\"Error\": \"Failed to set up screen capture\"}";
+    printf("Failed to set up screen capture!\n");
+    return 1;
   }
   printf("Creating capture loop thread...\n");
   stop_capture = false;
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
-    cleanup_strip();
     free(led_positions);
     stop_video_capture();
-    return  "{\"Error\": \"Failed to create capture thread\"}";
+    printf("Failed to create capture thread!\n"); 
+    return 1;
   }
 
-  return "{\"Success\": \"Capturing started\"}";
+  printf("Capturing started...\n");
+  return 0;
 }
 
 uint32_t blend_colors(struct led_position*, unsigned char*, int, int);
@@ -276,13 +281,14 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
   return ((int)(r_total / count) << 16) | ((int)(g_total / count) << 8) | (int)(b_total / count);
 }
 
-char *stop_capturing() {
+int stop_capturing() {
   stop_capture = true;  // Signal thread to stop
   if(pthread_join(capture_thread, NULL)) { // Wait for thread to finish
-    return "{\"Error\": \"Failed to join capture thread\"}";
+    printf("Failed to join capture thread!\n");
+    return 1;
   } 
   free(led_positions);
   stop_video_capture();
   printf("Capture thread joined.\n");
-  return "{\"Success: \"Capture Thread stopped\"}";
+  return 0;
 }
