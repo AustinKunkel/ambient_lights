@@ -8,7 +8,7 @@
 
 // main control file (replaces led_functions.py for the most part)
 
-LEDSettings led_settings = {
+led_settings = {
     .brightness = 255,        // Default brightness (full brightness)
     .color = 0xFFFFFF,        // Default color (white)
     .capture_screen = 0,      // Default: screen capture disabled
@@ -32,7 +32,6 @@ char *update_leds() {
     printf("Updating the LEDs...\n");
     stop_current_task();
     printf("Stopped current task...\n");
-    printf("%d", led_settings.count);
     if(get_led_count() != led_settings.count) {
         cleanup_strip();
         if(setup_strip(led_settings.count)) {
