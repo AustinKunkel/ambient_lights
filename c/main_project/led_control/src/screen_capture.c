@@ -201,7 +201,7 @@ int start_capturing(ws2811_t *strip) {
   }
   printf("Creating capture loop thread...\n");
   stop_capture = false;
-  printf("LED Count: %d\n", strip->channel[0].count);
+  //printf("LED Count: %d\n", strip->channel[0].count);
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
     //free(led_positions);
     stop_video_capture();

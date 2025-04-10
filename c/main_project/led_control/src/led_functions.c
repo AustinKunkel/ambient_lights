@@ -1,21 +1,22 @@
 #include "led_functions.h"
 #include <stdlib.h>
 
-ws2811_t ledstring = {
-  .freq = WS2811_TARGET_FREQ,
-  .dmanum = 10,
-  .channel = {
-    [0] = {
-      .gpionum = GPIO_PIN,
-      .invert = 0,
-      .brightness = 255,
-      .strip_type = WS2811_STRIP_GRB,
-    },
-  },
-};
+ws2811_t ledstring;
 
 int setup_strip(int led_count)
 {
+  ledstring = (ws2811_t) {
+    .freq = WS2811_TARGET_FREQ,
+    .dmanum = 10,
+    .channel = {
+      [0] = {
+        .gpionum = GPIO_PIN,
+        .invert = 0,
+        .brightness = 255,
+        .strip_type = WS2811_STRIP_GRB,
+      },
+    },
+  };
   ledstring.channel[0].count = led_count;
   if (ws2811_init(&ledstring) != WS2811_SUCCESS) 
   {
