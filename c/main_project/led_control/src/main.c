@@ -39,11 +39,9 @@ char *update_leds() {
         }
     }
     set_brightness(led_settings.brightness);
-
+    printf("Set brightness");
     if(led_settings.capture_screen) {
         printf("Creating task: Screen Capture...\n");
-        ws2811_t *ledstring = get_ledstring();
-        printf("LED Count: %d\n", ledstring->channel[0].count);
         if(start_capturing(get_ledstring())) {
             printf("Error starting screen capture!\n");
             return"{\"Error\": \"Error starting screen capture!\"}";
