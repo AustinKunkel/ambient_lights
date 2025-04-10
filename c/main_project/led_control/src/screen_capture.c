@@ -184,7 +184,7 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
-  if(setup_strip()) {
+  if(setup_strip(strip->channel[0].count)) {
     printf("Failed to initialize LED strip!\n");
     return 1;
   } 
