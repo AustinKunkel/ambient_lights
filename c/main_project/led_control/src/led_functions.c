@@ -16,7 +16,6 @@ ws2811_t ledstring = {
 
 int setup_strip(int led_count)
 {
-  cleanup_strip();
   ledstring.channel[0].count = led_count;
   if (ws2811_init(&ledstring) != WS2811_SUCCESS) 
   {
