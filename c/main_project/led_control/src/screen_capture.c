@@ -257,7 +257,6 @@ void *capture_loop(void *strip_ptr) {
   //   }
   // }
   free(rgb_buffer);
-  cleanup_strip();
   printf("Capture stopped...\n");
 }
 
