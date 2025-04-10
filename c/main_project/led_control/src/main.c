@@ -32,6 +32,8 @@ char *update_leds() {
     printf("Updating the LEDs...\n");
     stop_current_task();
     printf("Stopped current task...\n");
+    get_led_count();
+    printf("got led count\n");
     if(get_led_count() != led_settings.count) {
         cleanup_strip();
         if(setup_strip(led_settings.count)) {
@@ -39,7 +41,6 @@ char *update_leds() {
         }
     }
     set_brightness(led_settings.brightness);
-    printf("Set brightness");
     if(led_settings.capture_screen) {
         printf("Creating task: Screen Capture...\n");
         if(start_capturing(get_ledstring())) {
