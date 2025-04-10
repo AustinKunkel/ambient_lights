@@ -8,7 +8,7 @@
 
 // main control file (replaces led_functions.py for the most part)
 
-led_settings = {
+LEDSettings led_settings = {
     .brightness = 255,        // Default brightness (full brightness)
     .color = 0xFFFFFF,        // Default color (white)
     .capture_screen = 0,      // Default: screen capture disabled
