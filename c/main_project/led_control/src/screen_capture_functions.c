@@ -112,25 +112,27 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
   unsigned char *ptr = rgb_buffer;
 
   for (size_t x = 0; x < frame_size; x += 4) {
-      int y0 = yuv_buffer[x + 0];
+      int y0 = yuv_buffer[x + 0] - 16;
       int u  = yuv_buffer[x + 1] - 128;
-      int y1 = yuv_buffer[x + 2];
+      int y1 = yuv_buffer[x + 2] - 16;
       int v  = yuv_buffer[x + 3] - 128;
 
       int r, g, b;
 
       // First pixel
-      r = (298 * y0 + 409 * v + 128) >> 8;
-      g = (298 * y0 - 100 * u - 208 * v + 128) >> 8;
-      b = (298 * y0 + 516 * u + 128) >> 8;
+      int c = y0 < 0 ? 0 : y0;
+      r = (298 * c + 409 * v + 128) >> 8;
+      g = (298 * c - 100 * u - 208 * v + 128) >> 8;
+      b = (298 * c + 516 * u + 128) >> 8;
       *(ptr++) = CLAMP(r);
       *(ptr++) = CLAMP(g);
       *(ptr++) = CLAMP(b);
 
       // Second pixel
-      r = (298 * y1 + 409 * v + 128) >> 8;
-      g = (298 * y1 - 100 * u - 208 * v + 128) >> 8;
-      b = (298 * y1 + 516 * u + 128) >> 8;
+      c = y1 < 0 ? 0 : y1;
+      r = (298 * c + 409 * v + 128) >> 8;
+      g = (298 * c - 100 * u - 208 * v + 128) >> 8;
+      b = (298 * c + 516 * u + 128) >> 8;
       *(ptr++) = CLAMP(r);
       *(ptr++) = CLAMP(g);
       *(ptr++) = CLAMP(b);
