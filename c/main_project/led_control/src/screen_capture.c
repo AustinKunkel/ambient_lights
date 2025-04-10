@@ -176,6 +176,8 @@ void setup_bottom_side(int count, struct led_position* led_list, int w, int h, i
   }
 }
 
+void *capture_loop(void *);
+
 int start_capturing(ws2811_t *strip) {
   if(!initialize_settings()) {
     printf("Failed to initialize sc_settings!\n");
@@ -200,7 +202,7 @@ int start_capturing(ws2811_t *strip) {
   printf("Creating capture loop thread...\n");
   stop_capture = false;
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
-    free(led_positions);
+    //free(led_positions);
     stop_video_capture();
     printf("Failed to create capture thread!\n"); 
     return 1;
