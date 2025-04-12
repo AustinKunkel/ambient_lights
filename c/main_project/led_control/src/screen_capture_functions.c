@@ -112,6 +112,7 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
   unsigned char *ptr = rgb_buffer;
 
   for (size_t x = 0; x < frame_size; x += 4) {
+      printf("y0: %d, y1: %d\t", x + 0, x + 2);
       int y0 = yuv_buffer[x + 0] - 16;
       int u  = yuv_buffer[x + 1] - 128;
       int y1 = yuv_buffer[x + 2] - 16;
