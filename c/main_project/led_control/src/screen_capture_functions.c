@@ -171,7 +171,7 @@ void capture_frame(unsigned char *rgb_buffer) {
   buf.memory = V4L2_MEMORY_MMAP;
 
   if (buf.index >= NUM_BUFFERS) {
-    fprintf(stderr, "Invalid buffer index: %d\n", buf.index);
+    printf(stderr, "Invalid buffer index: %d\n", buf.index);
     return;
   }
   
@@ -184,8 +184,6 @@ void capture_frame(unsigned char *rgb_buffer) {
   // Process the frame data (dev.buffers[buf.index] contains the frame)
   void *frame_data = dev.buffers[buf.index];
   size_t frame_size = buf.bytesused;
-
-  printf("Actual bytes used: %d", frame_size);
 
   // if(frame_size == (WIDTH * HEIGHT * 2)) {
   //   printf("Frame size matches expected");

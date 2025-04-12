@@ -16,6 +16,10 @@
 #define DEVICE "/dev/video0"
 #define WIDTH  640
 #define HEIGHT 480
+#define LEFT 2
+#define RIGHT 0
+#define TOP 1
+#define BOTTOM 3
 int LED_COUNT = 206;  // Number of LEDs
 
 volatile bool stop_capture = false;
@@ -41,6 +45,7 @@ struct CaptureSettings {
 struct led_position {
   int x;
   int y;
+  int side; // 0 for right, 1 for top, 2 for left, 3 for bottom
 };
 
 struct led_position *led_positions;
@@ -119,6 +124,7 @@ void setup_left_side(int count, struct led_position* led_list, int h,
 
     led_list[index].x = x_index;
     led_list[index].y = y_index;
+    led_list[index].side = LEFT;
   }
 }
 
@@ -139,6 +145,7 @@ void setup_right_side(int count, struct led_position* led_list, int w, int h,
 
     led_list[index].x = x_index;
     led_list[index].y = y_index;
+    led_list[index].side = RIGHT;
   }
 }
 
@@ -157,6 +164,7 @@ void setup_top_side(int count, struct led_position* led_list, int w,
 
     led_list[index].x = x_index;
     led_list[index].y = y_index;
+    led_list[index].side = TOP;
   }
 }
 
@@ -173,6 +181,7 @@ void setup_bottom_side(int count, struct led_position* led_list, int w, int h, i
 
     led_list[index].x = x_index;
     led_list[index].y = y_index;
+    led_list[index].side = BOTTOM;
   }
 }
 
@@ -231,7 +240,7 @@ void *capture_loop(void *strip_ptr) {
     if(blend_mode_active) {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        uint32_t color = blend_colors(led_positions, rgb_buffer, i, 10);
+        uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
         set_led_32int_color(i, color);
       }
     } else {
@@ -273,6 +282,36 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     r_total += rgb_buffer[buffer_index];
     g_total += rgb_buffer[buffer_index + 1];
     b_total += rgb_buffer[buffer_index + 2];
+    count++;
+  }
+  for(int j = 1; j <= depth; j++) { // read inwards
+    int check_index; // index in the rgb buffer we want to check
+    struct led_position current_pixel = led_list[index];
+    int pixel_side = current_pixel.side;
+    if(pixel_side == TOP) {
+      int new_y = current_pixel.y + j;
+      if(new_y >= HEIGHT) break;
+
+      check_index = (new_y * WIDTH + current_pixel.x) * 3;
+    } else if(pixel_side == BOTTOM) {
+      int new_y = current_pixel.y - j;
+      if(new_y < 0) break;
+
+      check_index = (new_y * WIDTH + current_pixel.x) * 3;
+    } else if(pixel_side == LEFT) {
+      int new_x = current_pixel.x + j;
+      if(new_x >= WIDTH) break;
+
+      check_index = (current_pixel.y * WIDTH + new_x) * 3;
+    } else { // right
+      int new_x = current_pixel.x - j;
+      if(new_x < 0) break;
+
+      check_index = (current_pixel.y * WIDTH + new_x) * 3;
+    }
+    r_total += rgb_buffer[check_index];
+    g_total += rgb_buffer[check_index + 1];
+    b_total += rgb_buffer[check_index + 2];
     count++;
   }
 
