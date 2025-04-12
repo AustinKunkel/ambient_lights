@@ -87,7 +87,7 @@ int auto_align_offsets() {
   unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
   if(!rgb_buffer) {
     perror("Failed to allocate rgb_buffer for offsets...");
-    return NULL;
+    return 1;
   }
   capture_frame(rgb_buffer);
 
