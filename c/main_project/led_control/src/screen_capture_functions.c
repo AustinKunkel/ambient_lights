@@ -112,11 +112,20 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
   unsigned char *ptr = rgb_buffer;
 
   for (size_t x = 0; x < frame_size; x += 4) {
-      //printf("y0: %d, y1: %d\t", x + 0, x + 2);
       int y0 = yuv_buffer[x + 0] - 16;
       int u  = yuv_buffer[x + 1] - 128;
       int y1 = yuv_buffer[x + 2] - 16;
       int v  = yuv_buffer[x + 3] - 128;
+
+      if(y0 != 0) {
+        int byte_index = x - rgb_buffer;
+        int pixel_index = byte_index / 3;
+
+        int x = pixel_index % WIDTH;
+        int y = pixel_index % HEIGHT;
+        printf("y0: %d x: %d y: %d\t", y0, x, y);
+      } 
+      
 
       int r, g, b;
 
