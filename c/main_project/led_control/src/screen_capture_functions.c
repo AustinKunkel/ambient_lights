@@ -171,7 +171,7 @@ void capture_frame(unsigned char *rgb_buffer) {
   buf.memory = V4L2_MEMORY_MMAP;
 
   if (buf.index >= NUM_BUFFERS) {
-    printf(stderr, "Invalid buffer index: %d\n", buf.index);
+    fprintf(stderr, "Invalid buffer index: %d\n", buf.index);
     return;
   }
   
