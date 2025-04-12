@@ -118,7 +118,7 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
       int v  = yuv_buffer[x + 3] - 128;
 
       if(y0 != 0) {
-        size_t byte_index = x - rgb_buffer;
+        size_t byte_index = ptr - rgb_buffer;
         size_t pixel_index = byte_index / 3;
 
         size_t x = pixel_index % WIDTH;
