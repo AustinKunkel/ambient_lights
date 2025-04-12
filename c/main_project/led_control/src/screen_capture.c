@@ -145,16 +145,16 @@ int setup_strip_capture(ws2811_t *strip) {
 
   int next_index = 0;
   printf("Setting up right side...\n");
-  setup_right_side(sc_settings.right_count, led_positions, WIDTH, HEIGHT, 0, next_index, -1);
+  setup_right_side(sc_settings.right_count, led_positions, WIDTH, HEIGHT, sc_settings.h_offset, next_index, -1);
   next_index += sc_settings.right_count;
   printf("Setting up top side...\n");
-  setup_top_side(sc_settings.top_count, led_positions, WIDTH, 0, next_index, -1);
+  setup_top_side(sc_settings.top_count, led_positions, WIDTH, sc_settings.v_offset, next_index, -1);
   next_index += sc_settings.top_count;
   printf("Setting up left side...\n");
-  setup_left_side(sc_settings.left_count, led_positions, HEIGHT, 0, next_index, -1);
+  setup_left_side(sc_settings.left_count, led_positions, HEIGHT, sc_settings.h_offset, next_index, -1);
   next_index += sc_settings.left_count;
   printf("Setting up bottom side...\n");
-  setup_bottom_side(sc_settings.bottom_count, led_positions, WIDTH, HEIGHT, 0, next_index, -1);
+  setup_bottom_side(sc_settings.bottom_count, led_positions, WIDTH, HEIGHT, sc_settings.v_offset, next_index, -1);
 
   return 0;
 }
