@@ -93,7 +93,9 @@ int auto_align_offsets() {
 
   // left/right (assuming they're the same because I didnt set up a left and right offset)
   bool not_black = false;
-  for(int i = 0; i < WIDTH; i++) { // x
+  int middle = WIDTH / 2; // x middle
+  sc_settings.h_offset = middle;
+  for(int i = middle; i >= 0; i--) { // x
     for(int j = 0; j < HEIGHT; j++) { // y
       //index = (y * WIDTH + x) * 3;
       int index = (j * WIDTH + i) * 3;
@@ -104,12 +106,14 @@ int auto_align_offsets() {
       }
     }
     if(not_black) break;
-    sc_settings.h_offset++;
+    sc_settings.h_offset--;
   }
 
   // top/bottom (same condition applies)
   not_black = false;
-  for(int j = 0; j < HEIGHT; j++) { // y
+  middle = HEIGHT / 2;
+  sc_settings.v_offset = middle;
+  for(int j = middle; j >= 0; j--) { // y
     for(int i = 0; i < WIDTH; i++) { // x
       int index = (j * WIDTH + i) * 3;
       uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
@@ -119,7 +123,7 @@ int auto_align_offsets() {
       }
     }
     if(not_black) break;
-    sc_settings.v_offset++;
+    sc_settings.v_offset--;
   }
   free(rgb_buffer);
   return 0;
@@ -337,7 +341,7 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     b_total += rgb_buffer[buffer_index + 2];
     count++;
   }
-  for(int j = 1; j <= depth; j++) { // read inwards
+  for(int j = 10; j <= depth; j += 10) { // read inwards
     int check_index; // index in the rgb buffer we want to check
     struct led_position current_pixel = led_list[index];
     int pixel_side = current_pixel.side;
