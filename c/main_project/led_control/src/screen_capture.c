@@ -100,10 +100,12 @@ int auto_align_offsets() {
     for(int j = 0; j < HEIGHT; j++) { // y
       //index = (y * WIDTH + x) * 3;
       int index = (j * WIDTH + i) * 3;
-      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
-      if(color > 0) {
-        not_black = true;
-        break;
+      if (index + 2 < WIDTH * HEIGHT * 3) {
+        uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+        if(color > 0) {
+          not_black = true;
+          break;
+        }
       }
     }
     if(!not_black) break;
@@ -118,10 +120,12 @@ int auto_align_offsets() {
     not_black = false;
     for(int i = 0; i < WIDTH; i++) { // x
       int index = (j * WIDTH + i) * 3;
-      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
-      if(color > 0) {
-        not_black = true;
-        break;
+      if (index + 2 < WIDTH * HEIGHT * 3) {
+        uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+        if(color > 0) {
+          not_black = true;
+          break;
+        }
       }
     }
     if(!not_black) break;
