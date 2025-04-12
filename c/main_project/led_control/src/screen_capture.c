@@ -100,12 +100,10 @@ int auto_align_offsets() {
     for(int j = 0; j < HEIGHT; j++) { // y
       //index = (y * WIDTH + x) * 3;
       int index = (j * WIDTH + i) * 3;
-      if (index + 2 < WIDTH * HEIGHT * 3) {
-        uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
-        if(color > 0) {
-          not_black = true;
-          break;
-        }
+      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+      if(color > 0) {
+        not_black = true;
+        break;
       }
     }
     if(!not_black) break;
@@ -120,12 +118,10 @@ int auto_align_offsets() {
     not_black = false;
     for(int i = 0; i < WIDTH; i++) { // x
       int index = (j * WIDTH + i) * 3;
-      if (index + 2 < WIDTH * HEIGHT * 3) {
-        uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
-        if(color > 0) {
-          not_black = true;
-          break;
-        }
+      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+      if(color > 0) {
+        not_black = true;
+        break;
       }
     }
     if(!not_black) break;
@@ -342,6 +338,9 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
 
     int buffer_index = (check_pixel_location.y * WIDTH + check_pixel_location.x) * 3;
     // printf("check index:%d, buffer index: %d, count: %d\t", check_index, buffer_index, count);
+    if (buffer_index < 0 || buffer_index + 2 >= WIDTH * HEIGHT * 3) {
+      continue; // or break, depending on your use-case
+    }
     r_total += rgb_buffer[buffer_index];
     g_total += rgb_buffer[buffer_index + 1];
     b_total += rgb_buffer[buffer_index + 2];
@@ -371,6 +370,9 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
       if(new_x < 0) break;
 
       check_index = (current_pixel.y * WIDTH + new_x) * 3;
+    }
+    if (check_index < 0 || check_index + 2 >= WIDTH * HEIGHT * 3) {
+      continue; // or break, depending on your use-case
     }
     r_total += rgb_buffer[check_index];
     g_total += rgb_buffer[check_index + 1];
