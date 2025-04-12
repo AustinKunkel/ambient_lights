@@ -117,24 +117,15 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
       int y1 = yuv_buffer[x + 2] - 16;
       int v  = yuv_buffer[x + 3] - 128;
 
-      if(y0 != 0) {
-        size_t byte_index = ptr - rgb_buffer;
-        size_t pixel_index = byte_index / 3;
+      // if(y0 != 0) {
+      //   size_t byte_index = ptr - rgb_buffer;
+      //   size_t pixel_index = byte_index / 3;
 
-        size_t x = pixel_index % WIDTH;
-        size_t y = pixel_index % HEIGHT;
-        printf("y0: %d x: %d y: %d\t", y0, x, y);
-      } 
-      if(y1 != 0) {
-        size_t byte_index = ptr - rgb_buffer;
-        size_t pixel_index = byte_index / 3;
-
-        size_t x = pixel_index % WIDTH;
-        size_t y = pixel_index % HEIGHT;
-        printf("y1: %d x: %d y: %d\t", y0, x, y);
-      } 
+      //   size_t x = pixel_index % WIDTH;
+      //   size_t y = pixel_index % HEIGHT;
+      //   printf("y0: %d x: %d y: %d\t", y0, x, y);
+      // } 
       
-
       int r, g, b;
 
       // First pixel
@@ -193,6 +184,8 @@ void capture_frame(unsigned char *rgb_buffer) {
   // Process the frame data (dev.buffers[buf.index] contains the frame)
   void *frame_data = dev.buffers[buf.index];
   size_t frame_size = buf.bytesused;
+
+  printf("Actual bytes used: %d", frame_size);
 
   // if(frame_size == (WIDTH * HEIGHT * 2)) {
   //   printf("Frame size matches expected");
