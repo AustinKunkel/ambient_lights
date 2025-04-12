@@ -79,6 +79,52 @@ void setup_right_side(int, struct led_position*, int, int, int, int, int);
 void setup_top_side(int, struct led_position*, int, int, int, int);
 void setup_bottom_side(int, struct led_position*, int, int, int, int, int);
 
+/**
+ * automatically aligns offsets to point to the correct position
+ * (avoids the black bars) 
+ */
+int auto_align_offsets() {
+  unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
+  if(!rgb_buffer) {
+    perror("Failed to allocate rgb_buffer for offsets...");
+    return NULL;
+  }
+  capture_frame(rgb_buffer);
+
+  // left/right (assuming they're the same because I didnt set up a left and right offset)
+  bool not_black = false;
+  for(int i = 0; i < WIDTH; i++) { // x
+    for(int j = 0; j < HEIGHT; j++) { // y
+      //index = (y * WIDTH + x) * 3;
+      int index = (j * WIDTH + i) * 3;
+      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+      if(color > 0) {
+        not_black = true;
+        break;
+      }
+    }
+    if(not_black) break;
+    sc_settings.h_offset++;
+  }
+
+  // top/bottom (same condition applies)
+  not_black = false;
+  for(int j = 0; j < HEIGHT; j++) { // y
+    for(int i = 0; i < WIDTH; i++) { // x
+      int index = (j * WIDTH + i) * 3;
+      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+      if(color > 0) {
+        not_black = true;
+        break;
+      }
+    }
+    if(not_black) break;
+    sc_settings.v_offset++;
+  }
+  free(rgb_buffer);
+  return 0;
+}
+
 
 /**
  * Sets up the LEDs with screen capture.
@@ -89,6 +135,11 @@ int setup_strip_capture(ws2811_t *strip) {
   led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
   if (led_positions == NULL) {
     printf("Memory allocation failed!\n");
+    return 1;
+  }
+
+  if(auto_align_offsets()) {
+    printf("Aligning offsets failed!\n");
     return 1;
   }
 
@@ -197,22 +248,24 @@ int start_capturing(ws2811_t *strip) {
     printf("Failed to initialize LED strip!\n");
     return 1;
   } 
+  printf("Setting up capture...\n");
+  if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
+
+    printf("Failed to set up screen capture!\n");
+    return 1;
+  }
+
   printf("Setting up strip capture\n");
   if(setup_strip_capture(strip)) {
     printf("Failed to set up strip screen capture!\n");
     return 1;
   }
-  printf("Setting up capture...\n");
-  if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
-    free(led_positions);
-    printf("Failed to set up screen capture!\n");
-    return 1;
-  }
+
   printf("Creating capture loop thread...\n");
   stop_capture = false;
   //printf("LED Count: %d\n", strip->channel[0].count);
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
-    //free(led_positions);
+    free(led_positions);
     stop_video_capture();
     printf("Failed to create capture thread!\n"); 
     return 1;
