@@ -106,14 +106,17 @@ int auto_align_offsets() {
         break;
       }
     }
-    if(!not_black) break;
+    if(!not_black) { // the current column is all black (we want to increment up one)
+      sc_settings.h_offset++;
+      break;
+    }
     sc_settings.h_offset--;
 
     if(sc_settings.h_offset < 0) {
       sc_settings.h_offset = 0;
       break;
     }
-    printf("H Offest: %d\n", sc_settings.h_offset);
+   // printf("H Offest: %d\n", sc_settings.h_offset);
   }
 
   // top/bottom (same condition applies)
@@ -130,14 +133,17 @@ int auto_align_offsets() {
         break;
       }
     }
-    if(!not_black) break;
+    if(!not_black) {
+      sc_settings.v_offset++;
+      break;
+    }
     sc_settings.v_offset--;
 
     if(sc_settings.v_offset < 0) {
       sc_settings.v_offset = 0;
       break;
     }
-    printf("V Offest: %d\n", sc_settings.v_offset);
+    // printf("V Offest: %d\n", sc_settings.v_offset);
   }
   free(rgb_buffer);
   return 0;
