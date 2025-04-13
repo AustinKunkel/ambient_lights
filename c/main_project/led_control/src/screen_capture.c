@@ -106,8 +106,8 @@ int auto_align_offsets() {
         break;
       }
     }
-    if(!not_black) { // the current column is all black (we want to increment up one)
-      sc_settings.h_offset++;
+    if(!not_black) { // the current column is all black (we want to read farther in)
+      sc_settings.h_offset += 2;
       break;
     }
     sc_settings.h_offset--;
@@ -134,7 +134,7 @@ int auto_align_offsets() {
       }
     }
     if(!not_black) {
-      sc_settings.v_offset++;
+      sc_settings.v_offset += 2;
       break;
     }
     sc_settings.v_offset--;
