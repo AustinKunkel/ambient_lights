@@ -133,8 +133,8 @@ int auto_align_offsets() {
     if(!not_black) break;
     sc_settings.v_offset--;
 
-    if(sc_settings.h_offset < 0) {
-      sc_settings.h_offset = 0;
+    if(sc_settings.v_offset < 0) {
+      sc_settings.v_offset = 0;
       break;
     }
     printf("V Offest: %d\n", sc_settings.v_offset);
