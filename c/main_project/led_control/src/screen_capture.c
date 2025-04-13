@@ -108,6 +108,7 @@ int auto_align_offsets() {
     }
     if(!not_black) break;
     sc_settings.h_offset--;
+    printf("H Offest: %d\n", sc_settings.h_offset);
   }
 
   // top/bottom (same condition applies)
@@ -126,6 +127,7 @@ int auto_align_offsets() {
     }
     if(!not_black) break;
     sc_settings.v_offset--;
+    printf("V Offest: %d\n", sc_settings.v_offset);
   }
   free(rgb_buffer);
   return 0;
@@ -370,9 +372,6 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
       if(new_x < 0) break;
 
       check_index = (current_pixel.y * WIDTH + new_x) * 3;
-    }
-    if (check_index < 0 || check_index + 2 >= WIDTH * HEIGHT * 3) {
-      continue; // or break, depending on your use-case
     }
     r_total += rgb_buffer[check_index];
     g_total += rgb_buffer[check_index + 1];
