@@ -11,6 +11,8 @@
 #include "csv_control.h"
 
 #define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
+#define LED_SETTINGS_FILENAME "led_control/data/led_settings.csv"
+#define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
 #define PORT 8080
 
 static struct MHD_Daemon *server;  // Declare server globally
@@ -106,7 +108,7 @@ int parse_led_settings_data_to_string(char *str) {
 int initialize_led_settings() {
     char data_line[512];
     printf("reading led_settings.csv...\n");
-    if(read_one_line("led_control/data/led_settings.csv", data_line, sizeof(data_line)) == 0)
+    if(read_one_line(LED_SETTINGS_FILENAME, data_line, sizeof(data_line)) == 0)
     {
         char *line_ptr = data_line;
         printf("Setting led settings variables...\n");
@@ -244,7 +246,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
     }
   }
 
-int handle_post_led_settings(const char *upload_data, size_t *upload_data_size) {
+int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data, size_t *upload_data_size) {
     cJSON *json = cJSON_Parse(upload_data);
     if(!json) {
         fprintf(stderr, "Error parsing JSON\n");
@@ -270,6 +272,27 @@ int handle_post_led_settings(const char *upload_data, size_t *upload_data_size) 
     if (cJSON_IsNumber(id)) led_settings.id = id->valueint;
 
     cJSON_Delete(json);
+
+    const char *response_text;
+    int response_code;
+
+    char led_settings_str[256];
+    parse_led_settings_data_to_string(led_settings_str);
+    if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) {
+        printf("Failed to write led_settings\n");
+        response_text = "{\"Error\":\"Failed to write led settings\"}";
+        response_code = MHD_HTTP_INTERNAL_SERVER_ERROR;
+    } else { // success
+        response_text =  update_leds();
+        response_code = MHD_HTTP_OK;
+    }
+    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
+                                                  (void *)response_text, 
+                                                  MHD_RESPMEM_PERSISTENT);
+    int ret = MHD_queue_response(connection, response_code, response);
+    MHD_destroy_response(response);
+
+    update_leds();
     return 0;
 }
   
