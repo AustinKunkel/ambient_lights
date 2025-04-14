@@ -93,27 +93,23 @@ int initialize_led_settings() {
         char *line_ptr = data_line;
         printf("Setting led settings variables...\n");
         led_settings.brightness = atoi(next_token(&line_ptr));
+        printf("Brightness: %d\n", led_settings.brightness);
         char *hex = next_token(&line_ptr);
+        printf("Hex string: %s", hex);
         if(hex) {
             char *hex_ptr = (hex[0] == '#') ? hex + 1 : hex;
+            printf("Hex ptr: %s", hex_ptr);
             led_settings.color = (int)strtol(hex_ptr, NULL, 16);
         } else {
             led_settings.color = 0xDFC57B;
         }
+        printf("Color: #%06X", led_settings.color);
         led_settings.capture_screen = atoi(next_token(&line_ptr));
         led_settings.sound_react = atoi(next_token(&line_ptr));
         led_settings.fx_num = atoi(next_token(&line_ptr));
         led_settings.count = atoi(next_token(&line_ptr));
         led_settings.id = atoi(next_token(&line_ptr));
-        printf("Current led settings: %d,#%06X,%s,%s,%s,%s,%s\n",
-        led_settings.brightness,
-        led_settings.color,
-        led_settings.capture_screen,
-        led_settings.sound_react,
-        led_settings.fx_num,
-        led_settings.count,
-        led_settings.id);
-        char buffer[256];
+        char *buffer[256];
         parse_led_settings_data_to_string(buffer);
         printf("Current LED settings: %s", buffer);
         return 0;
