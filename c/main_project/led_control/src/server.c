@@ -109,7 +109,7 @@ int initialize_led_settings() {
         led_settings.fx_num = atoi(next_token(&line_ptr));
         led_settings.count = atoi(next_token(&line_ptr));
         led_settings.id = atoi(next_token(&line_ptr));
-        char *buffer[256];
+        char buffer[256];
         parse_led_settings_data_to_string(buffer);
         printf("Current LED settings: %s", buffer);
         return 0;
