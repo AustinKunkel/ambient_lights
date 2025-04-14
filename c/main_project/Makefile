@@ -27,7 +27,7 @@ CAPTURE_SRC = led_control/test/capture_test.c \
 
 # Object Files (replace .c with .o)
 SRV_TEST_OBJ = $(SRV_TST_SRC:.c=.o)
-CSV_CTRL_TEST_OBJ = $(CSV_CTROL_TEST_SRC:.c=.o)
+CSV_CTRL_TEST_OBJ = $(CSV_CTRL_TEST_SRC:.c=.o)
 CAPTURE_OBJ = $(CAPTURE_SRC:.c=.o)
 MAIN_OBJ = $(MAIN_SRC:.c=.o)
 
@@ -65,3 +65,4 @@ $(MAIN_TARGET): $(MAIN_OBJ)
 # Clean build artifacts
 clean:
 	rm -f $(SRV_TEST_OBJ) $(SRV_TEST_TARGET)
+	rm -f $(CSV_CTRL_TEST_OBJ) $(CSV_CTRL_TEST_TARGET)
