@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <cjson/cJSON.h>
 #include "led_functions.h"
 #include "main.h"
 #include "csv_control.h"
@@ -242,9 +243,38 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
       return handle_serve_static_files(connection, url);
     }
   }
+
+int handle_post_led_settings(const char *upload_data, size_t *upload_data_size) {
+    cJSON *json = cJSON_Parse(upload_data);
+    if(!json) {
+        fprintf(stderr, "Error parsing JSON\n");
+        return 1;
+    }
+    cJSON *brightness = cJSON_GetObjectItemCaseSensitive(json, "brightness");
+    cJSON *color = cJSON_GetObjectItemCaseSensitive(json, "color");
+    cJSON *capture_screen = cJSON_GetObjectItemCaseSensitive(json, "capture_screen");
+    cJSON *sound_react = cJSON_GetObjectItemCaseSensitive(json, "sound_react");
+    cJSON *fx_num = cJSON_GetObjectItemCaseSensitive(json, "fx_num");
+    cJSON *count = cJSON_GetObjectItemCaseSensitive(json, "count");
+    cJSON *id = cJSON_GetObjectItemCaseSensitive(json, "id");
+
+    if (cJSON_IsNumber(brightness)) led_settings.brightness = brightness->valueint;
+    if (cJSON_IsString(color) && color->valuestring) {
+        const char *hex = color->valuestring;
+        led_settings.color = (int)strtol(hex[0] == '#' ? hex + 1 : hex, NULL, 16);
+    }
+    if (cJSON_IsNumber(capture_screen)) led_settings.capture_screen = capture_screen->valueint;
+    if (cJSON_IsNumber(sound_react)) led_settings.sound_react = sound_react->valueint;
+    if (cJSON_IsNumber(fx_num)) led_settings.fx_num = fx_num->valueint;
+    if (cJSON_IsNumber(count)) led_settings.count = count->valueint;
+    if (cJSON_IsNumber(id)) led_settings.id = id->valueint;
+
+    cJSON_Delete(json);
+    return 0;
+}
   
-  int handle_post_request(struct MHD_Connection *connection, const char *url,
-      const char *upload_data, size_t *upload_data_size) {
+int handle_post_request(struct MHD_Connection *connection, const char *url,
+    const char *upload_data, size_t *upload_data_size) {
   
   static char post_data[1024]; // Buffer to store received data
   
@@ -270,9 +300,9 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   MHD_destroy_response(response);
   
   return ret; // Ensure a response is returned
-  }
+}
   
-  int handle_delete_request(struct MHD_Connection *connection, const char *url) {
+int handle_delete_request(struct MHD_Connection *connection, const char *url) {
     if (strncmp(url, "/api", 4) == 0) {
         led_settings.capture_screen = 0;
         led_settings.brightness = 0;
@@ -292,4 +322,4 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
         MHD_destroy_response(response);
         return ret;
     }
-  }
+}

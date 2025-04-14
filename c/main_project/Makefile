@@ -6,7 +6,7 @@ LIB_DIR = /use/local/lib
 
 # Compiler Flags
 CFLAGS = -I$(INC_DIR)
-LDFLAGS = -I$(LIB_DIR) -lmicrohttpd -lws2811 -pthread -lrt -lgnutls -lm
+LDFLAGS = -I$(LIB_DIR) -lcjson -lmicrohttpd -lws2811 -pthread -lrt -lgnutls -lm
 
 # Source Files
 SRV_TST_SRC = led_control/test/server_test.c \
