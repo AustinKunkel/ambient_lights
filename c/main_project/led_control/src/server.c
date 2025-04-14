@@ -7,6 +7,7 @@
 #include <signal.h>
 #include "led_functions.h"
 #include "main.h"
+#include "csv_control.h"
 
 #define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
 #define PORT 8080
@@ -63,6 +64,55 @@ void stop_server(int signo) {
     exit(0);
 }
 
+/**
+ * Helper function to get the next token in a csv line
+ */
+char* next_token(char **line) {
+    char *token = strtok(*line, ",");
+    *line = NULL;
+    return token;
+}
+
+int parse_led_settings_data_to_string(char *str) {
+    return sprintf(str, "%d,#%06X,%s,%s,%s,%s,%s",
+        led_settings.brightness,
+        led_settings.color,
+        led_settings.capture_screen,
+        led_settings.sound_react,
+        led_settings.fx_num,
+        led_settings.count,
+        led_settings.id
+    );
+}
+
+int initialize_led_settings() {
+    char data_line[512];
+    if(read_one_line("led_control/data/led_settings.csv", data_line, sizeof(data_line)) == 0)
+    {
+        char *line_ptr = data_line;
+        led_settings.brightness = atoi(next_token(&line_ptr));
+        char *hex = next_token(&line_ptr);
+        if(hex) {
+            char *hex_ptr = (hex[0] == '#') ? hex + 1 : hex;
+            led_settings.color = (int)strtol(hex_ptr, NULL, 16);
+        } else {
+            led_settings.color = 0xDFC57B;
+        }
+        led_settings.capture_screen = atoi(next_token(&line_ptr));
+        led_settings.sound_react = atoi(next_token(&line_ptr));
+        led_settings.fx_num = atoi(next_token(&line_ptr));
+        led_settings.count = atoi(next_token(&line_ptr));
+        led_settings.id = atoi(next_token(&line_ptr));
+        char buffer[256];
+        parse_led_settings_data_to_string(buffer);
+        printf("Current LED settings: %s", buffer);
+        return 0;
+    } else {
+        perror("Unable to read from led_settings.csv!!\n");
+        return 1;
+    }
+}
+
 int main(int argc, char **argv) {
     // Register signal handler for CTRL+C
     signal(SIGINT, stop_server);
@@ -81,13 +131,20 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if(initialize_led_settings()) {
+        printf("Error initializing Led settings!\n");
+        return 1;
+    }
+
     printf("Server running on http://localhost:%d/\n", PORT);
     printf("Press CTRL+C to stop the server.\n");
 
-    if(setup_strip(206) != 0) {
+    if(setup_strip(led_settings.count) != 0) {
         printf("Problem setting up strip...\n");
         return 1;
     }
+
+    show_strip();
 
     // Keep the server running until stopped
     while (1) {

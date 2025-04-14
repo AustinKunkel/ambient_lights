@@ -5,6 +5,7 @@
 #include "led_functions.h"
 #include "screen_capture.h"
 #include "ws2811.h"
+#include "csv_control.h"
 
 // main control file (replaces led_functions.py for the most part)
 
@@ -17,7 +18,6 @@ LEDSettings led_settings = {
     .count = 206,             // Example count of LEDs
     .id = 0                   // Default id
 };
-
 typedef struct {
     pthread_t thread_id;
     int task_status; // 0 for completed, 1 for running

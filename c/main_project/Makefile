@@ -20,7 +20,8 @@ MAIN_SRC = led_control/src/server.c \
 					 led_control/src/led_functions.c \
 					 led_control/src/main.c \
 					 led_control/src/screen_capture.c \
-					 led_control/src/screen_capture_functions.c
+					 led_control/src/screen_capture_functions.c \
+					 led_control/src/csv_control.c
 
 CAPTURE_SRC = led_control/test/capture_test.c \
 							led_control/test/screen_capture_functions.c
@@ -66,3 +67,5 @@ $(MAIN_TARGET): $(MAIN_OBJ)
 clean:
 	rm -f $(SRV_TEST_OBJ) $(SRV_TEST_TARGET)
 	rm -f $(CSV_CTRL_TEST_OBJ) $(CSV_CTRL_TEST_TARGET)
+	rm -f $(CAPTURE_OBJ) $(CAPTURE_TARGET)
+	rm -f $(MAIN_OBJ) $(MAIN_TARGET)
