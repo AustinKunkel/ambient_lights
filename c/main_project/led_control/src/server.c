@@ -68,6 +68,10 @@ void stop_server(int signo) {
  * Helper function to get the next token in a csv line
  */
 char* next_token(char **line) {
+    if(*line == NULL) return NULL;
+
+    while (**line == ' ' || **line == '\t') (*line)++;
+
     char *token = strtok(*line, ",");
     if(token) {
         *line = NULL;
@@ -105,12 +109,17 @@ int initialize_led_settings() {
         } else {
             led_settings.color = 0xDFC57B;
         }
-        printf("Color: #%06X", led_settings.color);
+        //printf("Color: #%06X\n", led_settings.color);
         led_settings.capture_screen = atoi(next_token(&line_ptr));
+        printf("Capture screen: %d\n", led_settings.capture_screen);
         led_settings.sound_react = atoi(next_token(&line_ptr));
+        printf("sound react: %d\n", led_settings.sound_react);
         led_settings.fx_num = atoi(next_token(&line_ptr));
+        printf("fx num: %d\n", led_settings.fx_num);
         led_settings.count = atoi(next_token(&line_ptr));
+        printf("count: %d\n", led_settings.count);
         led_settings.id = atoi(next_token(&line_ptr));
+        printf("id: %d\n", led_settings.id);
         char buffer[256];
         parse_led_settings_data_to_string(buffer);
         printf("Current LED settings: %s", buffer);
