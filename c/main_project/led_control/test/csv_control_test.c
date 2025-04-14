@@ -55,7 +55,6 @@ int read_data(char *filename, Config* data) {
   }
 
   char line[1024];
-
   // Read a line from the file
   if (fgets(line, sizeof(line), fp) == NULL) {
     perror("Failed to read from file\n");
@@ -64,18 +63,32 @@ int read_data(char *filename, Config* data) {
   }
 
   char *line_ptr = line;
+  char *token;
 
-  // Parsing values from the line
-  data->res_x = atoi(next_token(&line_ptr));
-  data->res_y = atoi(next_token(&line_ptr));
-  data->boolean = atoi(next_token(&line_ptr));
+  token = next_token(&line_ptr);
+  if (token) {
+      data->res_x = atoi(token);
+      printf("res_x = %d\n", data->res_x); // DEBUG
+  }
 
-  // Parsing the hex color code
-  char *hex = next_token(&line_ptr);
-  if (hex) {
-    // Skip the '#' character if it's present
-    char *hex_ptr = (hex[0] == '#') ? hex + 1 : hex;
-    data->test = strtol(hex_ptr, NULL, 16);
+  token = strtok(NULL, ",");
+  if (token) {
+      data->res_y = atoi(token);
+      printf("res_y = %d\n", data->res_y); // DEBUG
+  }
+
+  token = strtok(NULL, ",");
+  if (token) {
+      data->boolean = atoi(token);
+      printf("boolean = %d\n", data->boolean); // DEBUG
+  }
+
+  token = strtok(NULL, ",");
+  if (token) {
+      printf("Raw hex string = %s\n", token); // DEBUG
+      char *hex_ptr = token[0] == '#' ? token + 1 : token;
+      data->test = strtol(hex_ptr, NULL, 16);
+      printf("Parsed hex = %lX\n", data->test); // DEBUG
   }
 
   fclose(fp);
