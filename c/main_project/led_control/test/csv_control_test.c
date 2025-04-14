@@ -56,15 +56,25 @@ int read_data(char *filename, Config* data) {
 
   char line[1024];
 
-  fgets(line, 1024, fp);
+  // Read a line from the file
+  if (fgets(line, sizeof(line), fp) == NULL) {
+    perror("Failed to read from file\n");
+    fclose(fp);
+    return 1;
+  }
+
   char *line_ptr = line;
 
+  // Parsing values from the line
   data->res_x = atoi(next_token(&line_ptr));
   data->res_y = atoi(next_token(&line_ptr));
   data->boolean = atoi(next_token(&line_ptr));
+
+  // Parsing the hex color code
   char *hex = next_token(&line_ptr);
-  if(hex) {
-    char *hex_ptr = hex[0] == '#' ? hex + 1 : hex;
+  if (hex) {
+    // Skip the '#' character if it's present
+    char *hex_ptr = (hex[0] == '#') ? hex + 1 : hex;
     data->test = strtol(hex_ptr, NULL, 16);
   }
 
