@@ -112,6 +112,10 @@ int main() {
   printf("CSV output of current config: %s\n", buffer);
   
   printf("Writing data to %s: %s\n", filename, buffer);
+  if(write_data(filename, header, buffer)) {
+    perror("Failed to write data\n");
+    return 1;
+  }
 
   printf("Setting all config to 0 and reading from file again...\n");
   config.boolean = 0;
