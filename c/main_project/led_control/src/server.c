@@ -283,7 +283,7 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
         response_text = "{\"Error\":\"Failed to write led settings\"}";
         response_code = MHD_HTTP_INTERNAL_SERVER_ERROR;
     } else { // success
-        response_text =  update_leds();
+        response_text = update_leds();
         response_code = MHD_HTTP_OK;
     }
     struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
@@ -292,12 +292,12 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     int ret = MHD_queue_response(connection, response_code, response);
     MHD_destroy_response(response);
 
-    update_leds();
-    return 0;
+    //update_leds();
+    return ret;
 }
   
 int handle_post_request(struct MHD_Connection *connection, const char *url,
-    const char *upload_data, size_t *upload_data_size) {
+  const char *upload_data, size_t *upload_data_size) {
   
   static char post_data[1024]; // Buffer to store received data
   
@@ -311,18 +311,22 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
   *upload_data_size = 0; // Reset to indicate data has been processed
   return MHD_YES; // Return YES to indicate more data may come
   }
-  
-  // Send a response back to the client
-  led_settings.brightness = 125;
-  led_settings.capture_screen = 1;
-  const char *response_text =  update_leds();
-  struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
-                                                  (void *)response_text, 
-                                                  MHD_RESPMEM_PERSISTENT);
-  int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-  MHD_destroy_response(response);
-  
-  return ret; // Ensure a response is returned
+
+  if(strncmp(url, "/led-settings", 14) == 0) {
+    return handle_post_led_settings(connection, upload_data, upload_data_size);
+  } else {
+    // Send a response back to the client
+    led_settings.brightness = 125;
+    led_settings.capture_screen = 1;
+    const char *response_text =  update_leds();
+    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
+                                                    (void *)response_text, 
+                                                    MHD_RESPMEM_PERSISTENT);
+    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    MHD_destroy_response(response);
+    
+    return ret; // Ensure a response is returned
+  }
 }
   
 int handle_delete_request(struct MHD_Connection *connection, const char *url) {
