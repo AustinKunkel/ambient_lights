@@ -247,6 +247,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   }
 
 int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data, size_t *upload_data_size) {
+    printf("%s", upload_data);
     cJSON *json = cJSON_Parse(upload_data);
     if(!json) {
         fprintf(stderr, "Error parsing JSON\n");
