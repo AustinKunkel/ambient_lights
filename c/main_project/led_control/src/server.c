@@ -69,7 +69,9 @@ void stop_server(int signo) {
  */
 char* next_token(char **line) {
     char *token = strtok(*line, ",");
-    *line = NULL;
+    if(token) {
+        *line = NULL;
+    }
     return token;
 }
 
