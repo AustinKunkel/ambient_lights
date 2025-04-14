@@ -83,13 +83,11 @@ char* next_token(char **line) {
     while (**line && **line != ',' && **line != '\n') {
         (*line)++;
     }
-
     // If we reached a comma, replace it with null terminator
     if (**line == ',' || **line == '\n') {
         **line = '\0';
         (*line)++; // Move past the delimiter
     }
-
     return token_start;
 }
 
@@ -116,15 +114,15 @@ int initialize_led_settings() {
         led_settings.brightness = atoi(next_token(&line_ptr));
         printf("Brightness: %d\n", led_settings.brightness);
         char *hex = next_token(&line_ptr);
-        printf("Hex string: %s", hex);
+        printf("Hex string: %s\n", hex);
         if(hex) {
             char *hex_ptr = (hex[0] == '#') ? hex + 1 : hex;
-            printf("Hex ptr: %s", hex_ptr);
+            printf("Hex ptr: %s\n", hex_ptr);
             led_settings.color = (int)strtol(hex_ptr, NULL, 16);
         } else {
             led_settings.color = 0xDFC57B;
         }
-        //printf("Color: #%06X\n", led_settings.color);
+        printf("Color: #%06lX\n", led_settings.color);
         led_settings.capture_screen = atoi(next_token(&line_ptr));
         printf("Capture screen: %d\n", led_settings.capture_screen);
         led_settings.sound_react = atoi(next_token(&line_ptr));
