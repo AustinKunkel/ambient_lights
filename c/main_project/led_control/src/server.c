@@ -93,7 +93,7 @@ char* next_token(char **line) {
 
 
 int parse_led_settings_data_to_string(char *str) {
-    return sprintf(str, "%d,#%06X,%s,%s,%s,%s,%s",
+    return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
         led_settings.brightness,
         led_settings.color,
         led_settings.capture_screen,
