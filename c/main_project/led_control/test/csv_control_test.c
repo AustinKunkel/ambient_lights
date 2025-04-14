@@ -65,7 +65,7 @@ int read_data(char *filename, Config* data) {
   char *hex = next_token(&line_ptr);
   if(hex) {
     char *hex_ptr = hex[0] == '#' ? hex + 1 : hex;
-    data->test = strol(hex_ptr, NULL, 16);
+    data->test = strtol(hex_ptr, NULL, 16);
   }
 
   fclose(fp);
