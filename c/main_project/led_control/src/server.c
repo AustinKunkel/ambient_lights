@@ -87,9 +87,11 @@ int parse_led_settings_data_to_string(char *str) {
 
 int initialize_led_settings() {
     char data_line[512];
+    printf("reading led_settings.csv...\n");
     if(read_one_line("led_control/data/led_settings.csv", data_line, sizeof(data_line)) == 0)
     {
         char *line_ptr = data_line;
+        printf("Setting led settings variables...\n");
         led_settings.brightness = atoi(next_token(&line_ptr));
         char *hex = next_token(&line_ptr);
         if(hex) {
