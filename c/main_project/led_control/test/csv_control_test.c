@@ -83,7 +83,7 @@ int parse_config_data_to_string(Config config, char *str) {
 }
 
 int main() {
-  char *filename = "test_data.csv";
+  char *filename = "/led_control/data/test_data.csv";
   char *header = "Res x, Res y, boolean, test";
   char *data = "640, 480, 1, #FF00AA";
 
