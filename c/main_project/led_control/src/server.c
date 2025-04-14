@@ -314,7 +314,7 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
   }
 
   if(strncmp(url, "/led-settings", 14) == 0) {
-    return handle_post_led_settings(connection, upload_data, upload_data_size);
+    return handle_post_led_settings(connection, post_data, sizeof(post_data));
   } else {
     // Send a response back to the client
     led_settings.brightness = 125;
