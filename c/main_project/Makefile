@@ -5,7 +5,7 @@ INC_DIR = /usr/local/include
 LIB_DIR = /use/local/lib 
 
 # Compiler Flags
-CFLAGS = -I$(INC_DIR)
+CFLAGS = -I$(INC_DIR) -I./cJSON
 LDFLAGS = -I$(LIB_DIR) -lcjson -lmicrohttpd -lws2811 -pthread -lrt -lgnutls -lm
 
 # Source Files
@@ -21,7 +21,8 @@ MAIN_SRC = led_control/src/server.c \
 					 led_control/src/main.c \
 					 led_control/src/screen_capture.c \
 					 led_control/src/screen_capture_functions.c \
-					 led_control/src/csv_control.c
+					 led_control/src/csv_control.c \
+					 cJSON/cJSON.c
 
 CAPTURE_SRC = led_control/test/capture_test.c \
 							led_control/test/screen_capture_functions.c

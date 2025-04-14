@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <cjson/cJSON.h>
+#include "../../cJSON/cJSON.h"
 #include "led_functions.h"
 #include "main.h"
 #include "csv_control.h"
