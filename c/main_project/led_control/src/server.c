@@ -90,8 +90,6 @@ char* next_token(char **line) {
     }
     return token_start;
 }
-
-
 int parse_led_settings_data_to_string(char *str) {
     return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
         led_settings.brightness,
@@ -114,28 +112,28 @@ int initialize_led_settings() {
         led_settings.brightness = atoi(next_token(&line_ptr));
         printf("Brightness: %d\n", led_settings.brightness);
         char *hex = next_token(&line_ptr);
-        printf("Hex string: %s\n", hex);
+        //printf("Hex string: %s\n", hex);
         if(hex) {
             char *hex_ptr = (hex[0] == '#') ? hex + 1 : hex;
-            printf("Hex ptr: %s\n", hex_ptr);
+            //printf("Hex ptr: %s\n", hex_ptr);
             led_settings.color = (int)strtol(hex_ptr, NULL, 16);
         } else {
             led_settings.color = 0xDFC57B;
         }
-        printf("Color: #%06lX\n", led_settings.color);
+        //printf("Color: #%06lX\n", led_settings.color);
         led_settings.capture_screen = atoi(next_token(&line_ptr));
-        printf("Capture screen: %d\n", led_settings.capture_screen);
+        //printf("Capture screen: %d\n", led_settings.capture_screen);
         led_settings.sound_react = atoi(next_token(&line_ptr));
-        printf("sound react: %d\n", led_settings.sound_react);
+        //printf("sound react: %d\n", led_settings.sound_react);
         led_settings.fx_num = atoi(next_token(&line_ptr));
-        printf("fx num: %d\n", led_settings.fx_num);
+        //printf("fx num: %d\n", led_settings.fx_num);
         led_settings.count = atoi(next_token(&line_ptr));
-        printf("count: %d\n", led_settings.count);
+        //printf("count: %d\n", led_settings.count);
         led_settings.id = atoi(next_token(&line_ptr));
-        printf("id: %d\n", led_settings.id);
+        //printf("id: %d\n", led_settings.id);
         char buffer[256];
         parse_led_settings_data_to_string(buffer);
-        printf("Current LED settings: %s", buffer);
+        printf("Current LED settings: %s\n", buffer);
         return 0;
     } else {
         perror("Unable to read from led_settings.csv!!\n");
@@ -174,6 +172,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    set_strip_32int_color(led_settings.color);
+    set_brightness(led_settings.brightness);
     show_strip();
 
     // Keep the server running until stopped
