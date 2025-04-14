@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
           'id': 0
       };
 
+      console.log(JSON.stringify(data));
+
       // Send the data using the Fetch API
       fetch('/led-settings', {
           method: 'POST',
