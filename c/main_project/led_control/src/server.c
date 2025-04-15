@@ -304,7 +304,7 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
 }
 
 int parse_sc_settings_data_to_string(char *str, CaptureSettings *settings) {
-    return sprintf(str, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+    return sprintf(str, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
         settings->v_offset,
         settings->h_offset,
         settings->avg_color,
@@ -315,7 +315,8 @@ int parse_sc_settings_data_to_string(char *str, CaptureSettings *settings) {
         settings->res_x,
         settings->res_y,
         settings->blend_depth,
-        settings->blend_mode
+        settings->blend_mode,
+        settings->auto_offset
     );
 }
 
