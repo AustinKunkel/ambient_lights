@@ -309,17 +309,22 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
   
   // Check if this is the first call or subsequent call
   if (*upload_data_size > 0) {
-  strncpy(post_data, upload_data, *upload_data_size);
-  post_data[*upload_data_size] = '\0'; // Ensure null termination
-  
-  printf("Received POST data: %s\n\n", post_data);
-  
-  *upload_data_size = 0; // Reset to indicate data has been processed
-  return MHD_YES; // Return YES to indicate more data may come
+    size_t len = *upload_data_size;
+    if (len >= sizeof(post_data)) len = sizeof(post_data) - 1;
+
+    memcpy(post_data, upload_data, len);
+    post_data[len] = '\0'; // Ensure null-terminated string
+
+    printf("UPLOAD DATA (%zu): %s\n", len, post_data); // Optional debug log
+
+    *upload_data_size = 0; // Reset to tell MHD data is processed
+    return MHD_YES;        // Continue processing (calls this function again with size 0)
   }
 
   if(strncmp(url, "/led-settings", 14) == 0) {
-    return handle_post_led_settings(connection, post_data);
+    if(*upload_data_size == 0) {
+        return handle_post_led_settings(connection, post_data);
+    }
   } else {
     // Send a response back to the client
     led_settings.brightness = 125;
