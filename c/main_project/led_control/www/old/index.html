@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambient Lights in C</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Welcome to my Ambient Lights in C!</h1>
+    <p>This page is served using <code>libmicrohttpd</code>!</p>
+    <button onclick="showMessage()">Click Me</button>
+    <button onclick="sendGet()">Send get</button>
+    <button onclick="sendPost()">Send post</button>
+    <button onclick="sendDelete()">Send Delete</button>
+    <label for="brightness">Brightness:</label>
+    <input type="range" id="brightness-slider" name="brightness" min="0" max="255" value="255" step="1">
+    <span id="brightness-value">255</span>
+    <script src="script.js"></script>
+</body>
+</html>

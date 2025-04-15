@@ -1,21 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ambient Lights in C</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Ambient LED Control</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/screen_capture.css">
+
+    <link rel="icon" href="favicon.ico">
+
+    <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
+    <script src="https://kit.fontawesome.com/1afd99e2c1.js" crossorigin="anonymous"></script>
+
+    <script src="js/request-handler.js"></script>
+    <script src="js/modal-handler.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/sound_effects.js"></script>
+
 </head>
 <body>
-    <h1>Welcome to my Ambient Lights in C!</h1>
-    <p>This page is served using <code>libmicrohttpd</code>!</p>
-    <button onclick="showMessage()">Click Me</button>
-    <button onclick="sendGet()">Send get</button>
-    <button onclick="sendPost()">Send post</button>
-    <button onclick="sendDelete()">Send Delete</button>
-    <label for="brightness">Brightness:</label>
-    <input type="range" id="brightness-slider" name="brightness" min="0" max="255" value="255" step="1">
-    <span id="brightness-value">255</span>
-    <script src="script.js"></script>
+    <div id="add-color-menu" style="display: none;">
+        <button onclick="closeAddColorMenu()"><i class="fa-regular fa-circle-xmark"></i></button>
+        
+        <button onclick="addUserColor()">Add current color</button>
+        <form onsubmit="addUserColor(document.getElementById('add-user-color-input').value, event)">
+            <div class="input-field">
+                <input type="text" placeholder="#FFFFFF" value="#FFFFFF" id="add-user-color-input" oninput="checkUserColor()">
+                <div class="error-container color-input-error-label" id="color-input-error-label" style="display: none">
+                    <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+                    <div class="error-text">Not a valid hex!</div>
+                </div>
+            </div>
+
+            <button type="submit" class="save" id="save-user-color">Save</button>
+        </form>
+    </div>
+
+    <div class="message-container" id="message-container" style="display: none">
+        <i id="message-icon"></i>
+        <div id="modal-message"></div>
+    </div>
+
+    <div class="color-picker">
+        <i class="fa-solid fa-power-off"></i>
+        <script src="{{ url_for('static', filename='js/color-wheel.js') }}"></script>
+    </div>
+
+    <div class="input-field">
+        <input id="color-code-input" oninput="changeColor()"></i></input>
+    
+        <div class="error-container color-input-error-label" id="color-input-error-label" style="display: none">
+            <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+            <div class="error-text">Not a valid hex!</div>
+        </div>
+    </div>
+
+    <div id="color-easy-container" class="color-easy-container"></div>
+
+    <div class="led-settings">
+        <h1>LED settings</h1>
+        <label for="brightness-input">Brightness</label>
+        <input type="range" id="brightness-input" min="0" max="255" value="50" step="1">
+
+        <label for="count-input">Count</label>
+        <input 
+            type="number" 
+            name="count-input" 
+            id="count-input" 
+            min="0" 
+            max="400"
+            step="1">
+    </div>
+
+    <div class="screen-capt-settings">
+        <h1>Screen capture settings</h1>
+        <button onclick="getCapture()" id="capture_button">Capture Screen</button>
+        
+        <div class="offsets">
+            <div>
+                <label for="v-offset-input">V-Offset</label>
+                <input 
+                    class="offsets-input"
+                    type="number" 
+                    name="v-offset-input" 
+                    id="v-offset-input" 
+                    placeholder="0"
+                    min="0"
+                    max="500"
+                    step="1">
+            </div>
+
+            <div>
+                <label for="h-offset-input">H-Offset</label>
+                <input
+                    class="offsets-input"
+                    type="number" 
+                    name="h-offset-input" 
+                    id="h-offset-input" 
+                    placeholder="0" 
+                    min="0"
+                    max="500"
+                    step="1">   
+            </div>
+        </div>
+        <div>
+            <input type="checkbox" name="avg-scrn-color-check" id="avg-scrn-color-check">
+            <label for="avg-scrn-color-check">Use average color</label>
+        </div>
+        <div>
+            <input type="checkbox" name="snd-rct-check" id="snd-rct-check" onclick="showScrnAndSndReactOptions()">
+            <label for="snd-rct-check">React to sound</label>
+        </div>
+
+        <div>
+            <input type="checkbox" name="blend-mode-check" id="blend-mode-check">
+            <label for="blend-mode-check">Blend Mode</label>
+            <input type="number" name="blend-depth-input" id="blend-depth-input" min="1" step="1">
+            <label for="blend-depth-input">Blend Depth</label>
+        </div>
+
+        <div id="scrn-sound-react-options" style="display: none;">
+            <select name="sound-effect-select" id="sound-effect-select">
+            </select>
+        </div>
+
+        <h3>LED counts</h3>
+        <div class="led-counts">
+            <div class="led-count-input-group">
+                <label for="left-led-count">Left </label>
+                <input type="number" name="left-led-count" id="left-led-count" min="0">
+            </div>
+
+            <div class="led-count-input-group">
+                <label for="right-led-count">Right</label>
+                <input type="number" name="right-led-count" id="right-led-count" min="0">
+            </div>
+
+            <div class="led-count-input-group">
+                <label for="top-led-count">Top</label>
+                <input type="number" name="top-led-count" id="top-led-count" min="0">
+            </div>
+
+            <div class="led-count-input-group">
+                <label for="bottom-led-count">Bottom</label>
+                <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">
+            </div>
+
+            <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
+        </div>
+
+        <h3>Screen Capture Resolution</h3>
+        <div class="resolution-settings">
+            <h4>Custom Resolution: </h4>
+            <div class="custom-resolution">
+                <label for="custom-res-width">width:</label>
+                <input 
+                    type="number" 
+                    name="custom-res-width" 
+                    id="custom-res-width" 
+                    min="640"
+                    step="1"
+                    onchange="handleCustomResolutionChange()">
+                <label for="custom-res-height">height:</label>
+                <input 
+                    type="number" 
+                    name="custom-res-height" 
+                    id="custom-res-height" 
+                    min="480"
+                    step="1"
+                    onchange="handleCustomResolutionChange()">
+                <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
+            </div>
+            <h4>16x9 Capture Resolutions:</h4>
+            <select name="resolutions" id="resolution-dropdown" onchange="handleDefaultResolutionChange(this)">
+                <option value="640x480">640x480</option>
+                <option value="720x480">720x480</option>
+                <option value="720x576">720x576</option>
+                <option value="800x600">800x600</option>
+                <option value="1024x768">1024x768</option>
+                <option value="1280x720">1280x720</option>
+                <option value="1280x960">1280x960</option>
+                <option value="1280x1024">1280x1024</option>
+                <option value="1360x768">1360x768</option>
+                <option value="1600x1200">1600x1200</option>
+                <option value="1920x1080">1920x1080</option>
+            </select>
+            <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
+        </div> 
+
+        <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
+    </div>
 </body>
 </html>
+
