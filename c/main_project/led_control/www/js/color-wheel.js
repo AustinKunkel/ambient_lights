@@ -229,8 +229,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         isCapturing = !isCapturing;
 
         requestCapture(isCapturing ? 1 : 0).then((data) => {
-            isCapturing = data['capt'] >= 1;
-
+            isCapturing = !isCapturing;
             window.updateCaptureButton(isCapturing);
         })
     }
