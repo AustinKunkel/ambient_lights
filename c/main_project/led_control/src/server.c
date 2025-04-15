@@ -179,6 +179,37 @@ int handle_get_api_request(struct MHD_Connection *connection, const char *url) {
     return ret;
 }
 
+int handle_get_led_settings_request(struct MHD_Connection *connection, const char *url) {
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(root, "status", "ok");
+    cJSON_AddNumberToObject(root, "code", 200);
+
+    cJSON *data = cJSON_CreateObject();
+    cJSON_AddNumberToObject(data, "brightness", led_settings.brightness);
+    char color_str[8]; // "#RRGGBB" + null terminator = 8 bytes 
+    snprintf(color_str, sizeof(color_str), "#%06X", led_settings.color);
+    cJSON_AddStringToObject(data, "color", color_str);
+    cJSON_AddNumberToObject(data, "capture_screen", led_settings.capture_screen);
+    cJSON_AddNumberToObject(data, "sound_react", led_settings.sound_react);
+    cJSON_AddNumberToObject(data, "fx_num", led_settings.fx_num);
+    cJSON_AddNumberToObject(data, "count", led_settings.count);
+    cJSON_AddNumberToObject(data, "id", led_settings.id);
+
+    cJSON_AddItemToObject(root, "json", data);
+    char *json_str = cJSON_PrintUnformatted(root);  // Caller must free this
+    cJSON_Delete(root);
+    
+    struct MHD_Response *response;
+    response = MHD_create_response_from_buffer(strlen(json_str), (void *)json_str, MHD_RESPMEM_MUST_FREE);
+
+    MHD_add_response_header(response, "Content-Type", "application/json");
+    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    
+    MHD_destroy_response(response);
+    return ret;
+}
+
 int handle_serve_static_files(struct MHD_Connection *connection, const char *url) {
     char file_path[512];
     struct stat file_stat;
@@ -217,6 +248,8 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
    
     if(strncmp(url, "/api", 4) == 0) {
       return handle_get_api_request(connection, url);
+    } else if(strncmp(url, "/led-settings", 13) == 0) {
+      return handle_get_led_settings_request(connection, url);
     } else {
       return handle_serve_static_files(connection, url);
     }

@@ -18,6 +18,27 @@
       console.log("Error: ", error);
     }
   }
+
+  async function sendLedSettingsGet() {
+    try {
+      const response = await fetch("/led-settings", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+      });
+
+      if(!response.ok) {
+        message_pop_up(TYPE.ERROR, "Error getting settings:\n", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      message_pop_up(TYPE.ERROR, "Error:", error);
+      console.error("Error:", error)
+    }
+  }
   
   async function requestCapture(isCapture) {
     const data = {

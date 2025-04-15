@@ -8,6 +8,12 @@ led_settings = {
   'id' : 2
 }
 
+function sendGetLedSettings() {
+  sendLedSettingsGet().then((data) => {
+    console.log(data);
+  })
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
 
   requestGetLedSettings().then( data => {
