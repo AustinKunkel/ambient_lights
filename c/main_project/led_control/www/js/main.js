@@ -23,8 +23,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   requestGetCaptSettings().then (data => {
     updateCaptSettings(data)
   })
-
+  const brightnessValue = document.getElementById("brightness-value");
   const brightnessInput = document.getElementById("brightness-input")
+  brightnessInput.addEventListener("change", () => {
+    brightnessValue.textContent = brightnessInput.value;
+  })
   brightnessInput.addEventListener("input", () => {
       led_settings.brightness = Number(brightnessInput.value)
       sendLedSettingsPost(led_settings).then(()=> {
