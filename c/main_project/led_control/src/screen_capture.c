@@ -131,10 +131,6 @@ int auto_align_offsets() {
           not_black = true;
           break;
       }
-      if(color > 0) {
-        not_black = true;
-        break;
-      }
     }
     if(!not_black) { // the current column is all black (we want to read farther in)
       sc_settings.h_offset += 2;
