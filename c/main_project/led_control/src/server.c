@@ -247,7 +247,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   }
 
 int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data) {
-    //printf("%s\n", upload_data);
+    printf("%s\n", upload_data);
     printf("Upload data length: %zu\n", strlen(upload_data)); // Check length
     //const char *test = "{\"brightness\":\"71\",\"color\":\"#FFFFFF\",\"capture_screen\":0,\"sound_react\":0,\"fx_num\":0,\"count\":206,\"id\":0}";
     cJSON *json = cJSON_Parse(upload_data);
