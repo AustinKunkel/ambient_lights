@@ -272,7 +272,7 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     cJSON *count = cJSON_GetObjectItemCaseSensitive(json, "count");
     cJSON *id = cJSON_GetObjectItemCaseSensitive(json, "id");
 
-    LEDSettings temp_settings; // used to compare passed values with current led settings
+    LEDSettings temp_settings = led_settings; // used to compare passed values with current led settings
 
     if (cJSON_IsNumber(brightness)) temp_settings.brightness = brightness->valueint;
     if (cJSON_IsString(color) && color->valuestring) {
@@ -289,6 +289,13 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     const char *response_text;
 
     int just_brightness = 0;
+
+    printf("Compare: brightness: %d vs %d, color: %06X vs %06X, fx: %d vs %d\n",
+        temp_settings.brightness, led_settings.brightness,
+        temp_settings.color, led_settings.color,
+        temp_settings.fx_num, led_settings.fx_num);
+
+        
     if(temp_settings.color == led_settings.color &&
        temp_settings.capture_screen == led_settings.capture_screen &&
        temp_settings.sound_react == led_settings.sound_react &&
