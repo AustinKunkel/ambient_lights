@@ -12,6 +12,7 @@
 #include "led_functions.h"
 #include "screen_capture.h"
 #include "screen_capture_functions.h"
+#include "csv_control.h"
 
 #define DEVICE "/dev/video0"
 #define WIDTH  640
@@ -20,27 +21,13 @@
 #define RIGHT 0
 #define TOP 1
 #define BOTTOM 3
+#define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
 int LED_COUNT = 206;  // Number of LEDs
 
 volatile bool stop_capture = false;
-bool blend_mode_active = true;
 pthread_t capture_thread;
 
 void *capture_loop(void *);
-
-struct CaptureSettings {
-  int v_offset;
-  int h_offset;
-  int avg_color;
-  int left_count;
-  int top_count;
-  int right_count;
-  int bottom_count;
-  int res_x;
-  int res_y;
-  short blend_mode;
-  int blend_depth;
-};
 
 struct led_position {
   int x;
@@ -50,28 +37,85 @@ struct led_position {
 
 struct led_position *led_positions;
 
-struct CaptureSettings sc_settings;
+CaptureSettings sc_settings;
 
 /**
- * Uses the sc_settings variable and initailizes the struct based on json file
+ * Helper function to get the next token in a csv line
+ */
+char* next_token(char **line) {
+  if (*line == NULL || **line == '\0') return NULL; // No more tokens or empty string
+
+  // Skip any leading spaces or tabs
+  while (**line == ' ' || **line == '\t') {
+      (*line)++;
+  }
+
+  // If we reached the end of the string, return NULL
+  if (**line == '\0') return NULL;
+
+  // Find the next delimiter (comma or end of line)
+  char *token_start = *line;
+  while (**line && **line != ',' && **line != '\n') {
+      (*line)++;
+  }
+  // If we reached a comma, replace it with null terminator
+  if (**line == ',' || **line == '\n') {
+      **line = '\0';
+      (*line)++; // Move past the delimiter
+  }
+  return token_start;
+}
+
+/**
+ * Uses the sc_settings variable and initailizes the struct based on csv file
  * 
  * currently uses default values
  */
 bool initialize_settings() {
-  sc_settings = (struct CaptureSettings) {
-    .h_offset = 0,
-    .avg_color = 0,
-    .left_count = 36,
-    .top_count = 66,
-    .right_count = 37,
-    .bottom_count = 67,
-    .res_x = 640,
-    .res_y = 480,
-    .blend_depth = 5,
-    .blend_mode = 0
-  };
+  char data_line[512];
+  printf("reading sc_settings.csv...\n");
+  if(read_one_line(SC_SETTINGS_FILENAME, data_line, sizeof(data_line)) == 0)
+  {
+    char *line_ptr = data_line;
+    printf("Setting sc settings variables...\n");
+    sc_settings.v_offset = atoi(next_token(&line_ptr));
+    printf("v_offset: %d\t", sc_settings.v_offset);
+    
+    sc_settings.h_offset = atoi(next_token(&line_ptr));
+    printf("h_offset: %d\t", sc_settings.h_offset);
+    
+    sc_settings.avg_color = atoi(next_token(&line_ptr));
+    printf("avg_color: %d\t", sc_settings.avg_color);
+    
+    sc_settings.left_count = atoi(next_token(&line_ptr));
+    printf("left_count: %d\t", sc_settings.left_count);
+    
+    sc_settings.right_count = atoi(next_token(&line_ptr));
+    printf("right_count: %d\t", sc_settings.right_count);
+    
+    sc_settings.top_count = atoi(next_token(&line_ptr));
+    printf("top_count: %d\t", sc_settings.top_count);
+    
+    sc_settings.bottom_count = atoi(next_token(&line_ptr));
+    printf("bottom_count: %d\t", sc_settings.bottom_count);
+    
+    sc_settings.res_x = atoi(next_token(&line_ptr));
+    printf("res_x: %d\t", sc_settings.res_x);
+    
+    sc_settings.res_y = atoi(next_token(&line_ptr));
+    printf("res_y: %d\t", sc_settings.res_y);
+    
+    sc_settings.blend_depth = atoi(next_token(&line_ptr));
+    printf("blend_depth: %d\t", sc_settings.blend_depth);
+    
+    sc_settings.blend_mode = atoi(next_token(&line_ptr));
+    printf("blend_mode: %d\t", sc_settings.blend_mode);    
 
-  return true;
+    return true;
+  } else {
+    perror("Unable to read from sc_settings.csv!!\n");
+    return false;
+  }
 }
 
 void setup_left_side(int, struct led_position*, int, int, int, int);
@@ -154,7 +198,7 @@ int auto_align_offsets() {
  * Sets up the LEDs with screen capture.
  */
 int setup_strip_capture(ws2811_t *strip) {
-  int LED_COUNT = strip->channel[0].count;
+  LED_COUNT = led_settings.count;
   printf("Mallocing led positions...\n");
   led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
   if (led_positions == NULL) {
@@ -268,7 +312,7 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
-  if(setup_strip(strip->channel[0].count)) {
+  if(setup_strip(LED_COUNT)) {
     printf("Failed to initialize LED strip!\n");
     return 1;
   } 
@@ -310,7 +354,7 @@ void *capture_loop(void *strip_ptr) {
     return NULL;
   }
   //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
-
+  bool blend_mode_active = sc_settings.blend_mode > 0;
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);

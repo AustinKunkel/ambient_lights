@@ -13,6 +13,8 @@
 #define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
 #define LED_SETTINGS_FILENAME "led_control/data/led_settings.csv"
 #define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
+#define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
+#define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
 #define PORT 8080
 
 static struct MHD_Daemon *server;  // Declare server globally
@@ -93,6 +95,7 @@ char* next_token(char **line) {
     }
     return token_start;
 }
+
 int parse_led_settings_data_to_string(char *str) {
     return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
         led_settings.brightness,
@@ -244,7 +247,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
     } else {
       return handle_serve_static_files(connection, url);
     }
-  }
+}
 
 int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data) {
     //printf("%s\n", upload_data);
@@ -296,7 +299,87 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     int ret = MHD_queue_response(connection, response_code, response);
     MHD_destroy_response(response);
 
-    //update_leds();
+    return ret;
+}
+
+int parse_sc_settings_data_to_string(char *str, CaptureSettings *settings) {
+    return sprintf(str, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+        settings->v_offset,
+        settings->h_offset,
+        settings->avg_color,
+        settings->left_count,
+        settings->right_count,
+        settings->top_count,
+        settings->bottom_count,
+        settings->res_x,
+        settings->res_y,
+        settings->blend_depth,
+        settings->blend_mode
+    );
+}
+
+int handle_post_sc_settings(struct MHD_Connection *connection, const char *upload_data) {
+    cJSON *json = cJSON_Parse(upload_data);
+    if(!json) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return 1;
+    }
+    cJSON *v_offset = cJSON_GetObjectItemCaseSensitive(json, "v_offset");
+    cJSON *h_offset = cJSON_GetObjectItemCaseSensitive(json, "h_offset");
+    cJSON *avg_color = cJSON_GetObjectItemCaseSensitive(json, "avg_color");
+    cJSON *left_count = cJSON_GetObjectItemCaseSensitive(json, "left_count");
+    cJSON *right_count = cJSON_GetObjectItemCaseSensitive(json, "right_count");
+    cJSON *top_count = cJSON_GetObjectItemCaseSensitive(json, "top_count");
+    cJSON *bottom_count = cJSON_GetObjectItemCaseSensitive(json, "bottom_count");
+    cJSON *res_x = cJSON_GetObjectItemCaseSensitive(json, "res_x");
+    cJSON *res_y = cJSON_GetObjectItemCaseSensitive(json, "res_y");
+    cJSON *blend_depth = cJSON_GetObjectItemCaseSensitive(json, "blend_depth");
+    cJSON *blend_mode = cJSON_GetObjectItemCaseSensitive(json, "blend_mode");
+
+    CaptureSettings temp_settings = { // some default values that are guaranteed
+        .v_offset = 0,
+        .h_offset = 0,
+        .avg_color = 0,
+        .left_count = 36,
+        .top_count = 66,
+        .right_count = 37,
+        .bottom_count = 67,
+        .res_x = 640,
+        .res_y = 480,
+        .blend_depth = 5,
+        .blend_mode = 0
+    };
+
+    if (cJSON_IsNumber(left_count)) temp_settings.left_count = left_count->valueint;
+    if (cJSON_IsNumber(right_count)) temp_settings.right_count = right_count->valueint;
+    if (cJSON_IsNumber(top_count)) temp_settings.top_count = top_count->valueint;
+    if (cJSON_IsNumber(bottom_count)) temp_settings.bottom_count = bottom_count->valueint;
+    if (cJSON_IsNumber(res_x)) temp_settings.res_x = res_x->valueint;
+    if (cJSON_IsNumber(res_y)) temp_settings.res_y = res_y->valueint;
+    if (cJSON_IsNumber(blend_depth)) temp_settings.blend_depth = blend_depth->valueint;
+    if (cJSON_IsNumber(blend_mode)) temp_settings.blend_mode = blend_mode->valueint;
+
+    cJSON_Delete(json);
+    const char *response_text;
+    int response_code;
+
+    char capt_settings_str[256];
+    parse_sc_settings_data_to_string(capt_settings_str, &temp_settings);
+    //printf("current led settings: %s\n", led_settings_str);
+    if(write_data(SC_SETTINGS_FILENAME, SC_SETTINGS_HEADER, capt_settings_str)) {
+        printf("Failed to write sc_settings\n");
+        response_text = "{\"Error\":\"Failed to write sc settings\"}";
+        response_code = MHD_HTTP_INTERNAL_SERVER_ERROR;
+    } else { // success
+        response_text = update_leds();
+        response_code = MHD_HTTP_OK;
+    }
+    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
+                                                  (void *)response_text, 
+                                                  MHD_RESPMEM_PERSISTENT);
+    int ret = MHD_queue_response(connection, response_code, response);
+    MHD_destroy_response(response);
+
     return ret;
 }
   
@@ -328,8 +411,9 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
 
   // All data received; now process
   if(strncmp(url, "/led-settings", 14) == 0) {
-    int ret = handle_post_led_settings(connection, post_data);
-    return ret;
+    return handle_post_led_settings(connection, post_data);
+  } else if(strncmp(url, "/sc-settings", 13) == 0) {
+    return handle_post_sc_settings(connection, post_data);
   } else {
     // Send a response back to the client
     led_settings.brightness = 125;
