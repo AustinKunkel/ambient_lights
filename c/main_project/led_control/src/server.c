@@ -239,20 +239,46 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     cJSON *count = cJSON_GetObjectItemCaseSensitive(json, "count");
     cJSON *id = cJSON_GetObjectItemCaseSensitive(json, "id");
 
-    if (cJSON_IsNumber(brightness)) led_settings.brightness = brightness->valueint;
+    LEDSettings temp_settings; // used to compare passed values with current led settings
+
+    if (cJSON_IsNumber(brightness)) temp_settings.brightness = brightness->valueint;
     if (cJSON_IsString(color) && color->valuestring) {
         const char *hex = color->valuestring;
-        led_settings.color = (int)strtol(hex[0] == '#' ? hex + 1 : hex, NULL, 16);
+        temp_settings.color = (int)strtol(hex[0] == '#' ? hex + 1 : hex, NULL, 16);
     }
-    if (cJSON_IsNumber(capture_screen)) led_settings.capture_screen = capture_screen->valueint;
-    if (cJSON_IsNumber(sound_react)) led_settings.sound_react = sound_react->valueint;
-    if (cJSON_IsNumber(fx_num)) led_settings.fx_num = fx_num->valueint;
-    if (cJSON_IsNumber(count)) led_settings.count = count->valueint;
-    if (cJSON_IsNumber(id)) led_settings.id = id->valueint;
-
+    if (cJSON_IsNumber(capture_screen)) temp_settings.capture_screen = capture_screen->valueint;
+    if (cJSON_IsNumber(sound_react)) temp_settings.sound_react = sound_react->valueint;
+    if (cJSON_IsNumber(fx_num)) temp_settings.fx_num = fx_num->valueint;
+    if (cJSON_IsNumber(count)) temp_settings.count = count->valueint;
+    if (cJSON_IsNumber(id)) temp_settings.id = id->valueint;
     cJSON_Delete(json);
 
     const char *response_text;
+
+    int just_brightness = 0;
+    if(temp_settings.color == led_settings.color &&
+       temp_settings.capture_screen == led_settings.capture_screen &&
+       temp_settings.sound_react == led_settings.sound_react &&
+       temp_settings.fx_num == led_settings.fx_num &&
+       temp_settings.count == led_settings.count &&
+       temp_settings.id == led_settings.id)
+    {
+    // if only the brightness could be different, no need to stop any services,
+    // just change brightness
+        led_settings.brightness = temp_settings.brightness;
+        update_led_vars();
+        response_text = "{\"Success\":\"Changed brightness\"}";
+        just_brightness = 1;
+    } else { // some other variable has changed, we will update led_settings
+        led_settings.brightness = temp_settings.brightness;
+        led_settings.color = temp_settings.color;
+        led_settings.capture_screen = temp_settings.capture_screen;
+        led_settings.sound_react = temp_settings.sound_react;
+        led_settings.fx_num = temp_settings.fx_num;
+        led_settings.count = temp_settings.count;
+        led_settings.id = temp_settings.id;
+    }
+
     int response_code;
 
     char led_settings_str[256];
@@ -263,7 +289,9 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
         response_text = "{\"Error\":\"Failed to write led settings\"}";
         response_code = MHD_HTTP_INTERNAL_SERVER_ERROR;
     } else { // success
-        response_text = update_leds();
+        if(!just_brightness) { // dont reset the led strip and everything
+            response_text = update_leds();
+        }
         response_code = MHD_HTTP_OK;
     }
     struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
