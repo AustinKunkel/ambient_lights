@@ -309,6 +309,7 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
     // If there's upload data, accumulate it
     if (*upload_data_size > 0) {
         size_t len = *upload_data_size;
+        printf("[DEBUG] Received chunk (%zu bytes): %.*s\n", len, (int)len, upload_data);
 
         // Prevent overflow
         if (post_data_offset + len >= sizeof(post_data)) {
