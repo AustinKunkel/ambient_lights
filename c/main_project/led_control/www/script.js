@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Prepare the data to be sent in JSON format
       const data = {
-          'brightness': brightness,
+          'brightness': Number(brightness),
           'color': '#FFFFFF',
           'capture_screen': 0,
           'sound_react': 0,
