@@ -247,10 +247,11 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   }
 
 int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data) {
-    printf("%s", upload_data);
+    printf("%s\n", upload_data);
+    printf("Upload data length: %zu\n", strlen(upload_data)); // Check length
     cJSON *json = cJSON_Parse(upload_data);
     if(!json) {
-        fprintf(stderr, "Error parsing JSON\n");
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
         return 1;
     }
     cJSON *brightness = cJSON_GetObjectItemCaseSensitive(json, "brightness");
@@ -310,7 +311,7 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
   strncpy(post_data, upload_data, *upload_data_size);
   post_data[*upload_data_size] = '\0'; // Ensure null termination
   
-  printf("Received POST data: %s\n", post_data);
+  printf("Received POST data: %s\n\n", post_data);
   
   *upload_data_size = 0; // Reset to indicate data has been processed
   return MHD_YES; // Return YES to indicate more data may come
