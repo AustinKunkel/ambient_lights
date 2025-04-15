@@ -33,7 +33,7 @@
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      return await response.json();
+      return await response.json().data;
     } catch (error) {
       message_pop_up(TYPE.ERROR, "Error:", error);
       console.error("Error:", error)

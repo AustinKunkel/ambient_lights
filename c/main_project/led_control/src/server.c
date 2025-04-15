@@ -196,7 +196,7 @@ int handle_get_led_settings_request(struct MHD_Connection *connection, const cha
     cJSON_AddNumberToObject(data, "count", led_settings.count);
     cJSON_AddNumberToObject(data, "id", led_settings.id);
 
-    cJSON_AddItemToObject(root, "json", data);
+    cJSON_AddItemToObject(root, "data", data);
     char *json_str = cJSON_PrintUnformatted(root);  // Caller must free this
     cJSON_Delete(root);
     
