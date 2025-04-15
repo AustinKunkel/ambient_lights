@@ -261,7 +261,9 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     cJSON *count = cJSON_GetObjectItemCaseSensitive(json, "count");
     cJSON *id = cJSON_GetObjectItemCaseSensitive(json, "id");
 
-    if (cJSON_IsNumber(brightness)) led_settings.brightness = brightness->valueint;
+    if (cJSON_IsNumber(brightness) && brightness->valuestring) {
+        led_settings.brightness = atoi(brightness->valuestring);
+    }
     if (cJSON_IsString(color) && color->valuestring) {
         const char *hex = color->valuestring;
         led_settings.color = (int)strtol(hex[0] == '#' ? hex + 1 : hex, NULL, 16);
@@ -279,6 +281,7 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
 
     char led_settings_str[256];
     parse_led_settings_data_to_string(led_settings_str);
+    printf("current led settings: %s\n", led_settings_str);
     if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) {
         printf("Failed to write led_settings\n");
         response_text = "{\"Error\":\"Failed to write led settings\"}";
