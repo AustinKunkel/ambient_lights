@@ -18,7 +18,7 @@
 static struct MHD_Daemon *server;  // Declare server globally
 
 int handle_get_request(struct MHD_Connection*, const char*);
-int handle_post_request(struct MHD_Connection*, const char*, const char*, size_t*);
+int handle_post_request(struct MHD_Connection*, const char*, const char*, size_t*, void**);
 int handle_delete_request(struct MHD_Connection*, const char*);
 
 // Function to determine the Content-Type based on file extension
