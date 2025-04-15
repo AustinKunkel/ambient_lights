@@ -127,7 +127,7 @@ int auto_align_offsets() {
       }
     }
     if(!not_black) { // the current column is all black (we want to read farther in)
-      sc_settings.h_offset += 3;
+      sc_settings.h_offset += 2;
       break;
     }
     sc_settings.h_offset--;
@@ -140,31 +140,36 @@ int auto_align_offsets() {
   }
 
   // top/bottom (same condition applies)
-  not_black = false;
-  middle = HEIGHT / 2;
-  sc_settings.v_offset = middle;
-  for(int j = middle; j >= 0; j--) { // y
-    not_black = false;
-    for(int i = 0; i < WIDTH; i++) { // x
+  bool row_is_not_black = false;
+  int middle = HEIGHT / 2;
+  
+  for (int j = middle; j >= 0; j--) {
+    row_is_not_black = false;
+  
+    for (int i = 0; i < WIDTH; i++) {
       int index = (j * WIDTH + i) * 3;
       uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
       if(color > 0) {
-        not_black = true;
+        row_is_not_black = true;
         break;
       }
     }
-    if(!not_black) {
-      sc_settings.v_offset += 3;
+  
+    if (!row_is_not_black) {
+      // This row is all black. Set the offset to the row just below it.
+      sc_settings.v_offset = j + 1;
       break;
     }
-    sc_settings.v_offset--;
-
-    if(sc_settings.v_offset < 0) {
+  
+    // If we reach the top without finding a black row:
+    if (j == 0) {
       sc_settings.v_offset = 0;
-      break;
     }
-    printf("V Offest: %d\n", sc_settings.v_offset);
+  
+    printf("Checking row: %d\n", j);
   }
+  printf("Final V Offset: %d\n", sc_settings.v_offset);
+  
   free(rgb_buffer);
   return 0;
 }
