@@ -84,6 +84,9 @@ bool initialize_settings() {
     sc_settings.blend_mode = atoi(next_token(&line_ptr));
     printf("blend_mode: %d\t", sc_settings.blend_mode);    
 
+    sc_settings.auto_offset = atoi(next_token(&line_ptr));
+    printf("Auto offset: %d\n", sc_settings.auto_offset);
+
     WIDTH = sc_settings.res_x;
     HEIGHT = sc_settings.res_y;
 

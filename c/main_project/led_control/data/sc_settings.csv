@@ -1,2 +1,2 @@
-V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode
-0,0,0,36,37,66,67,640,480,5,1
+V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode, auto offset
+0,0,0,36,37,66,67,640,480,5,1, 1

@@ -1,3 +1,24 @@
+  async function sendLedSettingsPost(data) {
+    try {
+      const response = await fetch ('/led-settings', {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      
+      if (!response.ok) {
+        message_pop_up(TYPE.ERROR, "Error capturing screen", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+    } catch (error) {
+      message_pop_up(TYPE.ERROR, "Error capturing screen", error);
+      console.log("Error: ", error);
+    }
+  }
+  
   async function requestCapture(isCapture) {
     const data = {
       'brightness': 100,
@@ -9,7 +30,7 @@
       'id': 2
     };
     try {
-      const response = await fetch(`/led-settings`, {
+      const response = await fetch('/led-settings', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

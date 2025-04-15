@@ -336,6 +336,7 @@ int handle_post_sc_settings(struct MHD_Connection *connection, const char *uploa
     cJSON *res_y = cJSON_GetObjectItemCaseSensitive(json, "res_y");
     cJSON *blend_depth = cJSON_GetObjectItemCaseSensitive(json, "blend_depth");
     cJSON *blend_mode = cJSON_GetObjectItemCaseSensitive(json, "blend_mode");
+    cJSON *auto_offset = cJSON_GetObjectItemCaseSensitive(json, "auto_offset");
 
     CaptureSettings temp_settings = { // some default values that are guaranteed
         .v_offset = 0,
@@ -348,7 +349,8 @@ int handle_post_sc_settings(struct MHD_Connection *connection, const char *uploa
         .res_x = 640,
         .res_y = 480,
         .blend_depth = 5,
-        .blend_mode = 0
+        .blend_mode = 0,
+        .auto_offset = 1
     };
 
     if (cJSON_IsNumber(left_count)) temp_settings.left_count = left_count->valueint;
@@ -359,6 +361,7 @@ int handle_post_sc_settings(struct MHD_Connection *connection, const char *uploa
     if (cJSON_IsNumber(res_y)) temp_settings.res_y = res_y->valueint;
     if (cJSON_IsNumber(blend_depth)) temp_settings.blend_depth = blend_depth->valueint;
     if (cJSON_IsNumber(blend_mode)) temp_settings.blend_mode = blend_mode->valueint;
+    if (cJSON_IsNumber(auto_offset)) temp_settings.auto_offset = auto_offset->valueint;
 
     cJSON_Delete(json);
     const char *response_text;

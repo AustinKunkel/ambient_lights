@@ -1,3 +1,13 @@
+led_settings = {
+  'brightness' : 100,
+  'color' : "#FFFFFF",
+  'capture_screen' : 0,
+  'sound_react' : 0,
+  'fx_num' : 0,
+  'count' : 206,
+  'id' : 2
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
 
   requestGetLedSettings().then( data => {
@@ -10,15 +20,19 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const brightnessInput = document.getElementById("brightness-input")
   brightnessInput.addEventListener("input", () => {
-      brightness = brightnessInput.value
-      requestChangeBrightness(brightness)
+      led_settings.brightness = Number(brightnessInput.value)
+      sendLedSettingsPost(led_settings).then(()=> {
+        // request get settings and update led_settings
+      });
   })
 
   const countInput = document.getElementById("count-input")
   countInput.addEventListener("keydown", function(event) {
     if (event.key === "Enter") {
-      count = countInput.value
-      requestChangeLedCount(count)
+      led_settings.count = Number(countInput.value);
+      sendLedSettingsPost(led_settings).then(() => {
+        // request get settings and update led_settings
+      });
     }
   })
 
@@ -32,11 +46,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   const blendDepthInput = document.getElementById('blend-depth-input');
 
   function updateLedSettings(data) {
-    brightnessInput.value = Number(data.bri)
-    countInput.value = Number(data.cnt)
-    soundReact.checked = data.srea >= 1;
+    brightnessInput.value = Number(data.brightness)
+    countInput.value = Number(data.count)
+    soundReact.checked = data.sound_react >= 1;
     showScrnAndSndReactOptions()
-    isCapturing = data.capt >= 1;
+    isCapturing = data.capture_screen >= 1;
     updateCaptureButton(isCapturing)
   }
 

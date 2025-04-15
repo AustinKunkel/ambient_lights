@@ -15,6 +15,7 @@ typedef struct {
   int res_y;
   short blend_mode;
   int blend_depth;
+  short auto_offset;
 } CaptureSettings;
 
 typedef struct {
