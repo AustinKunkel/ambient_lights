@@ -66,3 +66,30 @@ int read_one_line(char *filename, char *output_line, size_t size) {
   fclose(fp);
   return 0;
 }
+
+/**
+ * Helper function to get the next token in a csv line
+ */
+char* next_token(char **line) {
+  if (*line == NULL || **line == '\0') return NULL; // No more tokens or empty string
+
+  // Skip any leading spaces or tabs
+  while (**line == ' ' || **line == '\t') {
+      (*line)++;
+  }
+
+  // If we reached the end of the string, return NULL
+  if (**line == '\0') return NULL;
+
+  // Find the next delimiter (comma or end of line)
+  char *token_start = *line;
+  while (**line && **line != ',' && **line != '\n') {
+      (*line)++;
+  }
+  // If we reached a comma, replace it with null terminator
+  if (**line == ',' || **line == '\n') {
+      **line = '\0';
+      (*line)++; // Move past the delimiter
+  }
+  return token_start;
+}

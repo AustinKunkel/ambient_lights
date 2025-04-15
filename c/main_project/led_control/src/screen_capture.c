@@ -15,14 +15,14 @@
 #include "csv_control.h"
 
 #define DEVICE "/dev/video0"
-#define WIDTH  640
-#define HEIGHT 480
 #define LEFT 2
 #define RIGHT 0
 #define TOP 1
 #define BOTTOM 3
 #define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
 int LED_COUNT = 206;  // Number of LEDs
+int WIDTH = 640;
+int HEIGHT = 480;
 
 volatile bool stop_capture = false;
 pthread_t capture_thread;
@@ -38,33 +38,6 @@ struct led_position {
 struct led_position *led_positions;
 
 CaptureSettings sc_settings;
-
-/**
- * Helper function to get the next token in a csv line
- */
-char* next_token(char **line) {
-  if (*line == NULL || **line == '\0') return NULL; // No more tokens or empty string
-
-  // Skip any leading spaces or tabs
-  while (**line == ' ' || **line == '\t') {
-      (*line)++;
-  }
-
-  // If we reached the end of the string, return NULL
-  if (**line == '\0') return NULL;
-
-  // Find the next delimiter (comma or end of line)
-  char *token_start = *line;
-  while (**line && **line != ',' && **line != '\n') {
-      (*line)++;
-  }
-  // If we reached a comma, replace it with null terminator
-  if (**line == ',' || **line == '\n') {
-      **line = '\0';
-      (*line)++; // Move past the delimiter
-  }
-  return token_start;
-}
 
 /**
  * Uses the sc_settings variable and initailizes the struct based on csv file
@@ -110,6 +83,9 @@ bool initialize_settings() {
     
     sc_settings.blend_mode = atoi(next_token(&line_ptr));
     printf("blend_mode: %d\t", sc_settings.blend_mode);    
+
+    WIDTH = sc_settings.res_x;
+    HEIGHT = sc_settings.res_y;
 
     return true;
   } else {

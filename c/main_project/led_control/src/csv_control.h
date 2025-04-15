@@ -6,3 +6,4 @@
 int write_data(char *, char *, char *);
 int append_data(char *, char *);
 int read_one_line(char *, char *, size_t);
+char *next_token(char **);
