@@ -24,12 +24,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     updateCaptSettings(data)
   })
   const brightnessValue = document.getElementById("brightness-value");
-  const brightnessInput = document.getElementById("brightness-input")
-  brightnessInput.addEventListener("change", () => {
-    brightnessValue.textContent = brightnessInput.value;
-  })
+  const brightnessInput = document.getElementById("brightness-input");
   brightnessInput.addEventListener("input", () => {
       led_settings.brightness = Number(brightnessInput.value)
+      brightnessValue.textContent = brightnessInput.value;
       sendLedSettingsPost(led_settings).then(()=> {
         // request get settings and update led_settings
       });

@@ -123,7 +123,14 @@ int auto_align_offsets() {
     for(int j = 0; j < HEIGHT; j++) { // y
       //index = (y * WIDTH + x) * 3;
       int index = (j * WIDTH + i) * 3;
-      uint32_t color = rgb_buffer[index] << 16 | rgb_buffer[index + 1] << 8 | rgb_buffer[index + 2];
+      uint8_t r = rgb_buffer[index];
+      uint8_t g = rgb_buffer[index + 1];
+      uint8_t b = rgb_buffer[index + 2];
+
+      if (r > 10 || g > 10 || b > 10) {
+          not_black = true;
+          break;
+      }
       if(color > 0) {
         not_black = true;
         break;
@@ -172,9 +179,7 @@ int auto_align_offsets() {
       sc_settings.v_offset = 0;
     }
   
-    printf("Checking row: %d\n", j);
   }
-  printf("Final V Offset: %d\n", sc_settings.v_offset);
   
   free(rgb_buffer);
   return 0;
