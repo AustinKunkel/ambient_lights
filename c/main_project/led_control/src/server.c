@@ -246,7 +246,7 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
     }
   }
 
-int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data, size_t *upload_data_size) {
+int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data) {
     printf("%s", upload_data);
     cJSON *json = cJSON_Parse(upload_data);
     if(!json) {
@@ -314,7 +314,7 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
   }
 
   if(strncmp(url, "/led-settings", 14) == 0) {
-    return handle_post_led_settings(connection, post_data, sizeof(post_data));
+    return handle_post_led_settings(connection, post_data);
   } else {
     // Send a response back to the client
     led_settings.brightness = 125;
