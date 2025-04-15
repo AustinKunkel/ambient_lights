@@ -303,26 +303,32 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
 int handle_post_request(struct MHD_Connection *connection, const char *url,
   const char *upload_data, size_t *upload_data_size) {
   
-  static char post_data[1024]; // Buffer to store received data
+  static char post_data[2048]; // Buffer to store received data
+  static size_t post_data_offset = 0;
   
-  // Check if this is the first call or subsequent call
-  if (*upload_data_size > 0) {
-    size_t len = *upload_data_size;
-    if (len >= sizeof(post_data)) len = sizeof(post_data) - 1;
+    // If there's upload data, accumulate it
+    if (*upload_data_size > 0) {
+        size_t len = *upload_data_size;
 
-    memcpy(post_data, upload_data, len);
-    post_data[len] = '\0'; // Ensure null-terminated string
+        // Prevent overflow
+        if (post_data_offset + len >= sizeof(post_data)) {
+            fprintf(stderr, "POST data too large\n");
+            return MHD_NO;
+        }
 
-    printf("UPLOAD DATA (%zu): %s\n", len, post_data); // Optional debug log
+        memcpy(post_data + post_data_offset, upload_data, len);
+        post_data_offset += len;
+        post_data[post_data_offset] = '\0'; // Null-terminate
 
-    *upload_data_size = 0; // Reset to tell MHD data is processed
-    return MHD_YES;        // Continue processing (calls this function again with size 0)
-  }
+        *upload_data_size = 0;
+        return MHD_YES;  // Tell MHD we’re ready for more (if any)
+    }
+
 
   if(strncmp(url, "/led-settings", 14) == 0) {
-    if(*upload_data_size == 0) {
-        return handle_post_led_settings(connection, post_data);
-    }
+    int ret = handle_post_led_settings(connection, post_data);
+    post_data_offset = 0;
+    return ret;
   } else {
     // Send a response back to the client
     led_settings.brightness = 125;
