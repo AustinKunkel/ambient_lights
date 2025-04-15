@@ -76,6 +76,7 @@ void update_led_vars() {
 void stop_current_task() {
     if(screen_capture_task.task_status == 1) {
         stop_capturing();
+        screen_capture_task.task_status = 0;
     }
     if(sound_effect_task.task_status == 1) {
         pthread_join(sound_effect_task.thread_id, NULL);
