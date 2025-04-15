@@ -247,8 +247,8 @@ int handle_get_request(struct MHD_Connection *connection, const char *url) {
   }
 
 int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data) {
-    printf("%s\n", upload_data);
-    printf("Upload data length: %zu\n", strlen(upload_data)); // Check length
+    //printf("%s\n", upload_data);
+    //printf("Upload data length: %zu\n", strlen(upload_data)); // Check length
     //const char *test = "{\"brightness\":\"71\",\"color\":\"#FFFFFF\",\"capture_screen\":0,\"sound_react\":0,\"fx_num\":0,\"count\":206,\"id\":0}";
     cJSON *json = cJSON_Parse(upload_data);
     if(!json) {
@@ -281,7 +281,7 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
 
     char led_settings_str[256];
     parse_led_settings_data_to_string(led_settings_str);
-    printf("current led settings: %s\n", led_settings_str);
+    //printf("current led settings: %s\n", led_settings_str);
     if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) {
         printf("Failed to write led_settings\n");
         response_text = "{\"Error\":\"Failed to write led settings\"}";
