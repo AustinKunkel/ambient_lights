@@ -340,6 +340,7 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
     int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
     MHD_destroy_response(response);
     
+    post_data_offset = 0;
     return ret; // Ensure a response is returned
   }
 }
