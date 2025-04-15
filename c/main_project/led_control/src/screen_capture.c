@@ -141,7 +141,7 @@ int auto_align_offsets() {
 
   // top/bottom (same condition applies)
   bool row_is_not_black = false;
-  int middle = HEIGHT / 2;
+  middle = HEIGHT / 2;
   
   for (int j = middle; j >= 0; j--) {
     row_is_not_black = false;
