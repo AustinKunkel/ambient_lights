@@ -21,8 +21,6 @@ struct capture_device {
 };
 
 struct capture_device dev; 
-int WIDTH = 640;
-int HEIGHT = 480;
 
 int setup_capture(int width, int height) {
 
@@ -33,15 +31,12 @@ int setup_capture(int width, int height) {
     return 1;
   }
 
-  WIDTH = width;
-  HEIGHT = height;
-
   // Configure device format
   struct v4l2_format format;
   memset(&format, 0, sizeof(format));
   format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  format.fmt.pix.width = WIDTH;
-  format.fmt.pix.height = HEIGHT;
+  format.fmt.pix.width = width;
+  format.fmt.pix.height = height;
   format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
 
   // Apply video format
