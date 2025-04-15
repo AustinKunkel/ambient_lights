@@ -290,10 +290,22 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
 
     int just_brightness = 0;
 
-    printf("Compare: brightness: %d vs %d, color: %06X vs %06X, fx: %d vs %d\n",
+    printf("Compare:\n"
+        "  brightness:      %d vs %d\n"
+        "  color:           #%06X vs #%06X\n"
+        "  capture_screen:  %d vs %d\n"
+        "  sound_react:     %d vs %d\n"
+        "  fx_num:          %d vs %d\n"
+        "  count:           %d vs %d\n"
+        "  id:              %d vs %d\n",
         temp_settings.brightness, led_settings.brightness,
         temp_settings.color, led_settings.color,
-        temp_settings.fx_num, led_settings.fx_num);
+        temp_settings.capture_screen, led_settings.capture_screen,
+        temp_settings.sound_react, led_settings.sound_react,
+        temp_settings.fx_num, led_settings.fx_num,
+        temp_settings.count, led_settings.count,
+        temp_settings.id, led_settings.id);
+ 
 
         
     if(temp_settings.color == led_settings.color &&
