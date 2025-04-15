@@ -142,7 +142,7 @@ int auto_align_offsets() {
       sc_settings.h_offset = 0;
       break;
     }
-   printf("H Offest: %d\n", sc_settings.h_offset);
+   //printf("H Offest: %d\n", sc_settings.h_offset);
   }
 
   // top/bottom (same condition applies)
