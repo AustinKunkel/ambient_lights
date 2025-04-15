@@ -263,9 +263,7 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     cJSON *count = cJSON_GetObjectItemCaseSensitive(json, "count");
     cJSON *id = cJSON_GetObjectItemCaseSensitive(json, "id");
 
-    if (cJSON_IsNumber(brightness) && brightness->valuestring) {
-        led_settings.brightness = atoi(brightness->valuestring);
-    }
+    if (cJSON_IsNumber(brightness)) led_settings.brightness = brightness->valueint;
     if (cJSON_IsString(color) && color->valuestring) {
         const char *hex = color->valuestring;
         led_settings.color = (int)strtol(hex[0] == '#' ? hex + 1 : hex, NULL, 16);
