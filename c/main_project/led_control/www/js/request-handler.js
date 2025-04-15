@@ -1,10 +1,20 @@
   async function requestCapture(isCapture) {
+    const data = {
+      'brightness': 100,
+      'color': '#FFFFFF',
+      'capture_screen': isCapture,
+      'sound_react': 0,
+      'fx_num': 0,
+      'count': 206,
+      'id': 2
+    };
     try {
-      const response = await fetch(`/led?capt=${isCapture}`, {
-        method: 'GET',
+      const response = await fetch(`/led-settings`, {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify(data);
     });
 
     if (!response.ok) {
