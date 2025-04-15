@@ -53,7 +53,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   const blendDepthInput = document.getElementById('blend-depth-input');
 
   function updateLedSettings(data) {
-    brightnessInput.value = Number(data.brightness)
+    brightnessValue.textContent = data.brightness;
+    brightnessInput.value = data.brightness;
     countInput.value = Number(data.count)
     soundReact.checked = data.sound_react >= 1;
     showScrnAndSndReactOptions()
