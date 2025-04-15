@@ -380,7 +380,7 @@ void *capture_loop(void *strip_ptr) {
 uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, int index, int depth) {
   int r_total = 0, g_total = 0, b_total = 0;
   int count = 0;
-  for(int i = -depth; i < depth + 1; i++) {
+  for(int i = -depth; i <= depth + 1; i++) {
     int check_index = (index + i + LED_COUNT) % LED_COUNT;
     // printf("led index: %d, check index: %d\t", index, check_index);
     struct led_position check_pixel_location = led_list[check_index];
@@ -395,35 +395,54 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     b_total += rgb_buffer[buffer_index + 2];
     count++;
   }
-  for(int j = 10; j <= depth; j += 10) { // read inwards
-    int check_index; // index in the rgb buffer we want to check
-    struct led_position current_pixel = led_list[index];
-    int pixel_side = current_pixel.side;
-    if(pixel_side == TOP) {
-      int new_y = current_pixel.y + j;
-      if(new_y >= HEIGHT) break;
 
-      check_index = (new_y * WIDTH + current_pixel.x) * 3;
-    } else if(pixel_side == BOTTOM) {
+  struct led_position current_pixel = led_list[index];
+  const int pixel_side = current_pixel.side;
+  // read inwards from the edge
+  if(pixel_side == TOP) {
+    for(int j = 10; j <= depth; j += 10) { // increment by 10 (can be changed but for now it works)
+      int new_y = current_pixel.y + j; // find the new y to read from the frame
+      if(new_y >= HEIGHT) break; // if it hits the bottom, dont read further
+
+      int check_index = (new_y * WIDTH + current_pixel.x) * 3; // formula to read any pixel (x, y) from the frame
+      r_total += rgb_buffer[check_index];
+      g_total += rgb_buffer[check_index + 1];
+      b_total += rgb_buffer[check_index + 2];
+      count++;
+    }
+  } else if(pixel_side == BOTTOM) { // same applies from aboves
+    for(int j = 10; j <= depth; j += 10) {
       int new_y = current_pixel.y - j;
-      if(new_y < 0) break;
+      if(new_y < 0) break; // if we hit the top
 
-      check_index = (new_y * WIDTH + current_pixel.x) * 3;
-    } else if(pixel_side == LEFT) {
+      int check_index = (new_y * WIDTH + current_pixel.x) * 3;
+      r_total += rgb_buffer[check_index];
+      g_total += rgb_buffer[check_index + 1];
+      b_total += rgb_buffer[check_index + 2];
+      count++;
+    }
+  } else if(pixel_side == LEFT) {
+    for(int j = 10; j <= depth; j += 10) {
       int new_x = current_pixel.x + j;
       if(new_x >= WIDTH) break;
 
-      check_index = (current_pixel.y * WIDTH + new_x) * 3;
-    } else { // right
+      int check_index = (current_pixel.y * WIDTH + new_x) * 3;
+      r_total += rgb_buffer[check_index];
+      g_total += rgb_buffer[check_index + 1];
+      b_total += rgb_buffer[check_index + 2];
+      count++;
+    }
+  } else { // right
+    for(int j = 10; j <= depth; j += 10) {
       int new_x = current_pixel.x - j;
       if(new_x < 0) break;
 
-      check_index = (current_pixel.y * WIDTH + new_x) * 3;
+      int check_index = (current_pixel.y * WIDTH + new_x) * 3;
+      r_total += rgb_buffer[check_index];
+      g_total += rgb_buffer[check_index + 1];
+      b_total += rgb_buffer[check_index + 2];
+      count++;
     }
-    r_total += rgb_buffer[check_index];
-    g_total += rgb_buffer[check_index + 1];
-    b_total += rgb_buffer[check_index + 2];
-    count++;
   }
 
   if(count == 0) {
