@@ -305,25 +305,27 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
   
   static char post_data[2048]; // Buffer to store received data
   static size_t post_data_offset = 0;
+
+  printf("[DEBUG] handle_post_request called. upload_data_size: %zu\n", *upload_data_size);
   
-    // If there's upload data, accumulate it
-    if (*upload_data_size > 0) {
-        size_t len = *upload_data_size;
-        printf("[DEBUG] Received chunk (%zu bytes): %.*s\n", len, (int)len, upload_data);
+  // If there's upload data, accumulate it
+  if (*upload_data_size > 0) {
+    size_t len = *upload_data_size;
+    printf("[DEBUG] Received chunk (%zu bytes): %.*s\n", len, (int)len, upload_data);
 
-        // Prevent overflow
-        if (post_data_offset + len >= sizeof(post_data)) {
-            fprintf(stderr, "POST data too large\n");
-            return MHD_NO;
-        }
-
-        memcpy(post_data + post_data_offset, upload_data, len);
-        post_data_offset += len;
-        post_data[post_data_offset] = '\0'; // Null-terminate
-
-        *upload_data_size = 0;
-        return MHD_YES;  // Tell MHD we’re ready for more (if any)
+    // Prevent overflow
+    if (post_data_offset + len >= sizeof(post_data)) {
+      fprintf(stderr, "POST data too large\n");
+      return MHD_NO;
     }
+
+    memcpy(post_data + post_data_offset, upload_data, len);
+    post_data_offset += len;
+    post_data[post_data_offset] = '\0'; // Null-terminate
+
+    *upload_data_size = 0;
+    return MHD_YES;  // Tell MHD we’re ready for more (if any)
+  }
 
 
   if(strncmp(url, "/led-settings", 14) == 0) {
