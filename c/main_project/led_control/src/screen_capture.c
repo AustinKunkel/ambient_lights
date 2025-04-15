@@ -127,7 +127,7 @@ int auto_align_offsets() {
       }
     }
     if(!not_black) { // the current column is all black (we want to read farther in)
-      sc_settings.h_offset += 2;
+      sc_settings.h_offset += 3;
       break;
     }
     sc_settings.h_offset--;
@@ -154,7 +154,7 @@ int auto_align_offsets() {
       }
     }
     if(!not_black) {
-      sc_settings.v_offset += 2;
+      sc_settings.v_offset += 3;
       break;
     }
     sc_settings.v_offset--;
