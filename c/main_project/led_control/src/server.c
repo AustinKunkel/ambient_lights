@@ -50,7 +50,7 @@ enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
   return handle_get_request(connection, url);
   } 
   else if (strcmp(method, "POST") == 0) {
-  return handle_post_request(connection, url, upload_data, upload_data_size);
+  return handle_post_request(connection, url, upload_data, upload_data_size, con_cls);
   } 
   else if (strcmp(method, "DELETE") == 0) {
   return handle_delete_request(connection, url);
@@ -301,36 +301,34 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
 }
   
 int handle_post_request(struct MHD_Connection *connection, const char *url,
-  const char *upload_data, size_t *upload_data_size) {
+  const char *upload_data, size_t *upload_data_size, void **con_cls) {
   
-  static char post_data[2048]; // Buffer to store received data
-  static size_t post_data_offset = 0;
+  static char post_data[1024]; // Buffer to store received data
+
+  if (*con_cls == NULL) {
+    *con_cls = post_data;
+    post_data[0] = '\0';
+    return MHD_YES;
+  }
 
   printf("[DEBUG] handle_post_request called. upload_data_size: %zu\n", *upload_data_size);
   
   // If there's upload data, accumulate it
   if (*upload_data_size > 0) {
     size_t len = *upload_data_size;
-    printf("[DEBUG] Received chunk (%zu bytes): %.*s\n", len, (int)len, upload_data);
+    if (len >= sizeof(post_data)) len = sizeof(post_data) - 1;
+    memcpy(post_data, upload_data, len);
+    post_data[len] = '\0';
 
-    // Prevent overflow
-    if (post_data_offset + len >= sizeof(post_data)) {
-      fprintf(stderr, "POST data too large\n");
-      return MHD_NO;
-    }
-
-    memcpy(post_data + post_data_offset, upload_data, len);
-    post_data_offset += len;
-    post_data[post_data_offset] = '\0'; // Null-terminate
+    printf("[DEBUG] Received chunk (%zu bytes): %s\n", len, post_data);
 
     *upload_data_size = 0;
-    return MHD_YES;  // Tell MHD we’re ready for more (if any)
+    return MHD_YES;
   }
 
-
+  // All data received; now process
   if(strncmp(url, "/led-settings", 14) == 0) {
     int ret = handle_post_led_settings(connection, post_data);
-    post_data_offset = 0;
     return ret;
   } else {
     // Send a response back to the client
@@ -343,7 +341,6 @@ int handle_post_request(struct MHD_Connection *connection, const char *url,
     int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
     MHD_destroy_response(response);
     
-    post_data_offset = 0;
     return ret; // Ensure a response is returned
   }
 }
