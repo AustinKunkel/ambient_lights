@@ -135,11 +135,11 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
 
 /**
  * Writes to a 1D array of unsigned chars PRE-ALLOCATE!!
- * unsigned char *rgb_buffer = (unsigned char *)malloc(WIDTH * HEIGHT * 3);
+ * unsigned char *rgb_buffer = (unsigned char *)malloc(width * height * 3);
  * Each subsequent row is "appended" onto the last
  * 
  * Formula for finding any index (x, y) format
- * index = (y * WIDTH + x) * 3;
+ * index = (y * width + x) * 3;
  * r = buffer[index]
  * g = buffer[index + 1]
  * b = buffer[index + 2]
@@ -169,7 +169,7 @@ void capture_frame(unsigned char *rgb_buffer) {
   void *frame_data = dev.buffers[buf.index];
   size_t frame_size = buf.bytesused;
 
-  // if(frame_size == (WIDTH * HEIGHT * 2)) {
+  // if(frame_size == (width * height * 2)) {
   //   printf("Frame size matches expected");
   // }
 
