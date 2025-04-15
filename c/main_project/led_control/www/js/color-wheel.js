@@ -1,5 +1,3 @@
-let isCapturing = false;
-
 document.addEventListener("DOMContentLoaded", async function() {
     const colorCodeInput = document.getElementById("color-code-input");
 
@@ -49,9 +47,9 @@ document.addEventListener("DOMContentLoaded", async function() {
         color_error_label.style="display: none";
         currentColor = hexColor;
         changeLedColor(hexColor).then((data) => {
-            isCapturing = data['capt'] >= 1;
+            led_settings.capture_screen = data['capt'] >= 1 ? 1 : 0;
 
-            window.updateCaptureButton(isCapturing);
+            window.updateCaptureButton(led_settings.capture_screen == 1);
         })
 
         if(activeColorButton != null) {
@@ -226,10 +224,13 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
         activeColorButton = null;
 
-        isCapturing = !isCapturing;
+        led_settings.capture_screen = led_settings.capture_screen == 1 ? 0 : 1; // flip
 
-        requestCapture(isCapturing ? 1 : 0).then((data) => {
-            window.updateCaptureButton(isCapturing);
+        sendLedSettingsPost(led_settings).then(() => {
+            sendLedSettingsGet().then((data) => {
+                led_settings = { ...data };
+            })
+            window.updateCaptureButton(led_settings.capture_screen > 0);
         })
     }
 

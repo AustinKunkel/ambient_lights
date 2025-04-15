@@ -1,4 +1,4 @@
-led_settings = {
+let led_settings = {
   'brightness' : 100,
   'color' : "#FFFFFF",
   'capture_screen' : 0,
@@ -17,7 +17,8 @@ function sendGetLedSettings() {
 document.addEventListener("DOMContentLoaded", async function() {
 
   sendLedSettingsGet().then(data => {
-    updateLedSettings(data)
+    led_settings = { ...data }; 
+    updateLedSettings()
   })
 
   requestGetCaptSettings().then (data => {
@@ -52,14 +53,13 @@ document.addEventListener("DOMContentLoaded", async function() {
   const captureButton = document.getElementById('capture_button');
   const blendDepthInput = document.getElementById('blend-depth-input');
 
-  function updateLedSettings(data) {
-    brightnessValue.textContent = data.brightness;
-    brightnessInput.value = data.brightness;
-    countInput.value = Number(data.count)
-    soundReact.checked = data.sound_react >= 1;
-    showScrnAndSndReactOptions()
-    isCapturing = data.capture_screen >= 1;
-    updateCaptureButton(isCapturing)
+  function updateLedSettings() {
+    brightnessValue.textContent = led_settings.brightness;
+    brightnessInput.value = led_settings.brightness;
+    countInput.value = Number(led_settings.count);
+    soundReact.checked = led_settings.sound_react >= 1;
+    showScrnAndSndReactOptions();
+    updateCaptureButton(led_settings.capture_screen > 0);
   }
 
   const leftCount = document.getElementById("left-led-count")
