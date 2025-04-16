@@ -38,19 +38,26 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Call the function to initialize color picker on page load
     initializeColorPicker();
 
-    colorPicker.on('color:input', function(color) {
+    let can_update_color = false;
+
+    colorPicker.on('input:change', function(color) {
         const hexColor = color.hexString;
         color_error_label.style="display: none";
         currentColor = hexColor;
         led_settings.color = currentColor;
-
-        sendLedSettingsPost(led_settings).then(
-            sendLedSettingsGet().then((data) => {
-                led_settings = { ...data };
-                updateLedSettings();
-            })
-        );
+        if(can_update_color) {
+            sendLedSettingsPost(led_settings).then(
+                sendLedSettingsGet().then((data) => {
+                    led_settings = { ...data };
+                    updateLedSettings();
+                })
+            );
+        }
     });
+
+    colorPicker.on('mount', () => {
+        can_update_color = true;
+    })
 
 
     colorPicker.on('color:change', function(color) {
