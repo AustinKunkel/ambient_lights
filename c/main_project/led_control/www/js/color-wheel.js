@@ -71,13 +71,11 @@ document.addEventListener("DOMContentLoaded", async function() {
         set_color_button.style.opacity = "1";
         set_color_button.disabled = false;
         set_color_button.style.borderColor = hexColor;
-        console.log(color_picker_element.style.opacity);
         color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
     });
 
     colorPicker.on('mount', function() {
         color_picker_element = document.querySelector('.IroWheelBorder');
-        console.log(color_picker_element);
     });
 
     window.verifyColorInput = function() {
@@ -115,6 +113,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
         } catch (error) {
             isUpdatingFromInput = false;
+            console.log(error);
             message_pop_up(errorType, message);
             set_color_button.style.borderColor = "black";
             set_color_button.disabled = true;
