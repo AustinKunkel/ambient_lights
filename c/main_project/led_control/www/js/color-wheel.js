@@ -28,8 +28,8 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 
     // Function to set the color picker and input field to the current color
-    async function initializeColorPicker() {
-        const color = await getCurrColor();
+    window.initializeColorPicker = () => {
+        const color = led_settings.color;
         if (color) {
             colorPicker.color.set(color);
             colorCodeInput.value = color;
@@ -38,12 +38,19 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Call the function to initialize color picker on page load
     initializeColorPicker();
 
+    colorPicker.on('color:input', function(color) {
+        const hexColor = color.hexString;
+        color_error_label.style="display: none";
+        currentColor = hexColor;
+        led_settings.color = currentColor;
+
+        sendLedSettingsPost(led_settings);
+    });
+
 
     colorPicker.on('color:change', function(color) {
         let hexColor = color.hexString;
-        if(!isUpdatingFromInput) {
-            colorCodeInput.value = hexColor;
-        }
+        colorCodeInput.value = hexColor;
         color_error_label.style="display: none";
         currentColor = hexColor;
         changeLedColor(hexColor).then((data) => {
@@ -61,7 +68,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         const color = colorCodeInput.value;
         updateColorPickerFromInput(color, TYPE.WARNING, "Not a valid hex!");
     }
-
     
     function updateColorPickerFromInput(color, errorType = TYPE.ERROR, message = "Error updating color") {
         try {

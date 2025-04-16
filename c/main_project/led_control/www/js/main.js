@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   sendLedSettingsGet().then(data => {
     led_settings = { ...data }; 
-    updateLedSettings()
+    updateLedSettings();
   })
 
   requestGetCaptSettings().then (data => {
@@ -60,6 +60,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     soundReact.checked = led_settings.sound_react >= 1;
     showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
+    initializeColorPicker();
   }
 
   const leftCount = document.getElementById("left-led-count")
