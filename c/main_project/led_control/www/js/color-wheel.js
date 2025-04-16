@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             set_color_button.style.opacity = "1";
             set_color_button.disabled = false;
             set_color_button.style.borderColor = color;
-            color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
+            color_picker_element.style.boxShadow = `0 0 50px ${color}`;
         } catch (error) {
             isUpdatingFromInput = false;
             console.log(error);
