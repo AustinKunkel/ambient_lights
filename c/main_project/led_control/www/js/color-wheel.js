@@ -44,7 +44,12 @@ document.addEventListener("DOMContentLoaded", async function() {
         currentColor = hexColor;
         led_settings.color = currentColor;
 
-        sendLedSettingsPost(led_settings);
+        sendLedSettingsPost(led_settings).then(
+            sendLedSettingsGet().then((data) => {
+                led_settings = { ...data };
+                updateLedSettings();
+            })
+        );
     });
 
 
@@ -52,12 +57,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         let hexColor = color.hexString;
         colorCodeInput.value = hexColor;
         color_error_label.style="display: none";
-        currentColor = hexColor;
-        changeLedColor(hexColor).then((data) => {
-            led_settings.capture_screen = data['capt'] >= 1 ? 1 : 0;
-
-            window.updateCaptureButton(led_settings.capture_screen == 1);
-        })
 
         if(activeColorButton != null) {
             activeColorButton.classList.remove("selected");

@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   const captureButton = document.getElementById('capture_button');
   const blendDepthInput = document.getElementById('blend-depth-input');
 
-  function updateLedSettings() {
+  window.updateLedSettings = () => {
     brightnessValue.textContent = led_settings.brightness;
     brightnessInput.value = led_settings.brightness;
     countInput.value = Number(led_settings.count);
