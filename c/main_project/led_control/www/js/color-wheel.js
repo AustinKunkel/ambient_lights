@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     let can_update_color = false;
 
-    colorPicker.on('input:change', function(color) {
+    colorPicker.on('input:end', function(color) {
         const hexColor = color.hexString;
         color_error_label.style="display: none";
         currentColor = hexColor;
