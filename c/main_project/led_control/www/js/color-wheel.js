@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         if(color == -1) {
             color = colorCodeInput.value;
         }
-        led_settings.color = currentColor;
+        led_settings.color = color;
         sendLedSettingsPost(led_settings).then(
             sendLedSettingsGet().then((data) => {
                 led_settings = { ...data };
