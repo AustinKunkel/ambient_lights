@@ -46,8 +46,8 @@
     </div>
 
     <div class="input-field">
-        <input id="color-code-input"></input>
-        <button disabled="disabled">Try</button>
+        <input id="color-code-input" onchange="verifyColorInput()"></input>
+        <button onclick="changeColor()">Set color</button>
     
         <div class="error-container color-input-error-label" id="color-input-error-label" style="display: none">
             <i class="fa-solid fa-triangle-exclamation fa-lg"></i>

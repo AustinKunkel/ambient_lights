@@ -38,26 +38,12 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Call the function to initialize color picker on page load
     initializeColorPicker();
 
-    let can_update_color = false;
 
     colorPicker.on('input:end', function(color) {
         const hexColor = color.hexString;
         color_error_label.style="display: none";
-        currentColor = hexColor;
-        led_settings.color = currentColor;
-        if(can_update_color) {
-            sendLedSettingsPost(led_settings).then(
-                sendLedSettingsGet().then((data) => {
-                    led_settings = { ...data };
-                    updateLedSettings();
-                })
-            );
-        }
+        changeColor(hexColor);
     });
-
-    colorPicker.on('mount', () => {
-        can_update_color = true;
-    })
 
 
     colorPicker.on('color:change', function(color) {
@@ -70,11 +56,25 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
     });
 
-    window.changeColor = function() {
+    window.verifyColorInput = function() {
         const color = colorCodeInput.value;
         updateColorPickerFromInput(color, TYPE.WARNING, "Not a valid hex!");
     }
+
+    window.changeColor = function(color = -1) {
+        if(color == -1) {
+            color = colorCodeInput.value;
+        }
+        led_settings.color = currentColor;
+        sendLedSettingsPost(led_settings).then(
+            sendLedSettingsGet().then((data) => {
+                led_settings = { ...data };
+                updateLedSettings();
+            })
+        );
+    }
     
+
     function updateColorPickerFromInput(color, errorType = TYPE.ERROR, message = "Error updating color") {
         try {
             isUpdatingFromInput = true;
