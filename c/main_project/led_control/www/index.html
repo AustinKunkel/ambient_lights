@@ -17,7 +17,6 @@
 
 </head>
 <body>
-    <button onclick="sendGetLedSettings()"> Send get to LED Settings</button>
     <div id="add-color-menu" style="display: none;">
         <button onclick="closeAddColorMenu()"><i class="fa-regular fa-circle-xmark"></i></button>
         
@@ -47,7 +46,7 @@
 
     <div class="input-field">
         <input id="color-code-input" oninput="verifyColorInput()"></input>
-        <button onclick="changeColor()">Set color</button>
+        <button onclick="changeColor()" id="set-color-button">Set color</button>
     
         <div class="error-container color-input-error-label" id="color-input-error-label" style="display: none">
             <i class="fa-solid fa-triangle-exclamation fa-lg"></i>

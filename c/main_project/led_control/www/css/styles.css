@@ -1,16 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Oswald:wght@200..700&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
+
+
+:root {
+  --bg-primary: #121212;
+  --bg-secondary: #1E1E1E;
+  --surface: #2C2C2C;
+  --text-primary: #FFFFFF;
+  --text-secondary: #B0B0B0;
+  --accent: #4FC3F7;
+  --error: #FF5252;
+  --success: #4CAF50;
+  --warning: #FFC107;
+  --disabled: #3A3A3A;
+  --divider: #2F2F2F;
+}
 
 * {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Roboto flex', sans-serif;
   cursor: default;
+  color: var(--text-primary);
 }
 
 body {
-  background: #ffffff;
   display: flex;
   justify-content: center;
   flex-direction: column;
   font-size: 40px;
+  background-color: var(--bg-primary);
 }
 
 button {
@@ -23,16 +40,17 @@ i {
 }
 
 .grayed-out {
-  background-color: #dadada;
+  background-color: var(--disabled);
 }
 
 .stop-option {
-  background-color: rgb(255, 169, 169);
+  background-color: rgb(255, 169, 169) !important;
   border-color: rgb(255, 105, 105) !important;
 }
 
 h1 {
   font-size: 100px;
+  font-weight: 600;
 }
 
 h3 {
@@ -62,8 +80,8 @@ label {
   z-index: 100;
   margin: auto;
   justify-content: center;
-  background-color: white;
-  border: 2px solid #ccc;
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--surface);
   border-radius: 10px;
   transition: all 1s ease-in
 }
@@ -80,13 +98,6 @@ label {
   width:fit-content;
   margin: auto;
 }
-#color-code-label
-{
-  width: fit-content;
-  height: fit-content;
-  padding: .5em;
-  border: 2px solid #a5a5a5
-}
 
 .color-input-error-label {
   align-items: center;
@@ -96,7 +107,7 @@ label {
 }
 
 .fa-triangle-exclamation {
-  color: rgb(245, 209, 47);
+  color: var(--warning);
   align-self: center;
   margin: 0 .5em;
 }
@@ -128,7 +139,7 @@ label {
   width: 75px;
   cursor: pointer;
 
-  border: 4px solid rgb(170, 170, 170);
+  border: 4px solid var(--surface);
   border-radius: 50%;
 
   display: inline-block; 
@@ -145,14 +156,14 @@ label {
 .color:hover {
   height: 80px;
   width: 80px;
-  border-color: rgb(146, 146, 146);
+  border-color: var(--divider);
 }
 
 
 .selected {
   height: 32px;
   width: 32px;
-  border: 2px solid black;
+  border: 2px solid var(--accent);
 }
 
 .space-top {
@@ -160,12 +171,27 @@ label {
 }
 
 #color-code-input {
-  width: 135px; 
+  width: 160px; 
   height: 60px; 
   font-size: 40px;
+  margin-top: 1em;
   text-align: center;
   vertical-align: middle;
 }
+#set-color-button {
+  width: fit-content;
+  height: 85px; 
+  font-size: 40px;
+  font-weight: 500;
+  padding: 5px 15px;
+  border: 4px solid transparent;
+  border-radius: 10px;
+  margin-left:1em;
+  margin-top: 1em;
+  background-color: var(--surface);
+  box-shadow: 2px 4px 10px var(--disabled);
+}
+
 .color-easy-container {
   display: flex;
   gap: 5px;
@@ -222,7 +248,8 @@ label {
 input {
   width: fit-content;
   padding: .25em;
-  border: 2px solid #e9e9e9;
+  border: 2px solid var(--disabled);
+  background-color: var(--surface);
   border-radius: 2px;
 }
 
@@ -241,10 +268,12 @@ input {
 }
 
 .save-button {
-  width: fit-content;
+  width: 130px;
+  height: 80px;
   font-size: 45px;
+  font-weight: 500;
   padding: 5px 15px;
-  border: 4px solid #ccc;
+  background-color: var(--accent);
   border-radius: 20px;
   margin: auto;
 }
@@ -254,7 +283,7 @@ input {
   width: 400px;
   height: 25px;
   border-radius: 20px;  
-  background: #d3d3d3;
+  background: var(--surface);
   outline: none;
   opacity: 0.7;
   -webkit-transition: .2s;
@@ -267,7 +296,8 @@ input {
   width: 50px;
   height: 50px;
   border-radius: 50%; 
-  background: #04AA6D;
+  border: 4px solid var(--accent);
+  background: var(--disabled);
   cursor: pointer;
 }
 
@@ -276,7 +306,8 @@ input {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: #04AA6D;
+  background: var(--disabled);
+  border: 4px solid var(--accent);
   cursor: pointer;
 }
 
@@ -310,7 +341,8 @@ input {
   padding: 15px;
   font-size: 40px;
   text-align: center;
-  border: 4px solid #ccc;
+  background-color: var(--surface);
+  border: 4px solid var(--surface);
   border-radius: 15px;
 }
 

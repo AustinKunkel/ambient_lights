@@ -3,8 +3,15 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     isUpdatingFromInput = false;
 
+    let color_picker_element = null;
+
     const colorPicker = new iro.ColorPicker('.color-picker', {
-        width: 600,
+        layout: [
+            {
+              component: iro.ui.Wheel
+            }
+        ],
+        width: 500,
         color: "#ffffff", // Default color
         layoutDirection: "vertical",
         sliderSize: 80,
@@ -21,6 +28,8 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     let isRemovingColor = false;
 
+    const set_color_button = document.getElementById("set-color-button");
+
     getUserColors().then(data => {
         userColors = data.colors || [];
         updateUserColors();
@@ -33,6 +42,12 @@ document.addEventListener("DOMContentLoaded", async function() {
         if (color) {
             colorPicker.color.set(color);
             colorCodeInput.value = color;
+            set_color_button.style.opacity = "1";
+            set_color_button.disabled = false;
+            set_color_button.style.borderColor = color;
+            if(color_picker_element) {
+                color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
+            }
         }
     }
     // Call the function to initialize color picker on page load
@@ -45,7 +60,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         changeColor(hexColor);
     });
 
-
     colorPicker.on('color:change', function(color) {
         let hexColor = color.hexString;
         colorCodeInput.value = hexColor;
@@ -54,6 +68,16 @@ document.addEventListener("DOMContentLoaded", async function() {
         if(activeColorButton != null) {
             activeColorButton.classList.remove("selected");
         }
+        set_color_button.style.opacity = "1";
+        set_color_button.disabled = false;
+        set_color_button.style.borderColor = hexColor;
+        console.log(color_picker_element.style.opacity);
+        color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
+    });
+
+    colorPicker.on('mount', function() {
+        color_picker_element = document.querySelector('.IroWheelBorder');
+        console.log(color_picker_element);
     });
 
     window.verifyColorInput = function() {
@@ -85,9 +109,17 @@ document.addEventListener("DOMContentLoaded", async function() {
                 color = rgbToHex(color);
             }
             colorCodeInput.value = color;
+            set_color_button.style.opacity = "1";
+            set_color_button.disabled = false;
+            set_color_button.style.borderColor = color;
+            color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
         } catch (error) {
             isUpdatingFromInput = false;
             message_pop_up(errorType, message);
+            set_color_button.style.borderColor = "black";
+            set_color_button.disabled = true;
+            set_color_button.style.opacity = ".5";
+            color_picker_element.style.boxShadow = `0 0 0 #000000`;
         }
     }
 
