@@ -63,7 +63,7 @@ int main() {
         .origin_protocol = LWSMPRO_FILE,
         .protocol = NULL,
         .cgienv = NULL,
-        .extra_mimetypes = "html=text/html",
+        .extra_mimetypes = NULL,
         .interpret = NULL,
         .cgi_timeout = 0,
         .cache_max_age = 0,
