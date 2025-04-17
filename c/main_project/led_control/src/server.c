@@ -72,7 +72,7 @@ int main() {
     static const struct lws_http_mount mount = {
         .mount_next = NULL,        // linked-list of mounts
         .mountpoint = "/",         // URL mount point
-        .origin = "/home/controller/ambient_lights/c/main_project/led_control/www", // local path
+        .origin = "./led_control/www", // local path
         .def = "index.html",       // default file
         .protocol = NULL,
         .cgienv = NULL,
