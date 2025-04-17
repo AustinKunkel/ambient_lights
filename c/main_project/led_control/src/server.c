@@ -14,7 +14,7 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len) {
 switch (reason) {
     case LWS_CALLBACK_HTTP:
-        if (lws_serve_http_file(wsi, "index.html", "text/html"))
+        if (lws_serve_http_file(wsi, "index.html", "text/html", NULL, 0))
             return -1;
         break;
     default:
@@ -74,18 +74,6 @@ int main() {
         lws_service(context, 0);
     }
     
-    lws_context_destroy(context);
-    
-
-    struct lws_context *context = lws_create_context(&info);
-    if (!context) {
-        lwsl_err("lws init failed\n");
-        return -1;
-    }
-
-    while (1)
-        lws_service(context, 1000);
-
     lws_context_destroy(context);
     return 0;
 }
