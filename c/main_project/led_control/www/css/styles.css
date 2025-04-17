@@ -147,7 +147,7 @@ label {
   width: fit-content;
   height: fit-content;
   position: fixed;
-  top: 2em;
+  top: 175px;
   left: 50%;
   margin-top: -1em;
   transform: translate(-50%, 0);
@@ -326,7 +326,7 @@ label {
 /***** Modal style *****/
 .modal-container {
   position: fixed;
-  top: 5%;
+  top:1px;
   left: 50%;
   margin: 0 auto;
   padding: .5em;
