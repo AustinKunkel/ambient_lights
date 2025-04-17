@@ -63,7 +63,7 @@ int main() {
         .origin_protocol = LWSMPRO_FILE,
         .protocol = NULL,
         .cgienv = NULL,
-        .extra_mimetypes = NULL,
+        .extra_mimetypes = "html=text/html",
         .interpret = NULL,
         .cgi_timeout = 0,
         .cache_max_age = 0,
@@ -73,7 +73,6 @@ int main() {
         .cache_intermediaries = 0,
         .basic_auth_login_file = NULL
     };
-    info.options = LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE;
 
     struct lws_context *context = lws_create_context(&info);
     if (!context) {
