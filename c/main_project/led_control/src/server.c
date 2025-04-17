@@ -53,16 +53,16 @@ return 0;
 static struct lws_protocols protocols[] = {
     {
         .name = "http",
-        .callback = lws_callback_http_dummy,  // built-in HTTP handler
+        .callback = lws_callback_http_dummy(),  // built-in HTTP handler
         .per_session_data_size = 0,
         .rx_buffer_size = 0,
     },
-    {
-        .name = "my-websocket-protocol",
-        .callback = callback_ws,
-        .per_session_data_size = 0,          // adjust if needed
-        .rx_buffer_size = 4096,
-    },
+    // {
+    //     .name = "my-websocket-protocol",
+    //     .callback = callback_ws,
+    //     .per_session_data_size = 0,          // adjust if needed
+    //     .rx_buffer_size = 4096,
+    // },
     { NULL, NULL, 0, 0 }
 };
 
