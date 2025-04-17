@@ -6,7 +6,7 @@ LIB_DIR = /use/local/lib
 
 # Compiler Flags
 CFLAGS = -I$(INC_DIR) -I./cJSON -I./libwebsockets/include -I./libwebsockets/build/include
-LDFLAGS = -I$(LIB_DIR) ./libwebsockets/build/lib/libwebsockets.a -lcjson -lws2811 -pthread -lrt -lgnutls -lm
+LDFLAGS = -I$(LIB_DIR) ./libwebsockets/build/lib/libwebsockets.a -lcjson -lws2811 -pthread -lrt -lgnutls -lm -lssl -lcrypto
 
 # Source Files
 SRV_TST_SRC = led_control/test/server_test.c \
