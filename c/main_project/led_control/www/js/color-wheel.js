@@ -14,7 +14,8 @@ document.addEventListener("DOMContentLoaded", async function() {
         width: 700,
         color: "#ffffff", // Default color
         layoutDirection: "vertical",
-        handleRadius: 35
+        handleRadius: 35,
+        wheelLightness: false
     });
 
     const color_error_label = document.getElementById('color-input-error-label');
