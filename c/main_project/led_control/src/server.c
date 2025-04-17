@@ -51,7 +51,7 @@ return 0;
 
 static struct lws_protocols protocols[] = {
     {
-        .name = "http-only",
+        .name = "http",
         .callback = lws_callback_http_dummy,  // built-in HTTP handler
         .per_session_data_size = 0,
         .rx_buffer_size = 0,
@@ -72,7 +72,7 @@ int main() {
     static const struct lws_http_mount mount = {
         .mount_next = NULL,        // linked-list of mounts
         .mountpoint = "/",         // URL mount point
-        .origin = "./led_control/www", // local path
+        .origin = "/home/controller/ambient_lights/c/main_project/led_control/www",
         .def = "index.html",       // default file
         .protocol = NULL,
         .cgienv = NULL,
@@ -87,6 +87,8 @@ int main() {
         .origin_protocol = LWSMPRO_FILE, // Serve from filesystem
         .basic_auth_login_file = NULL,
     };
+
+    lws_set_log_level(LLL_NOTICE | LLL_INFO | LLL_WARN | LLL_ERR, NULL);
 
     info.port = 8080;
     info.mounts = &mount;
