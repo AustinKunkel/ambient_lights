@@ -2,7 +2,7 @@ CC = gcc
 
 # Directories
 INC_DIR = /usr/local/include
-LIB_DIR = /use/local/lib /libwebsockets/build/lib/libwebsockets.a
+LIB_DIR = /use/local/lib ./libwebsockets/build/lib/libwebsockets.a
 
 # Compiler Flags
 CFLAGS = -I$(INC_DIR) -I./cJSON -I./libwebsockets/include -I./libwebsockets/build/include
