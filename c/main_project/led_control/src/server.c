@@ -66,16 +66,16 @@ static struct lws_protocols protocols[] = {
     { NULL, NULL, 0, 0 }
 };
 
-char resolved_path[PATH_MAX];  // Buffer to store the resolved path
-if (realpath("./led_control/www", resolved_path) != NULL) {
-    printf("Serving from path: %s\n", resolved_path);
-} else {
-    perror("Error resolving path");
-}
-
 int main() {
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
+
+    char resolved_path[PATH_MAX];  // Buffer to store the resolved path
+    if (realpath("./led_control/www", resolved_path) != NULL) {
+        printf("Serving from path: %s\n", resolved_path);
+    } else {
+        perror("Error resolving path");
+    }
 
     static const struct lws_http_mount mount = {
         .mount_next = NULL,           // Linked-list of mounts
