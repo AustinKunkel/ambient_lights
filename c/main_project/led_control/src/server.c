@@ -15,7 +15,7 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
         switch (reason) {
 
             case LWS_CALLBACK_HTTP:
-                printf("Received request: %s\n", lws_get_url(wsi));  // Log the full request path
+                printf("Received request: %s\n", lws_get_ssl(wsi));  // Log the full request path
                 if (lws_serve_http_file(wsi, "./led_control/www/index.html", "text/html", NULL, 0))
                     return -1;
                 break;
@@ -66,7 +66,12 @@ static struct lws_protocols protocols[] = {
     { NULL, NULL, 0, 0 }
 };
 
-printf("Serving from path: %s\n", realpath("./led_control/www", NULL));
+char resolved_path[PATH_MAX];  // Buffer to store the resolved path
+if (realpath("./led_control/www", resolved_path) != NULL) {
+    printf("Serving from path: %s\n", resolved_path);
+} else {
+    perror("Error resolving path");
+}
 
 int main() {
     struct lws_context_creation_info info;
