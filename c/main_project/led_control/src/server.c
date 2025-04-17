@@ -17,7 +17,7 @@ static int callback_http(struct lws *wsi,
 } 
 
 static int callback_ws(struct lws *wsi,
-                       enum les_callback_reasons reason,
+                       enum lws_callback_reasons reason,
                        void *user, void *in, size_t len) {
     switch (reason) {
         case LWS_CALLBACK_ESTABLISHED:
