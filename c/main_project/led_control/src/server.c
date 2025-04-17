@@ -58,7 +58,7 @@ int main() {
     info.mounts = &(struct lws_http_mount) {
         .mount_next = NULL,
         .mountpoint = "/",
-        .origin = "./led_control/www",  // your static files folder
+        .origin = "./www",  // your static files folder
         .def = "index.html",
         .origin_protocol = LWSMPRO_FILE,
         .protocol = NULL,
