@@ -53,6 +53,33 @@ document.addEventListener("DOMContentLoaded", async function() {
   const captureButton = document.getElementById('capture_button');
   const blendDepthInput = document.getElementById('blend-depth-input');
 
+  const hamburgerIcon = document.getElementById('hamburger-icon');
+
+  const sidebar = document.getElementById('sidebar');
+  let sidebarOpen = false;
+
+  window.addEventListener('scroll', () => {
+    const header = document.getElementsByTagName('header')[0];
+    const headerTitle = document.getElementById('header-title');
+
+    const scrollY = window.scrollY;
+
+    if(scrollY >= 275) {
+      header.style.backgroundColor = "#121212";
+      headerTitle.style.display = "block";
+    } else {  
+      header.style.backgroundColor = "transparent";
+      headerTitle.style.display = "none";
+    }
+  });
+
+  window.toggleSidebar = () => {
+    sidebarOpen = !sidebarOpen;
+    console.log(sidebarOpen);
+    sidebar.style.left = sidebarOpen ? 0 : '-120%';
+  }
+
+
   window.updateLedSettings = () => {
     brightnessValue.textContent = led_settings.brightness;
     brightnessInput.value = led_settings.brightness;
@@ -114,6 +141,23 @@ document.addEventListener("DOMContentLoaded", async function() {
         showScrnAndSndReactOptions()
       })
     })
+
+  }
+
+  let isReactingToSound = false;
+  window.reactToSound = () => {
+    isReactingToSound = !isReactingToSound;
+    const soundReactButton = document.getElementById('sound-react-button');
+    if(isReactingToSound) {
+      soundReactButton.innerHTML = 'Stop Reacting to Sound';
+      soundReactButton.classList.add('stop-option');
+    } else {
+      soundReactButton.innerHTML = 'React to Sound';
+      soundReactButton.classList.remove('stop-option');
+    }
+  }
+
+  function updateSoundCaptureButton() {
 
   }
 

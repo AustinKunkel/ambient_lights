@@ -11,11 +11,10 @@ document.addEventListener("DOMContentLoaded", async function() {
               component: iro.ui.Wheel
             }
         ],
-        width: 500,
+        width: 700,
         color: "#ffffff", // Default color
         layoutDirection: "vertical",
-        sliderSize: 80,
-        handleRadius: 25
+        handleRadius: 35
     });
 
     const color_error_label = document.getElementById('color-input-error-label');
