@@ -93,7 +93,7 @@ int main() {
     info.protocols = protocols;
     info.gid = -1;
     info.uid = -1;
-    info.options = LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE;
+    info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT; // or other options
     struct lws_context *context = lws_create_context(&info);
     if (context == NULL) {
         fprintf(stderr, "libwebsockets init failed\n");
