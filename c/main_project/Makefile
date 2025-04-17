@@ -2,11 +2,11 @@ CC = gcc
 
 # Directories
 INC_DIR = /usr/local/include
-LIB_DIR = /use/local/lib ./libwebsockets/build/lib/libwebsockets.a
+LIB_DIR = /use/local/lib
 
 # Compiler Flags
 CFLAGS = -I$(INC_DIR) -I./cJSON -I./libwebsockets/include -I./libwebsockets/build/include
-LDFLAGS = -I$(LIB_DIR) -lcjson -lws2811 -pthread -lrt -lgnutls -lm
+LDFLAGS = -I$(LIB_DIR) -lcjson -lws2811 -pthread -lrt -lgnutls -lm./libwebsockets/build/lib/libwebsockets.a
 
 # Source Files
 SRV_TST_SRC = led_control/test/server_test.c \
