@@ -70,11 +70,11 @@ int main() {
     memset(&info, 0, sizeof(info));
 
     static const struct lws_http_mount mount = {
-        .mount_next = NULL,        // linked-list of mounts
-        .mountpoint = "/",         // URL mount point
-        .origin = "/home/controller/ambient_lights/c/main_project/led_control/www",
-        .def = "index.html",       // default file
-        .protocol = NULL,
+        .mount_next = NULL,           // Linked-list of mounts
+        .mountpoint = "/",            // URL mount point
+        .origin = "./led_control/www", // Local path
+        .def = "index.html",          // Default file
+        .protocol = NULL,             // Protocol for serving the files
         .cgienv = NULL,
         .extra_mimetypes = NULL,
         .interpret = NULL,
