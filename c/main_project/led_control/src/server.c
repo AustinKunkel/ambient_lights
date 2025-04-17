@@ -14,7 +14,7 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len) {
 switch (reason) {
     case LWS_CALLBACK_HTTP:
-        if (lws_serve_http_file(wsi, "index.html", "text/html", NULL, 0))
+        if (lws_serve_http_file(wsi, "./led_control/www/index.html", "text/html", NULL, 0))
             return -1;
         break;
     default:
