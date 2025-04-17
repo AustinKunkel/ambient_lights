@@ -34,23 +34,24 @@ static int callback_ws(struct lws *wsi,
 
 static struct lws_protocols protocols[] = {
     {
-        "http-only",
-        callback_http,
-        0,
-        0,
+        .name = "http",
+        .callback = lws_callback_http_dummy,  // built-in HTTP handler
+        .per_session_data_size = 0,
+        .rx_buffer_size = 0,
     },
     {
-        "my-websocket-protocol",
-        callback_ws,
-        0,
-        4096,
+        .name = "my-websocket-protocol",
+        .callback = callback_ws,
+        .per_session_data_size = 0,          // adjust if needed
+        .rx_buffer_size = 4096,
     },
-    { NULL, NULL, 0, 0 }
+    LWS_PROTOCOL_LIST_TERM
 };
 
 int main() {
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
+    
 
     info.port = 8080;
     info.protocols = protocols;
@@ -59,7 +60,8 @@ int main() {
         .mountpoint = "/",
         .origin = "./led_control/www",  // your static files folder
         .def = "index.html",
-        .protocol = "http",
+        .origin_protocol = LWSMPRO_FILE,
+        .protocol = NULL,
         .cgienv = NULL,
         .extra_mimetypes = NULL,
         .interpret = NULL,
@@ -69,9 +71,9 @@ int main() {
         .cache_reusable = 0,
         .cache_revalidate = 0,
         .cache_intermediaries = 0,
-        .origin_protocol = LWSMPRO_FILE,
-        .mountpoint_len = 1
+        .basic_auth_login_file = NULL
     };
+    info.options = LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES;
 
     struct lws_context *context = lws_create_context(&info);
     if (!context) {
