@@ -325,7 +325,7 @@ label {
 
 /***** Modal style *****/
 .modal-container {
-  position: absolute;
+  position: fixed;
   top: 5%;
   left: 50%;
   margin: 0 auto;
