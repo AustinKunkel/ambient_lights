@@ -12,33 +12,54 @@
 
 static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len) {
-switch (reason) {
-    case LWS_CALLBACK_HTTP:
-        if (lws_serve_http_file(wsi, "/home/controller/ambient_lights/c/main_project/led_control/www/index.html", "text/html", NULL, 0))
-            return -1;
-        break;
-    default:
-        break;
+    switch (reason) {
+        case LWS_CALLBACK_HTTP: {
+            const char *requested_uri = (const char *)in;
+            char filepath[512];
+        
+            // Construct the full file path
+            snprintf(filepath, sizeof(filepath), "/home/controller/ambient_lights/c/main_project/led_control/www%s", requested_uri);
+
+            lwsl_notice("HTTP request for URI: %s\n", requested_uri);
+            lwsl_notice("Serving file: %s\n", filepath);
+
+        
+            // Determine the content type based on the file extension
+            const char *content_type = "text/plain";
+            if (strstr(requested_uri, ".html"))
+                content_type = "text/html";
+            else if (strstr(requested_uri, ".css"))
+                content_type = "text/css";
+            else if (strstr(requested_uri, ".js"))
+                content_type = "application/javascript";
+        
+            // Serve the file
+            if (lws_serve_http_file(wsi, filepath, content_type, NULL, 0) < 0)
+                return -1; // Error occurred
+        
+            return 1; // Close the connection after serving the file
+        }
     }
-    return 0;
 }
 
 static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
  void *user, void *in, size_t len) {
-switch (reason) {
-    case LWS_CALLBACK_ESTABLISHED:
-        // Handle new WebSocket connection
-        break;
-    case LWS_CALLBACK_RECEIVE:
-        // Handle received WebSocket message
-        break;
-    case LWS_CALLBACK_CLOSED:
-        // Handle WebSocket closure
-        break;
-    default:
-        break;
-}
-return 0;
+
+    const 
+    switch (reason) {
+        case LWS_CALLBACK_ESTABLISHED:
+            // Handle new WebSocket connection
+            break;
+        case LWS_CALLBACK_RECEIVE:
+            // Handle received WebSocket message
+            break;
+        case LWS_CALLBACK_CLOSED:
+            // Handle WebSocket closure
+            break;
+        default:
+            break;
+    }
+    return 0;
 }
 
 
