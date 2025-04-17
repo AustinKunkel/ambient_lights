@@ -74,6 +74,8 @@ int main() {
         .basic_auth_login_file = NULL
     };
 
+    lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_DEBUG, NULL);
+
     struct lws_context *context = lws_create_context(&info);
     if (!context) {
         lwsl_err("lws init failed\n");
