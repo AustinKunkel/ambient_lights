@@ -19,10 +19,6 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
         
             // Construct the full file path
             snprintf(filepath, sizeof(filepath), "/home/controller/ambient_lights/c/main_project/led_control/www%s", requested_uri);
-
-            lwsl_notice("HTTP request for URI: %s\n", requested_uri);
-            lwsl_notice("Serving file: %s\n", filepath);
-
         
             // Determine the content type based on the file extension
             const char *content_type = "text/plain";
@@ -44,22 +40,20 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
 
 static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
  void *user, void *in, size_t len) {
-
-    const 
-    switch (reason) {
-        case LWS_CALLBACK_ESTABLISHED:
-            // Handle new WebSocket connection
-            break;
-        case LWS_CALLBACK_RECEIVE:
-            // Handle received WebSocket message
-            break;
-        case LWS_CALLBACK_CLOSED:
-            // Handle WebSocket closure
-            break;
-        default:
-            break;
-    }
-    return 0;
+switch (reason) {
+    case LWS_CALLBACK_ESTABLISHED:
+        // Handle new WebSocket connection
+        break;
+    case LWS_CALLBACK_RECEIVE:
+        // Handle received WebSocket message
+        break;
+    case LWS_CALLBACK_CLOSED:
+        // Handle WebSocket closure
+        break;
+    default:
+        break;
+}
+return 0;
 }
 
 
