@@ -15,8 +15,9 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
         switch (reason) {
 
             case LWS_CALLBACK_HTTP:
-                // LWS handles static file serving via the mount
-                lwsl_info("HTTP request for: %s\n", (const char *)in);
+                printf("Received request: %s\n", lws_get_url(wsi));  // Log the full request path
+                if (lws_serve_http_file(wsi, "./led_control/www/index.html", "text/html", NULL, 0))
+                    return -1;
                 break;
     
             case LWS_CALLBACK_HTTP_FILE_COMPLETION:
@@ -64,6 +65,8 @@ static struct lws_protocols protocols[] = {
     },
     { NULL, NULL, 0, 0 }
 };
+
+printf("Serving from path: %s\n", realpath("./led_control/www", NULL));
 
 int main() {
     struct lws_context_creation_info info;
