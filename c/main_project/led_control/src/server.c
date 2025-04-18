@@ -53,7 +53,7 @@ return 0;
 static struct lws_protocols protocols[] = {
     {
         .name = "http",
-        .callback = lws_callback_http_dummy(),  // built-in HTTP handler
+        .callback = lws_callback_http_dummy,  // built-in HTTP handler
         .per_session_data_size = 0,
         .rx_buffer_size = 0,
     },
