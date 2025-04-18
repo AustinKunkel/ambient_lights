@@ -15,7 +15,7 @@ function sendGetLedSettings() {
 }
 
 let socket;
-function startWebSocket() {
+window.startWebSocket = () => {
   socket = new WebSocket('ws://' + window.location.hostname + ':8080', 'websocket');
 
   socket.onopen = function(event) {
@@ -34,7 +34,7 @@ function startWebSocket() {
     console.error('WebSocket error:', error);
   };
 
-  function sendMessage() {
+  window.sendMessage = () => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send('Hello from the browser!');
       console.log('Message sent.');
@@ -43,7 +43,7 @@ function startWebSocket() {
     }
   }
 
-  function closeWebSocket() {
+  window.closeWebSocket = () => {
     if (socket) {
       socket.close();
     }
