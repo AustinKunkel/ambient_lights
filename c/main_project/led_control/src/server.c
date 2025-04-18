@@ -6,7 +6,7 @@
 
 static const struct lws_protocols protocols[];
 
-#define STATIC_PATH "./led_functions/www/"  // Path for static files
+#define STATIC_PATH "./led_control/www/"  // Path for static files
 #define WEBSOCKET_PORT 8080
 
 // WebSocket protocol callback function
@@ -37,39 +37,20 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 {
     switch (reason) {
         case LWS_CALLBACK_HTTP: {
-            // Extract the requested URL (URI) using lws_get_uri
-            const char *url = lws_get_uri(wsi);
-        
-            if (url) {
-                printf("Received HTTP request for URL: %s\n", url);
-            } else {
-                printf("Failed to get URL\n");
-            }
-        
-            // HTTP response headers
-            const char *http_response_header = 
-                "HTTP/1.1 200 OK\r\n"          // Status line
-                "Content-Type: text/html\r\n"  // Content type header
-                "Connection: close\r\n"        // Close the connection after the response
-                "\r\n";                       // End of headers
-        
-            // Send the headers
-            int n = lws_write(wsi, (unsigned char *)http_response_header, strlen(http_response_header), LWS_WRITE_HTTP);
-            if (n < 0) {
-                printf("Error sending HTTP response headers\n");
+            // Print the HTTP request for debugging
+            printf("Received HTTP request\n");
+
+            // Define the file path to serve (e.g., index.html)
+            const char *file_path = "./led_control/index.html";
+
+            // Content type (for the response)
+            const char *content_type = "text/html";
+
+            // Serve the static file
+            if (lws_serve_http_file(wsi, file_path, content_type) < 0) {
+                printf("Failed to serve the file\n");
                 return -1;
             }
-        
-            // HTML body response
-            const char *html_body = "<html><body><h1>Hello from libwebsockets!</h1></body></html>";
-        
-            // Send the body
-            n = lws_write(wsi, (unsigned char *)html_body, strlen(html_body), LWS_WRITE_HTTP);
-            if (n < 0) {
-                printf("Error sending HTTP body\n");
-                return -1;
-            }
-        
             break;
         }
     // case LWS_CALLBACK_HTTP: {
