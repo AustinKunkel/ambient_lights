@@ -94,14 +94,14 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
             content_type = "application/octet-stream";
             }
 
-            lws_return_http_status(wsi, HTTP_STATUS_OK, "Content-Type: text/html\r\n\r\n");
-            const char *response = "<html><body><h1>Hello, world!</h1></body></html>";
-            lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
+            // lws_return_http_status(wsi, HTTP_STATUS_OK, "Content-Type: text/html\r\n\r\n");
+            // const char *response = "<html><body><h1>Hello, world!</h1></body></html>";
+            // lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
 
-
-            // Serve the file with NULL for mime_type and extra_headers
-            // if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
-            // return -1;
+            //Serve the file with NULL for mime_type and extra_headers
+            if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
+                return -1;
+            }
         break;
     }
     default:
