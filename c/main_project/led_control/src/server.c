@@ -47,8 +47,10 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     }
 
     // Build the full file path
-    char file_path[1024];
+    char file_path[512];
     snprintf(file_path, sizeof(file_path), "%s%s", STATIC_PATH, requested_uri);
+
+    printf("Requested file: %s", file_path);
 
     // Check if the requested file exists
     struct stat file_stat;
