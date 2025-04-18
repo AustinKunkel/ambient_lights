@@ -34,8 +34,6 @@ function startWebSocket() {
     console.error('WebSocket error:', error);
   };
 
-  startWebSocket();
-
   function sendMessage() {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send('Hello from the browser!');
