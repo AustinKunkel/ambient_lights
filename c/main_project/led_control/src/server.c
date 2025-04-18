@@ -60,33 +60,40 @@ int initialize_led_settings() {
     }
 }
 
+int parse_led_settings_data_to_string(char *str) {
+    return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
+        led_settings.brightness,
+        led_settings.color,
+        led_settings.capture_screen,
+        led_settings.sound_react,
+        led_settings.fx_num,
+        led_settings.count,
+        led_settings.id
+    );
+}
+
 // WebSocket protocol callback function
 static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
-                              void *user, void *in, size_t len)
+    void *user, void *in, size_t len)
 {
-    switch (reason) {
-    case LWS_CALLBACK_ESTABLISHED:
-        printf("WebSocket connection established\n");
-        break;
-    case LWS_CALLBACK_RECEIVE:
-        printf("Received message: %s\n", (char *)in);
-        lws_write(wsi, in, len, LWS_WRITE_TEXT);  // Echo the received message back
-        break;
-    case LWS_CALLBACK_CLOSED:
-        printf("WebSocket connection closed\n");
-        break;
-    default:
-        break;
-    }
-
-    return 0;
+switch (reason) {
+case LWS_CALLBACK_ESTABLISHED:
+printf("WebSocket connection established\n");
+break;
+case LWS_CALLBACK_RECEIVE:
+printf("Received message: %s\n", (char *)in);
+lws_write(wsi, in, len, LWS_WRITE_TEXT);  // Echo the received message back
+break;
+case LWS_CALLBACK_CLOSED:
+printf("WebSocket connection closed\n");
+break;
+default:
+break;
 }
 
-void stop_server(int signo) {
-    printf("\nStopping server...\n");
-    lws_context_destroy(context);
-    exit(0);
+return 0;
 }
+
 
 // HTTP callback function for serving static files
 static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
@@ -193,6 +200,13 @@ static struct lws_context *create_server_context()
     }
 
     return context;
+}
+
+
+void stop_server(int signo) {
+    printf("\nStopping server...\n");
+    lws_context_destroy(context);
+    exit(0);
 }
 
 int main(void)
