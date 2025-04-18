@@ -114,6 +114,8 @@ static struct lws_context *create_server_context()
     info.protocols = protocols;
     info.gid = -1;
     info.uid = -1;
+    info.options = LWS_SERVER_OPTION_HTTP_HEADERS | LWS_SERVER_OPTION_DISABLE_IPV6;
+    info.context = lws_create_context(&info);
 
     // Create the server context
     struct lws_context *context = lws_create_context(&info);
