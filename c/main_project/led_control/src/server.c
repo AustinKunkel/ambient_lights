@@ -88,7 +88,7 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     }
 
     // Serve the file with NULL for mime_type and extra_headers
-    if (lws_serve_http_file(wsi, file_path, content_type, NULL, NULL) < 0) {
+    if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
     return -1;
     }
     break;
