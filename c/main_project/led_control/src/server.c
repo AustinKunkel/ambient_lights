@@ -6,7 +6,7 @@
 
 static const struct lws_protocols protocols[];
 
-#define STATIC_PATH "./led_functions/www"  // Path for static files
+#define STATIC_PATH "./led_functions/www/"  // Path for static files
 #define WEBSOCKET_PORT 8080
 
 // WebSocket protocol callback function
