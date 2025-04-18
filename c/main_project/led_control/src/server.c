@@ -36,23 +36,23 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
     switch (reason) {
-        case LWS_CALLBACK_HTTP: {
-            // Print the HTTP request for debugging
-            printf("Received HTTP request\n");
+        // case LWS_CALLBACK_HTTP: {
+        //     // Print the HTTP request for debugging
+        //     printf("Received HTTP request\n");
 
-            // Define the file path to serve (e.g., index.html)
-            const char *file_path = "./led_control/www/index.html";
+        //     // Define the file path to serve (e.g., index.html)
+        //     const char *file_path = "./led_control/www/index.html";
 
-            // Content type (for the response)
-            const char *content_type = "text/html";
+        //     // Content type (for the response)
+        //     const char *content_type = "text/html";
 
-            // Serve the static file
-            if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
-                printf("Failed to serve the file\n");
-                return -1;
-            }
-            break;
-        }
+        //     // Serve the static file
+        //     if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
+        //         printf("Failed to serve the file\n");
+        //         return -1;
+        //     }
+        //     break;
+        // }
         case LWS_CALLBACK_HTTP: {
             printf("Received http request");
             // Get the requested URI
