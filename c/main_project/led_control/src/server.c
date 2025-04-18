@@ -36,66 +36,60 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
     switch (reason) {
-        case LWS_CALLBACK_HTTP:
-            printf("HTTP request received: %s\n", (const char *)in);
-            break;
-        default:
-            break;
+    case LWS_CALLBACK_HTTP:
+    {
+    // Get the requested URI
+    const char *requested_uri = (const char *)in;
+
+    // If the requested file is not specified, serve index.html
+    if (strcmp(requested_uri, "/") == 0) {
+    requested_uri = "/index.html";
     }
-    // case LWS_CALLBACK_HTTP:
-    // {
-    // // Get the requested URI
-    // const char *requested_uri = (const char *)in;
 
-    // // If the requested file is not specified, serve index.html
-    // if (strcmp(requested_uri, "/") == 0) {
-    // requested_uri = "/index.html";
-    // }
+    // Build the full file path
+    char file_path[1024];
+    snprintf(file_path, sizeof(file_path), "%s%s", STATIC_PATH, requested_uri);
 
-    // // Build the full file path
-    // char file_path[1024];
-    // snprintf(file_path, sizeof(file_path), "%s%s", STATIC_PATH, requested_uri);
+    // Check if the requested file exists
+    struct stat file_stat;
+    if (stat(file_path, &file_stat) == -1) {
+    // If file doesn't exist, return 404
+    lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
+    return -1;
+    }
 
-    // // Check if the requested file exists
-    // struct stat file_stat;
-    // if (stat(file_path, &file_stat) == -1) {
-    // // If file doesn't exist, return 404
-    // lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
+    // Serve the requested file
+    const char *content_type;
+    if (strstr(requested_uri, ".html")) {
+    content_type = "text/html";
+    } else if (strstr(requested_uri, ".css")) {
+    content_type = "text/css";
+    } else if (strstr(requested_uri, ".js")) {
+    content_type = "application/javascript";
+    } else if (strstr(requested_uri, ".jpg") || strstr(requested_uri, ".jpeg")) {
+    content_type = "image/jpeg";
+    } else if (strstr(requested_uri, ".png")) {
+    content_type = "image/png";
+    } else if (strstr(requested_uri, ".gif")) {
+    content_type = "image/gif";
+    } else {
+    content_type = "application/octet-stream";
+    }
+
+    lws_return_http_status(wsi, HTTP_STATUS_OK, "Content-Type: text/html\r\n\r\n");
+    const char *response = "<html><body><h1>Hello, world!</h1></body></html>";
+    lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
+
+
+    // Serve the file with NULL for mime_type and extra_headers
+    // if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
     // return -1;
     // }
-
-    // // Serve the requested file
-    // const char *content_type;
-    // if (strstr(requested_uri, ".html")) {
-    // content_type = "text/html";
-    // } else if (strstr(requested_uri, ".css")) {
-    // content_type = "text/css";
-    // } else if (strstr(requested_uri, ".js")) {
-    // content_type = "application/javascript";
-    // } else if (strstr(requested_uri, ".jpg") || strstr(requested_uri, ".jpeg")) {
-    // content_type = "image/jpeg";
-    // } else if (strstr(requested_uri, ".png")) {
-    // content_type = "image/png";
-    // } else if (strstr(requested_uri, ".gif")) {
-    // content_type = "image/gif";
-    // } else {
-    // content_type = "application/octet-stream";
-    // }
-
-    // lws_return_http_status(wsi, HTTP_STATUS_OK, "Content-Type: text/html\r\n\r\n");
-    // const char *response = "<html><body><h1>Hello, world!</h1></body></html>";
-    // lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
-
-
-    // // Serve the file with NULL for mime_type and extra_headers
-    // // if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
-    // // return -1;
-    // // }
-    // break;
-    // }
-    // default:
-    // break;
-    // }
+    break;
+    }
+    default:
+    break;
+    }
 
     return 0;
 }
