@@ -50,6 +50,10 @@ function closeWebSocket() {
   }
 }
 
+window.onload = function() {
+  startWebSocket();
+};
+
 document.addEventListener("DOMContentLoaded", async function() {
 
   sendLedSettingsGet().then(data => {
