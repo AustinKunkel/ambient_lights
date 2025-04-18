@@ -37,12 +37,10 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 {
     switch (reason) {
         case LWS_CALLBACK_HTTP: {
-            // Extract the requested URL
-            char url[512];
-            int len = lws_hdr_copy(wsi, url, sizeof(url), LWS_HEADER_URI);
+            // Extract the requested URL (URI) using lws_get_uri
+            const char *url = lws_get_uri(wsi);
         
-            // If the URL was copied successfully, print it
-            if (len > 0) {
+            if (url) {
                 printf("Received HTTP request for URL: %s\n", url);
             } else {
                 printf("Failed to get URL\n");
