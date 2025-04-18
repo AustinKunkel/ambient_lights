@@ -47,7 +47,7 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
             const char *content_type = "text/html";
 
             // Serve the static file
-            if (lws_serve_http_file(wsi, file_path, content_type) < 0) {
+            if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
                 printf("Failed to serve the file\n");
                 return -1;
             }
