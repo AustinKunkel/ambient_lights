@@ -37,10 +37,34 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 {
     switch (reason) {
         case LWS_CALLBACK_HTTP: {
-            printf("Received HTTP request: %s\n", (const char *)in);
-
-            const char *response = "<html><body><h1>Hello from libwebsockets!</h1></body></html>";
-            lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
+            // Get the requested URL
+            const char *url = lws_get_url(wsi);
+            printf("Received HTTP request for URL: %s\n", url);
+        
+            // HTTP response headers
+            const char *http_response_header = 
+                "HTTP/1.1 200 OK\r\n"          // Status line
+                "Content-Type: text/html\r\n"  // Content type header
+                "Connection: close\r\n"        // Close the connection after the response
+                "\r\n";                       // End of headers
+        
+            // Send the headers
+            int n = lws_write(wsi, (unsigned char *)http_response_header, strlen(http_response_header), LWS_WRITE_HTTP);
+            if (n < 0) {
+                printf("Error sending HTTP response headers\n");
+                return -1;
+            }
+        
+            // HTML body response
+            const char *html_body = "<html><body><h1>Hello from libwebsockets!</h1></body></html>";
+        
+            // Send the body
+            n = lws_write(wsi, (unsigned char *)html_body, strlen(html_body), LWS_WRITE_HTTP);
+            if (n < 0) {
+                printf("Error sending HTTP body\n");
+                return -1;
+            }
+        
             break;
         }
     // case LWS_CALLBACK_HTTP: {
