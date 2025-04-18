@@ -21,6 +21,19 @@ static const struct lws_protocols protocols[];
 
 struct lws_context *context;
 
+
+int parse_led_settings_data_to_string(char *str) {
+    return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
+        led_settings.brightness,
+        led_settings.color,
+        led_settings.capture_screen,
+        led_settings.sound_react,
+        led_settings.fx_num,
+        led_settings.count,
+        led_settings.id
+    );
+}
+
 int initialize_led_settings() {
     char data_line[512];
     printf("reading led_settings.csv...\n");
@@ -58,18 +71,6 @@ int initialize_led_settings() {
         perror("Unable to read from led_settings.csv!!\n");
         return 1;
     }
-}
-
-int parse_led_settings_data_to_string(char *str) {
-    return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
-        led_settings.brightness,
-        led_settings.color,
-        led_settings.capture_screen,
-        led_settings.sound_react,
-        led_settings.fx_num,
-        led_settings.count,
-        led_settings.id
-    );
 }
 
 // WebSocket protocol callback function
