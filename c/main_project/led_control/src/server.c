@@ -1,119 +1,137 @@
 #include <libwebsockets.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <signal.h>
-#include "../../cJSON/cJSON.h"
-#include "led_functions.h"
-#include "main.h"
-#include "csv_control.h"
 
-static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
-    void *user, void *in, size_t len) {
-        switch (reason) {
+static const struct lws_protocols protocols[];
 
-            case LWS_CALLBACK_HTTP:
-                printf("Received request: %s\n", lws_get_ssl(wsi));  // Log the full request path
-                if (lws_serve_http_file(wsi, "./led_control/www/index.html", "text/html", NULL, 0))
-                    return -1;
-                break;
-    
-            case LWS_CALLBACK_HTTP_FILE_COMPLETION:
-                // Optional: called after serving a file
-                return -1;  // close connection after serving
-    
-            default:
-                break;
-        }
-    
-        return 0;
-}
+#define STATIC_PATH "./led_functions/www"  // Path for static files
+#define WEBSOCKET_PORT 7681
 
-static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
- void *user, void *in, size_t len) {
-switch (reason) {
+// WebSocket protocol callback function
+static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
+                              void *user, void *in, size_t len)
+{
+    switch (reason) {
     case LWS_CALLBACK_ESTABLISHED:
-        // Handle new WebSocket connection
+        printf("WebSocket connection established\n");
         break;
     case LWS_CALLBACK_RECEIVE:
-        // Handle received WebSocket message
+        printf("Received message: %s\n", (char *)in);
+        lws_write(wsi, in, len, LWS_WRITE_TEXT);  // Echo the received message back
         break;
     case LWS_CALLBACK_CLOSED:
-        // Handle WebSocket closure
+        printf("WebSocket connection closed\n");
         break;
     default:
         break;
-}
-return 0;
-}
-
-
-static struct lws_protocols protocols[] = {
-    {
-        .name = "http",
-        .callback = lws_callback_http_dummy,  // built-in HTTP handler
-        .per_session_data_size = 0,
-        .rx_buffer_size = 0,
-    },
-    // {
-    //     .name = "my-websocket-protocol",
-    //     .callback = callback_ws,
-    //     .per_session_data_size = 0,          // adjust if needed
-    //     .rx_buffer_size = 4096,
-    // },
-    { NULL, NULL, 0, 0 }
-};
-
-int main() {
-    struct lws_context_creation_info info;
-    memset(&info, 0, sizeof(info));
-
-    char resolved_path[PATH_MAX];  // Buffer to store the resolved path
-    if (realpath("./led_control/www", resolved_path) != NULL) {
-        printf("Serving from path: %s\n", resolved_path);
-    } else {
-        perror("Error resolving path");
     }
 
-    static const struct lws_http_mount mount = {
-        .mount_next = NULL,           // Linked-list of mounts
-        .mountpoint = "/",            // URL mount point
-        .origin = "./led_control/www", // Local path
-        .def = "index.html",          // Default file
-        .protocol = NULL,             // Protocol for serving the files
-        .cgienv = NULL,
-        .extra_mimetypes = NULL,
-        .interpret = NULL,
-        .cgi_timeout = 0,
-        .cache_max_age = 0,
-        .auth_mask = 0,
-        .cache_reusable = 0,
-        .cache_revalidate = 0,
-        .cache_intermediaries = 0,
-        .origin_protocol = LWSMPRO_FILE, // Serve from filesystem
-        .basic_auth_login_file = NULL,
-    };
+    return 0;
+}
 
-    lws_set_log_level(LLL_NOTICE | LLL_INFO | LLL_WARN | LLL_ERR, NULL);
+// Define the WebSocket protocol
+static const struct lws_protocols protocols[] = {
+    {
+        "http",       // protocol name
+        websocket_callback,  // callback function
+        0,             // per session data size
+        1024,          // maximum frame size
+    },
+    { NULL, NULL, 0, 0 }  // end of protocols list
+};
 
-    info.port = 8080;
-    info.mounts = &mount;
+// HTTP callback function for serving static files
+static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
+                         void *user, void *in, size_t len)
+{
+    switch (reason) {
+    case LWS_CALLBACK_HTTP:
+    {
+        // Get the requested URI
+        const char *requested_uri = (const char *)in;
+
+        // If the requested file is not specified, serve index.html
+        if (strcmp(requested_uri, "/") == 0) {
+            requested_uri = "/index.html";
+        }
+
+        // Build the full file path
+        char file_path[1024];
+        snprintf(file_path, sizeof(file_path), "%s%s", STATIC_PATH, requested_uri);
+
+        // Check if the requested file exists
+        struct stat file_stat;
+        if (stat(file_path, &file_stat) == -1) {
+            // If file doesn't exist, return 404
+            lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
+            return -1;
+        }
+
+        // Serve the requested file
+        const char *content_type;
+        if (strstr(requested_uri, ".html")) {
+            content_type = "text/html";
+        } else if (strstr(requested_uri, ".css")) {
+            content_type = "text/css";
+        } else if (strstr(requested_uri, ".js")) {
+            content_type = "application/javascript";
+        } else if (strstr(requested_uri, ".jpg") || strstr(requested_uri, ".jpeg")) {
+            content_type = "image/jpeg";
+        } else if (strstr(requested_uri, ".png")) {
+            content_type = "image/png";
+        } else if (strstr(requested_uri, ".gif")) {
+            content_type = "image/gif";
+        } else {
+            content_type = "application/octet-stream";
+        }
+
+        // Serve the file
+        if (lws_serve_http_file(wsi, file_path, content_type) < 0) {
+            return -1;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+// Create the server context for `libwebsockets`
+static struct lws_context *create_server_context()
+{
+    struct lws_context_creation_info info;
+    memset(&info, 0, sizeof(info));
+    info.port = WEBSOCKET_PORT;
     info.protocols = protocols;
     info.gid = -1;
     info.uid = -1;
-    info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT; // or other options
+
+    // Create the server context
     struct lws_context *context = lws_create_context(&info);
-    if (context == NULL) {
-        fprintf(stderr, "libwebsockets init failed\n");
+    if (!context) {
+        fprintf(stderr, "Error creating server context\n");
+        return NULL;
+    }
+
+    return context;
+}
+
+int main(void)
+{
+    struct lws_context *context = create_server_context();
+    if (!context) {
         return -1;
     }
-    
+
+    // Main event loop to process connections
     while (1) {
         lws_service(context, 100);
     }
-    
+
     lws_context_destroy(context);
     return 0;
 }
