@@ -94,7 +94,6 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     //     // return -1;
     //     // }
     //     break;
-    }   
     default:
         break;
     }
