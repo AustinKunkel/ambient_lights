@@ -31,17 +31,6 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     return 0;
 }
 
-// Define the WebSocket protocol
-static const struct lws_protocols protocols[] = {
-    {
-        "http-only",       // protocol name
-        http_callback,  // callback function
-        0,             // per session data size
-        1024,          // maximum frame size
-    },
-    { NULL, NULL, 0, 0 }  // end of protocols list
-};
-
 // HTTP callback function for serving static files
 static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
@@ -110,6 +99,17 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
     return 0;
 }
+
+// Define the WebSocket protocol
+static const struct lws_protocols protocols[] = {
+    {
+        "http-only",       // protocol name
+        http_callback,  // callback function
+        0,             // per session data size
+        1024,          // maximum frame size
+    },
+    { NULL, NULL, 0, 0 }  // end of protocols list
+};
 
 // Create the server context for `libwebsockets`
 static struct lws_context *create_server_context()
