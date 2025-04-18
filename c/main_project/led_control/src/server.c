@@ -12,7 +12,11 @@
 
 static const struct lws_protocols protocols[];
 
-#define STATIC_PATH "./led_control/www"  // Path for static files
+#define WEB_ROOT "./led_control/www"  // Path for static files
+#define LED_SETTINGS_FILENAME "led_control/data/led_settings.csv"
+#define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
+#define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
+#define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
 #define PORT 8080
 
 struct lws_context *context;
@@ -107,7 +111,7 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
             // Build the full file path
             char file_path[512];
-            snprintf(file_path, sizeof(file_path), "%s%s", STATIC_PATH, requested_uri);
+            snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT, requested_uri);
 
             // Check if the requested file exists
             struct stat file_stat;
