@@ -90,14 +90,40 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         printf("WebSocket connection closed\n");
         break;
     case LWS_CALLBACK_SERVER_WRITEABLE: {
-        const char *message = "Welcome from the server!";
-        unsigned char buffer[LWS_PRE + 1024];  // LWS_PRE is required padding
-        size_t n = strlen(message);
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "status", "ok");
+        cJSON_AddNumberToObject(root, "code", 200);
+
+        cJSON *data = cJSON_CreateObject();
+        cJSON_AddNumberToObject(data, "brightness", led_settings.brightness);
         
-        memcpy(&buffer[LWS_PRE], message, n);
-        lws_write(wsi, &buffer[LWS_PRE], n, LWS_WRITE_TEXT);
+        char color_str[8]; // "#RRGGBB"
+        snprintf(color_str, sizeof(color_str), "#%06X", led_settings.color);
+        cJSON_AddStringToObject(data, "color", color_str);
+        cJSON_AddNumberToObject(data, "capture_screen", led_settings.capture_screen);
+        cJSON_AddNumberToObject(data, "sound_react", led_settings.sound_react);
+        cJSON_AddNumberToObject(data, "fx_num", led_settings.fx_num);
+        cJSON_AddNumberToObject(data, "count", led_settings.count);
+        cJSON_AddNumberToObject(data, "id", led_settings.id);
+        
+        cJSON_AddItemToObject(root, "data", data);
+        char *json_str = cJSON_PrintUnformatted(root); // You must free this
+        
+        // Prepare LWS buffer (with padding)
+        unsigned char buffer[LWS_PRE + 1024];  // Adjust size as needed
+        size_t json_len = strlen(json_str);
+        if (json_len > 1024) json_len = 1024;  // Basic safety check
+        
+        memcpy(&buffer[LWS_PRE], json_str, json_len);
+        
+        // Send JSON over WebSocket
+        lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+        
+        // Cleanup
+        free(json_str);
+        cJSON_Delete(root);
         break;
-    }
+        }
     default:
         break;
     }
