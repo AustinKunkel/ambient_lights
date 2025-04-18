@@ -14,6 +14,44 @@ function sendGetLedSettings() {
   })
 }
 
+let socket;
+function startWebSocket() {
+  socket = new WebSocket('ws://' + window.location.hostname + ':8080', 'websocket');
+
+  socket.onopen = function(event) {
+    console.log('WebSocket connection opened.');
+  };
+
+  socket.onmessage = function(event) {
+    console.log('Message from server:', event.data);
+  };
+
+  socket.onclose = function(event) {
+    console.log('WebSocket connection closed.');
+  };
+
+  socket.onerror = function(error) {
+    console.error('WebSocket error:', error);
+  };
+
+  startWebSocket();
+
+  function sendMessage() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send('Hello from the browser!');
+      console.log('Message sent.');
+    } else {
+      console.log('WebSocket is not open.');
+    }
+  }
+
+  function closeWebSocket() {
+    if (socket) {
+      socket.close();
+    }
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
 
   sendLedSettingsGet().then(data => {

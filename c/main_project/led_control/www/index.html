@@ -17,6 +17,11 @@
 
 </head>
 <body>
+    <div class="button-container">
+        <button class="save-button" onclick="startWebSocket()"></button>
+        <button onclick="sendMessage()" class="save-button">Send Message</button>
+        <button class="save-button" onclick="closeWebSocket()">Close Socket</button>
+    </div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <i class="fa-solid fa-xmark" id="sidebar-x" onclick="toggleSidebar()"></i>

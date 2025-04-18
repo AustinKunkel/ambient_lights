@@ -37,7 +37,7 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 {
     switch (reason) {
         case LWS_CALLBACK_HTTP: {
-            printf("Received http request");
+            printf("Received http request\n");
             // Get the requested URI
             const char *requested_uri = (const char *)in;
 
@@ -104,10 +104,15 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 // Define the WebSocket protocol
 static const struct lws_protocols protocols[] = {
     {
-        "http-only",       // protocol name
+        "http",       // protocol name
         http_callback,  // callback function
         0,             // per session data size
-        0,          // maximum frame size
+        1024,          // maximum frame size
+    }, {
+        "websocket",
+        websocket_callback,
+        0,
+        1024,
     },
     { NULL, NULL, 0, 0 }  // end of protocols list
 };
@@ -121,6 +126,7 @@ static struct lws_context *create_server_context()
     info.protocols = protocols;
     info.gid = -1;
     info.uid = -1;
+    info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
 
     // Create the server context
     struct lws_context *context = lws_create_context(&info);
