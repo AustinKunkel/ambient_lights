@@ -77,20 +77,30 @@ int initialize_led_settings() {
 static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
-switch (reason) {
-case LWS_CALLBACK_ESTABLISHED:
-printf("WebSocket connection established\n");
-break;
-case LWS_CALLBACK_RECEIVE:
-printf("Received message: %s\n", (char *)in);
-lws_write(wsi, in, len, LWS_WRITE_TEXT);  // Echo the received message back
-break;
-case LWS_CALLBACK_CLOSED:
-printf("WebSocket connection closed\n");
-break;
-default:
-break;
-}
+    switch (reason) {
+    case LWS_CALLBACK_ESTABLISHED:
+        printf("WebSocket connection established\n");
+        lws_callback_on_writable(wsi);
+        break;
+    case LWS_CALLBACK_RECEIVE:
+        printf("Received message: %s\n", (char *)in);
+        lws_callback_on_writable(wsi);
+        break;
+    case LWS_CALLBACK_CLOSED:
+        printf("WebSocket connection closed\n");
+        break;
+    case LWS_CALLBACK_SERVER_WRITEABLE: {
+        const char *message = "Welcome from the server!";
+        unsigned char buffer[LWS_PRE + 1024];  // LWS_PRE is required padding
+        size_t n = strlen(message);
+        
+        memcpy(&buffer[LWS_PRE], message, n);
+        lws_write(wsi, &buffer[LWS_PRE], n, LWS_WRITE_TEXT);
+        break;
+    }
+    default:
+        break;
+    }
 
 return 0;
 }

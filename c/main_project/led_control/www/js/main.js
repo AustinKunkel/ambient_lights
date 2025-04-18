@@ -24,6 +24,13 @@ function startWebSocket() {
 
   socket.onmessage = function(event) {
     console.log('Message from server:', event.data);
+
+    try {
+      const data = JSON.parse(event.data);
+      console.log('Parsed Data:', data);
+    } catch (e) {
+      console.log("received plain message:", event.data);
+    }
   };
 
   socket.onclose = function(event) {
