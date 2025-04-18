@@ -37,7 +37,6 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
 {
     switch (reason) {
     case LWS_CALLBACK_HTTP:
-    {
     // Get the requested URI
     const char *requested_uri = (const char *)in;
 
@@ -88,7 +87,6 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     // return -1;
     // }
     break;
-    }
     default:
     break;
     }
