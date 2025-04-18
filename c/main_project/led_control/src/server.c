@@ -41,7 +41,7 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
             printf("Received HTTP request\n");
 
             // Define the file path to serve (e.g., index.html)
-            const char *file_path = "./led_control/index.html";
+            const char *file_path = "./led_control/www/index.html";
 
             // Content type (for the response)
             const char *content_type = "text/html";
