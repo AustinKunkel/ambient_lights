@@ -36,27 +36,15 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
     switch (reason) {
-        // case LWS_CALLBACK_HTTP: {
-        //     // Print the HTTP request for debugging
-        //     printf("Received HTTP request\n");
-
-        //     // Define the file path to serve (e.g., index.html)
-        //     const char *file_path = "./led_control/www/index.html";
-
-        //     // Content type (for the response)
-        //     const char *content_type = "text/html";
-
-        //     // Serve the static file
-        //     if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
-        //         printf("Failed to serve the file\n");
-        //         return -1;
-        //     }
-        //     break;
-        // }
         case LWS_CALLBACK_HTTP: {
             printf("Received http request");
             // Get the requested URI
             const char *requested_uri = (const char *)in;
+
+            if (strstr(requested_uri, "..")) {
+                lws_return_http_status(wsi, HTTP_STATUS_FORBIDDEN, NULL);
+                return -1;
+            }
 
             // If the requested file is not specified, serve index.html
             if (strcmp(requested_uri, "/") == 0) {
@@ -99,6 +87,8 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
             // lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
 
             //Serve the file with NULL for mime_type and extra_headers
+
+            printf("Serving file: %s\n", file_path);
             if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
                 return -1;
             }
