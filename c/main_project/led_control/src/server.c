@@ -34,8 +34,8 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
 // Define the WebSocket protocol
 static const struct lws_protocols protocols[] = {
     {
-        "http",       // protocol name
-        websocket_callback,  // callback function
+        "http-only",       // protocol name
+        http_callback,  // callback function
         0,             // per session data size
         1024,          // maximum frame size
     },
