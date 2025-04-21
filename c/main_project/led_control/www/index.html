@@ -26,6 +26,7 @@
             <li onclick="toggleSidebar()" class="sidebar-link"><a href="#led-settings">Led Settings</a></li>
             <li onclick="toggleSidebar()" class="sidebar-link"><a href="#screen-capture-settings">Screen Capture Settings</a></li>
             <li onclick="toggleSidebar()" class="sidebar-link"><a href="#resolution-settings">Resolution Settings</a></li>
+            <li onclikc="toggleSidebar()" class="sidebar-link"><a href="#debug-options">Debug Options</a></li>
         </ul>
     </div>
     <header>
@@ -34,11 +35,6 @@
         <i class="fa-solid fa-power-off power-icon"></i>
     </header>
     <h1 class="main-title" id="home">Ambient LED Control</h1>
-    <div class="button-container">
-        <button class="capture-button" onclick="startWebSocket()">Start</button>
-        <button onclick="getLEDSettings()" class="capture-button">Get Led Settings</button>
-        <button class="capture-button" onclick="closeWebSocket()">Close Socket</button>
-    </div>
     <div id="add-color-menu" style="display: none;">
         <button onclick="closeAddColorMenu()"><i class="fa-regular fa-circle-xmark"></i></button>
         
@@ -224,6 +220,14 @@
 
         <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
     </div>
+    <section id="debug-options">
+        <h2>Debug Options</h2>
+        <div class="button-container">
+            <button class="capture-button" onclick="startWebSocket()">Start Socket</button>
+            <button onclick="getLEDSettings()" class="capture-button">Get Led Settings</button>
+            <button class="capture-button" onclick="closeWebSocket()">Close Socket</button>
+        </div>
+    </section>
 </body>
 </html>
 
