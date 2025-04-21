@@ -51,6 +51,15 @@ function getLEDSettings() {
   }
 }
 
+function setServerLEDSettings() {
+  if(socket && socket.readyState == WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      action: "set_led_settings",
+      data: led_settings
+    }))
+  }
+}
+
 function sendMessage() {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send('Hello from the browser!');
@@ -85,9 +94,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   brightnessInput.addEventListener("input", () => {
       led_settings.brightness = Number(brightnessInput.value)
       brightnessValue.textContent = brightnessInput.value;
-      sendLedSettingsPost(led_settings).then(()=> {
-        // request get settings and update led_settings
-      });
+
+      setServerLEDSettings();
+      // sendLedSettingsPost(led_settings).then(()=> {
+      //   // request get settings and update led_settings
+      // });
   })
 
   const countInput = document.getElementById("count-input")

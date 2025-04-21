@@ -135,7 +135,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
 void handle_get_led_settings(struct lws *wsi) {
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "action", "get_settings");
+    cJSON_AddStringToObject(root, "action", "get_led_settings");
     cJSON_AddStringToObject(root, "status", "ok");
 
     cJSON *data = cJSON_CreateObject();
