@@ -42,6 +42,15 @@ function startWebSocket() {
   };
 }
 
+function getLEDSettings() {
+  if(socket && socket.readyState == WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      action : "get_led_settings"
+    }));
+    console.log("Get led settings sent");
+  }
+}
+
 function sendMessage() {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send('Hello from the browser!');

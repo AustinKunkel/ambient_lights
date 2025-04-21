@@ -81,12 +81,10 @@ void handle_set_led_settings(struct lws *wsi, cJSON *data);
  * Helper function to distribute actions to their correct handler functions
  */
 void dispatch_action(struct lws *wsi, const char *action, cJSON *data) {
-    if (strcmp(action, "get_settings") == 0) {
-        handle_get_settings(wsi);
-    } else if (strcmp(action, "set_brightness") == 0) {
-        handle_set_brightness(wsi, data);
-    } else if (strcmp(action, "set_color") == 0) {
-        handle_set_color(wsi, data);
+    if (strcmp(action, "get_led_settings") == 0) {
+        handle_get_led_settings(wsi);
+    } else if (strcmp(action, "set_led_settings") == 0) {
+        handle_set_led_settings(wsi, data);
     } else {
         printf("Unknown action: %s\n", action);
     }
