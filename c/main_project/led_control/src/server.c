@@ -73,63 +73,187 @@ int initialize_led_settings() {
     }
 }
 
-// WebSocket protocol callback function
+void handle_get_led_settings(struct lws *wsi);
+void handle_set_led_settings(struct lws *wsi, cJSON *data);
+// void handle_set_color(struct lws *wsi, cJSON *data);
+
+/**
+ * Helper function to distribute actions to their correct handler functions
+ */
+void dispatch_action(struct lws *wsi, const char *action, cJSON *data) {
+    if (strcmp(action, "get_settings") == 0) {
+        handle_get_settings(wsi);
+    } else if (strcmp(action, "set_brightness") == 0) {
+        handle_set_brightness(wsi, data);
+    } else if (strcmp(action, "set_color") == 0) {
+        handle_set_color(wsi, data);
+    } else {
+        printf("Unknown action: %s\n", action);
+    }
+}
+
+// --- Main WebSocket callback ---
 static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
     switch (reason) {
     case LWS_CALLBACK_ESTABLISHED:
         printf("WebSocket connection established\n");
-        lws_callback_on_writable(wsi);
         break;
-    case LWS_CALLBACK_RECEIVE:
-        printf("Received message: %s\n", (char *)in);
-        lws_callback_on_writable(wsi);
-        break;
-    case LWS_CALLBACK_CLOSED:
-        printf("WebSocket connection closed\n");
-        break;
-    case LWS_CALLBACK_SERVER_WRITEABLE: {
-        cJSON *root = cJSON_CreateObject();
-        cJSON_AddStringToObject(root, "status", "ok");
-        cJSON_AddNumberToObject(root, "code", 200);
 
-        cJSON *data = cJSON_CreateObject();
-        cJSON_AddNumberToObject(data, "brightness", led_settings.brightness);
-        
-        char color_str[8]; // "#RRGGBB"
-        snprintf(color_str, sizeof(color_str), "#%06X", led_settings.color);
-        cJSON_AddStringToObject(data, "color", color_str);
-        cJSON_AddNumberToObject(data, "capture_screen", led_settings.capture_screen);
-        cJSON_AddNumberToObject(data, "sound_react", led_settings.sound_react);
-        cJSON_AddNumberToObject(data, "fx_num", led_settings.fx_num);
-        cJSON_AddNumberToObject(data, "count", led_settings.count);
-        cJSON_AddNumberToObject(data, "id", led_settings.id);
-        
-        cJSON_AddItemToObject(root, "data", data);
-        char *json_str = cJSON_PrintUnformatted(root); // You must free this
-        
-        // Prepare LWS buffer (with padding)
-        unsigned char buffer[LWS_PRE + 1024];  // Adjust size as needed
-        size_t json_len = strlen(json_str);
-        if (json_len > 1024) json_len = 1024;  // Basic safety check
-        
-        memcpy(&buffer[LWS_PRE], json_str, json_len);
-        
-        // Send JSON over WebSocket
-        lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
-        
-        // Cleanup
-        free(json_str);
-        cJSON_Delete(root);
-        break;
+    case LWS_CALLBACK_RECEIVE: {
+        printf("Received message: %s\n", (char *)in);
+
+        cJSON *json = cJSON_Parse((char *)in);
+        if (!json) {
+            printf("Invalid JSON\n");
+            break;
         }
-    default:
+
+        cJSON *action = cJSON_GetObjectItem(json, "action");
+        cJSON *data = cJSON_GetObjectItem(json, "data");
+
+        if (cJSON_IsString(action)) {
+            dispatch_action(wsi, action->valuestring, data);
+        }
+
+        cJSON_Delete(json);
         break;
     }
 
-return 0;
+    case LWS_CALLBACK_SERVER_WRITEABLE:
+        // You can implement write queue flushing here if needed
+        break;
+
+    case LWS_CALLBACK_CLOSED:
+        printf("WebSocket connection closed\n");
+        break;
+
+    default:
+        break;
+    }
+    return 0;
 }
+
+void handle_get_led_settings(struct lws *wsi) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "get_settings");
+    cJSON_AddStringToObject(root, "status", "ok");
+
+    cJSON *data = cJSON_CreateObject();
+    cJSON_AddNumberToObject(data, "brightness", led_settings.brightness);
+
+    char color_str[8];
+    snprintf(color_str, sizeof(color_str), "#%06X", led_settings.color);
+    cJSON_AddStringToObject(data, "color", color_str);
+
+    cJSON_AddNumberToObject(data, "capture_screen", led_settings.capture_screen);
+    cJSON_AddNumberToObject(data, "sound_react", led_settings.sound_react);
+    cJSON_AddNumberToObject(data, "fx_num", led_settings.fx_num);
+    cJSON_AddNumberToObject(data, "count", led_settings.count);
+    cJSON_AddNumberToObject(data, "id", led_settings.id);
+
+    cJSON_AddItemToObject(root, "data", data);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    unsigned char buffer[LWS_PRE + 1024];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+
+    free(json_str);
+    cJSON_Delete(root);
+}
+
+void handle_set_led_settings(struct lws *wsi, cJSON *json) {
+    if (!cJSON_IsObject(json)) return;
+
+    if(!json) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+    cJSON *brightness = cJSON_GetObjectItemCaseSensitive(json, "brightness");
+    cJSON *color = cJSON_GetObjectItemCaseSensitive(json, "color");
+    cJSON *capture_screen = cJSON_GetObjectItemCaseSensitive(json, "capture_screen");
+    cJSON *sound_react = cJSON_GetObjectItemCaseSensitive(json, "sound_react");
+    cJSON *fx_num = cJSON_GetObjectItemCaseSensitive(json, "fx_num");
+    cJSON *count = cJSON_GetObjectItemCaseSensitive(json, "count");
+    cJSON *id = cJSON_GetObjectItemCaseSensitive(json, "id");
+
+    LEDSettings temp_settings = led_settings; // used to compare passed values with current led settings
+
+    if (cJSON_IsNumber(brightness)) temp_settings.brightness = brightness->valueint;
+    if (cJSON_IsString(color) && color->valuestring) {
+        const char *hex = color->valuestring;
+        temp_settings.color = (int)strtol(hex[0] == '#' ? hex + 1 : hex, NULL, 16);
+    }
+    if (cJSON_IsNumber(capture_screen)) temp_settings.capture_screen = capture_screen->valueint;
+    if (cJSON_IsNumber(sound_react)) temp_settings.sound_react = sound_react->valueint;
+    if (cJSON_IsNumber(fx_num)) temp_settings.fx_num = fx_num->valueint;
+    if (cJSON_IsNumber(count)) temp_settings.count = count->valueint;
+    if (cJSON_IsNumber(id)) temp_settings.id = id->valueint;
+
+    const char *response_text;
+    int just_brightness = 0;
+
+    if(temp_settings.color == led_settings.color &&
+        temp_settings.capture_screen == led_settings.capture_screen &&
+        temp_settings.sound_react == led_settings.sound_react &&
+        temp_settings.fx_num == led_settings.fx_num &&
+        temp_settings.count == led_settings.count &&
+        temp_settings.id == led_settings.id)
+     {
+     // if only the brightness could be different, no need to stop any services,
+     // just change brightness
+         led_settings.brightness = temp_settings.brightness;
+         update_led_vars();
+         response_text = "{\"Success\":\"Changed brightness\"}";
+         just_brightness = 1;
+     } else { // some other variable has changed, we will update led_settings
+         led_settings.brightness = temp_settings.brightness;
+         led_settings.color = temp_settings.color;
+         led_settings.capture_screen = temp_settings.capture_screen;
+         led_settings.sound_react = temp_settings.sound_react;
+         led_settings.fx_num = temp_settings.fx_num;
+         led_settings.count = temp_settings.count;
+         led_settings.id = temp_settings.id;
+     }
+
+    char led_settings_str[256];
+    parse_led_settings_data_to_string(led_settings_str);
+    //printf("current led settings: %s\n", led_settings_str);
+    if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) { // writes data to csv file
+        printf("Failed to write led_settings\n");
+        response_text = "{\"Error\":\"Failed to write led settings\"}";
+    } else { // success
+        if(!just_brightness) { // dont reset the led strip and everything
+            response_text = update_leds();
+        }
+    }
+
+    char *json_str = cJSON_PrintUnformatted(json);
+    unsigned char buffer[LWS_PRE + 1024];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+
+    free(json_str);
+    cJSON_Delete(json);
+}
+
+// void handle_set_color(struct lws *wsi, cJSON *data) {
+//     if (!cJSON_IsObject(data)) return;
+
+//     cJSON *val = cJSON_GetObjectItem(data, "value");
+//     if (cJSON_IsString(val)) {
+//         unsigned int color;
+//         if (sscanf(val->valuestring, "#%06X", &color) == 1) {
+//             led_settings.color = color;
+//             printf("Color set to #%06X\n", led_settings.color);
+//             handle_get_settings(wsi); // echo updated settings
+//         }
+//     }
+// }
 
 
 // HTTP callback function for serving static files
