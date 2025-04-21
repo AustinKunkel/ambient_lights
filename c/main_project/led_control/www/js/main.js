@@ -26,8 +26,20 @@ function startWebSocket() {
     console.log('Message from server:', event.data);
 
     try {
-      const data = JSON.parse(event.data);
+      const message = JSON.parse(event.data);
+
+      const { action, data } = message;
       console.log('Parsed Data:', data);
+
+      switch (action) {
+        case "get_led_settings":
+          led_settings = {...data};
+          updateLedSettings();
+        case "get_capt_settings":
+          break;
+        case "led_pixel_data":
+          break;
+      }
     } catch (e) {
       console.log("received plain message:", event.data);
     }
