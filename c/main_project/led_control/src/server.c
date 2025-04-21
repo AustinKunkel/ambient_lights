@@ -97,6 +97,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     switch (reason) {
     case LWS_CALLBACK_ESTABLISHED:
         printf("WebSocket connection established\n");
+        handle_get_led_settings(wsi);  // Send LED settings to the client
         break;
 
     case LWS_CALLBACK_RECEIVE: {
