@@ -236,7 +236,6 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
 
     free(json_str);
-    cJSON_Delete(json);
 }
 
 // void handle_set_color(struct lws *wsi, cJSON *data) {

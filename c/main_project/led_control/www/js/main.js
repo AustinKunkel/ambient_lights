@@ -56,7 +56,9 @@ function setServerLEDSettings() {
     socket.send(JSON.stringify({
       action: "set_led_settings",
       data: led_settings
-    }))
+    }));
+  } else {
+    console.log("WebSocket is not open.");
   }
 }
 
