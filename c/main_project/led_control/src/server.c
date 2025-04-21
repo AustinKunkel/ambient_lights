@@ -100,7 +100,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         break;
 
     case LWS_CALLBACK_RECEIVE: {
-        printf("Received message: %s\n", (char *)in);
+        printf("Received message: %.*s\n", (int)len, (char *)in);
 
         cJSON *json = cJSON_Parse((char *)in);
         if (!json) {
