@@ -27,9 +27,8 @@ function startWebSocket() {
 
     try {
       const message = JSON.parse(event.data);
-
+      console.log('Parsed Data:', message);
       const { action, data } = message;
-      console.log('Parsed Data:', data);
 
       switch (action) {
         case "get_led_settings":

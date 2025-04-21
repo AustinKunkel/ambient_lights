@@ -88,12 +88,14 @@ document.addEventListener("DOMContentLoaded", async function() {
             color = colorCodeInput.value;
         }
         led_settings.color = color;
-        sendLedSettingsPost(led_settings).then(
-            sendLedSettingsGet().then((data) => {
-                led_settings = { ...data };
-                updateLedSettings();
-            })
-        );
+        setServerLEDSettings();
+        getLEDSettings();
+        // sendLedSettingsPost(led_settings).then(
+        //     sendLedSettingsGet().then((data) => {
+        //         led_settings = { ...data };
+        //         updateLedSettings();
+        //     })
+        // );
     }
     
 
