@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const set_color_button = document.getElementById("set-color-button");
 
     getUserColors().then(data => {
-        userColors = data.colors || [];
+        userColors = data.colors || [];getCapture
         updateUserColors();
     });
 
@@ -42,11 +42,11 @@ document.addEventListener("DOMContentLoaded", async function() {
         if (color) {
             colorPicker.color.set(color);
             colorCodeInput.value = color;
-            set_color_button.style.opacity = "1";
             set_color_button.disabled = false;
+            set_color_button.classList.remove('disabled-button');
             set_color_button.style.borderColor = color;
             if(color_picker_element) {
-                color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
+                color_picker_element.style.boxShadow = `0 0 50px ${color}`;
             }
         }
     }
@@ -68,9 +68,10 @@ document.addEventListener("DOMContentLoaded", async function() {
         if(activeColorButton != null) {
             activeColorButton.classList.remove("selected");
         }
-        set_color_button.style.opacity = "1";
         set_color_button.disabled = false;
+        set_color_button.classList.remove('disabled-button');
         set_color_button.style.borderColor = hexColor;
+        set_color_button.style.boxShadow = `0 0 10px ${hexColor}`;
         color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
     });
 
@@ -109,18 +110,17 @@ document.addEventListener("DOMContentLoaded", async function() {
                 color = rgbToHex(color);
             }
             colorCodeInput.value = color;
-            set_color_button.style.opacity = "1";
             set_color_button.disabled = false;
+            set_color_button.classList.remove('disabled-button');
             set_color_button.style.borderColor = color;
+            set_color_button.style.boxShadow = `0 0 10px ${color}`;
             color_picker_element.style.boxShadow = `0 0 50px ${color}`;
         } catch (error) {
             isUpdatingFromInput = false;
             console.log(error);
             message_pop_up(errorType, message);
-            set_color_button.style.borderColor = "black";
             set_color_button.disabled = true;
-            set_color_button.style.opacity = ".5";
-            color_picker_element.style.boxShadow = `0 0 0 #000000`;
+            set_color_button.classList.add('disabled-button');
         }
     }
 
@@ -271,12 +271,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
         led_settings.capture_screen = led_settings.capture_screen == 1 ? 0 : 1; // flip
 
-        sendLedSettingsPost(led_settings).then(() => {
-            sendLedSettingsGet().then((data) => {
-                led_settings = { ...data };
-            })
-            window.updateCaptureButton(led_settings.capture_screen > 0);
-        })
+        setServerLEDSettings();
     }
 
     /**

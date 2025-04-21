@@ -156,9 +156,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   window.toggleSidebar = () => {
     sidebarOpen = !sidebarOpen;
     console.log(sidebarOpen);
-    sidebar.style.left = sidebarOpen ? 0 : '-120%';
+    sidebar.style.left = sidebarOpen ? 0 : '-100%';
   }
-
 
   window.updateLedSettings = () => {
     brightnessValue.textContent = led_settings.brightness;
@@ -283,5 +282,72 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function setBlendMode(value) {
     blendModeActive.checked = value > 0;
+  }
+
+
+  const width = 640;
+  const height = 480;
+  const scale = 7;
+
+  const cols = Math.floor(width / scale);
+  const rows = Math.floor(height / scale);
+
+  function getEdgeIndices(cols, rows) {
+    const indices = [];
+
+    const length = '10px';
+    const width = '10px';
+
+    // Top row
+    for (let i = 0; i < cols; i++) {
+      indices.push({ row: 0, col: i, width: width, height: length });
+    }
+  
+    // Right column
+    for (let i = 1; i < rows - 1; i++) {
+      indices.push({ row: i, col: cols - 1, width: length, height: width });
+    }
+  
+    // Bottom row
+    for (let i = cols - 1; i >= 0; i--) {
+      indices.push({ row: rows - 1, col: i, width: width, height: length });
+    }
+  
+    // Left column
+    for (let i = rows - 2; i > 0; i--) {
+      indices.push({ row: i, col: 0, width: length, height: width });
+    }
+  
+    return indices;
+  }
+
+  const edgeCoords = getEdgeIndices(cols, rows);
+  const container = document.getElementById('pixel-grid');
+
+  // Optional: style container with fixed size
+
+  const edgePixels = [];
+
+  edgeCoords.forEach(coord => {
+    const pixel = document.createElement('div');
+    pixel.className = 'pixel';
+
+    // Position using absolute positioning
+    pixel.style.position = 'absolute';
+    pixel.style.width = coord.width;
+    pixel.style.height = coord.height;
+    pixel.style.left = `${(coord.col / cols) * 100}%`;
+    pixel.style.top = `${(coord.row / rows) * 100}%`;
+    pixel.style.backgroundColor = "red";
+
+    container.appendChild(pixel);
+    edgePixels.push(pixel);
+  });
+
+  function updateEdgePixels(colorArray) {
+    for (let i = 0; i < edgePixels.length; i++) {
+      const color = colorArray[i];
+      edgePixels[i].style.backgroundColor = color;
+    }
   }
 })
