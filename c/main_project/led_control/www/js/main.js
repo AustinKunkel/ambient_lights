@@ -55,7 +55,7 @@ function setServerLEDSettings() {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_led_settings",
-      data: led_settings
+      data: {...led_settings}
     }));
   } else {
     console.log("WebSocket is not open.");
