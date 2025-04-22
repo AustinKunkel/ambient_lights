@@ -402,10 +402,9 @@ static const struct lws_protocols protocols[] = {
         0,             // per session data size
         1024,          // maximum frame size
     }, {
-        "websocket",
-        websocket_callback,
-        0,
-        1024,
+        .name = "websocket",
+        .callback = websocket_callback,
+        .per_session_data_size = sizeof(per_session_data_t),
     },
     { NULL, NULL, 0, 0 }  // end of protocols list
 };
