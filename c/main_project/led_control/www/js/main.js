@@ -8,6 +8,21 @@ let led_settings = {
   'id' : 2
 }
 
+let capt_settings = {
+  'v_offset' : 0,
+  'h_offset' : 0,
+  'avg_color' : 0,
+  'left_count' : 36,
+  'right_count' : 37,
+  'top_count' : 66,
+  'bottom_count' : 67,
+  'res_x' : 640,
+  'res_y' : 480,
+  'blend_depth' : 5,
+  'blend_mode' : 1,
+  'auto_offset' : 1
+}
+
 function sendGetLedSettings() {
   sendLedSettingsGet().then((data) => {
     console.log(data);
@@ -163,6 +178,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
     initializeColorPicker();
+    getEdgeIndices
   }
 
   const leftCount = document.getElementById("left-led-count")
@@ -247,6 +263,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   function updateCaptSettings(data) {
+    capt_settings = { ...data };
+
     vOffsetInput.value = data['v-offset']
     hOffsetInput.value = data['h-offset']
     leftCount.value = data['left-count']
@@ -280,65 +298,60 @@ document.addEventListener("DOMContentLoaded", async function() {
     blendModeActive.checked = value > 0;
   }
 
-
-  const width = 640;
-  const height = 480;
-  const scale = 7;
-
-  const cols = Math.floor(width / scale);
-  const rows = Math.floor(height / scale);
-
-  function getEdgeIndices(cols, rows) {
+  function getEdgeIndices() {
     const indices = [];
 
     const length = '10px';
     const width = '10px';
 
     // Top row
-    for (let i = 0; i < cols; i++) {
+    for (let i = 0; i < capt_settings.top_count; i++) {
       indices.push({ row: 0, col: i, width: width, height: length });
     }
   
     // Right column
-    for (let i = 1; i < rows - 1; i++) {
+    for (let i = 1; i < capt_settings.right_count - 1; i++) {
       indices.push({ row: i, col: cols - 1, width: length, height: width });
     }
   
     // Bottom row
-    for (let i = cols - 1; i >= 0; i--) {
+    for (let i = capt_settings.bottom_count - 1; i >= 0; i--) {
       indices.push({ row: rows - 1, col: i, width: width, height: length });
     }
   
     // Left column
-    for (let i = rows - 2; i > 0; i--) {
+    for (let i = capt_settings.left_count - 2; i > 0; i--) {
       indices.push({ row: i, col: 0, width: length, height: width });
     }
   
     return indices;
   }
 
-  const edgeCoords = getEdgeIndices(cols, rows);
-  const container = document.getElementById('pixel-grid');
+  function updateEntirePixelFrame() {
+    const edgeCoords = getEdgeIndices();
+    const container = document.getElementById('pixel-grid');
+    container.innerHTML = '';
+    const edgePixels = [];
 
-  // Optional: style container with fixed size
+    const avg_horizontal_count = Math.round((capt_settings.top_count + capt_settings.bottom_count) / 2);
+    const avg_vertical_count = Math.round((capt_settings.left_count + capt_settings.right_count) / 2);
 
-  const edgePixels = [];
-
-  edgeCoords.forEach(coord => {
-    const pixel = document.createElement('div');
-    pixel.className = 'pixel';
-
-    // Position using absolute positioning
-    pixel.style.position = 'absolute';
-    pixel.style.width = coord.width;
-    pixel.style.height = coord.height;
-    pixel.style.left = `${(coord.col / cols) * 100}%`;
-    pixel.style.top = `${(coord.row / rows) * 100}%`;
-    pixel.style.backgroundColor = "red";
-
-    container.appendChild(pixel);
-    edgePixels.push(pixel);
-  });
+    edgeCoords.forEach(coord => {
+      const pixel = document.createElement('div');
+      pixel.className = 'pixel';
+  
+      // Position using absolute positioning
+      pixel.style.position = 'absolute';
+      pixel.style.width = coord.width;
+      pixel.style.height = coord.height;
+      pixel.style.left = `${(coord.col / avg_horizontal_count ) * 100}%`;
+      pixel.style.top = `${(coord.row / avg_vertical_count) * 100}%`;
+      pixel.style.backgroundColor = "red";
+  
+      container.appendChild(pixel);
+      edgePixels.push(pixel);
+    });
+  }
 
   window.updateEdgePixels = (colorArray) => {
     console.log(colorArray);
