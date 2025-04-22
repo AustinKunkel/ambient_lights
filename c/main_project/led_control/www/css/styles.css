@@ -191,6 +191,7 @@ label {
   left: 50%;
   transform: translateX(-50%);
   margin-top: 75px;
+  background-color: #35a4d8;
 }
 .pixel {
   width: 100%;

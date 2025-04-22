@@ -294,6 +294,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     blendModeActive.checked = value > 0;
   }
 
+  const spacing = 3; // number of pixels to be averaged
+
   function getEdgeIndices() {
     const indices = [];
   
@@ -301,12 +303,13 @@ document.addEventListener("DOMContentLoaded", async function() {
     const length = '15px';  // longer side
     const width = '15px';    // shorter side
   
-    const containerPadding = 2; // percentage padding for better alignment
+    const containerPadding = 0; // percentage padding for better alignment
 
     // Right column
-    for (let i = 0; i < capt_settings.right_count - 2; i++) {
+    let i_roof = Math.floor((capt_settings.right_count - 2)/ spacing);
+    for (let i = 0; i < i_roof; i++) {
       indices.push({
-        row: (capt_settings.right_count - 2) - i,
+        row: i_roof - i,
         col: 'right',
         width: length,
         height: width
@@ -314,7 +317,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   
     // Top row
-    for (let i = 0; i < capt_settings.top_count - 1; i++) {
+    i_roof = Math.floor((capt_settings.top_count) / spacing);
+    for (let i = 0; i < i_roof; i++) {
       indices.push({
         row: 0,
         col: i,
@@ -325,7 +329,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     // Left column
-    for (let i = capt_settings.left_count - 2; i > 0; i--) {
+    i_roof = Math.floor((capt_settings.left_count - 2) / spacing);
+    for (let i = i_roof; i > 0; i--) {
       indices.push({
         row: i,
         col: 0,
@@ -335,7 +340,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   
     // Bottom row
-    for (let i = capt_settings.bottom_count - 1; i >= 0; i--) {
+    i_roof = Math.floor((capt_settings.bottom_count - 2) / spacing);
+    for (let i = i_roof; i >= 0; i--) {
       indices.push({
         row: 'bottom',
         col: i,
@@ -344,9 +350,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         topOffset: `calc(100% - ${containerPadding}%)`
       });
     }
-  
-
-  
     return indices;
   }
 
@@ -356,38 +359,57 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function updateEntirePixelFrame() {
     const edgeCoords = getEdgeIndices();
-    //console.log("EdgeCoords:", edgeCoords);
+    console.log("EdgeCoords:", edgeCoords);
     const container = document.getElementById('pixel-grid');
-    container.innerHTML = '';
-    edgePixels.length = 0;
-
-    const avg_horizontal_count = Math.round((capt_settings.top_count + capt_settings.bottom_count) / 2);
-    const avg_vertical_count = Math.round((capt_settings.left_count + capt_settings.right_count) / 2);
-
+    container.innerHTML = ''; // Clear the container
+    edgePixels.length = 0; // Clear the edgePixels array
+  
+    const horizontalMargin = 5; // Horizontal space between sides (left, right)
+    const verticalMargin = 5; // Vertical space between sides (top, bottom)
+  
+    // Calculate the available space after subtracting margins
+    const availableWidth = container.offsetWidth - (2 * horizontalMargin);
+    const availableHeight = container.offsetHeight - (2 * verticalMargin);
+  
+    // Calculate spacing for each side based on available space
+    const horizontalSpacing = availableWidth / Math.floor(capt_settings.top_count / spacing);
+    const verticalSpacing = availableHeight / Math.floor(capt_settings.left_count / spacing);
+  
+    // Ensure pixels take up the available space without overshooting
+    const pixelWidth = horizontalSpacing; // Each pixel will take up the full width space
+    const pixelHeight = verticalSpacing; // Each pixel will take up the full height space
+  
     edgeCoords.forEach(coord => {
       const pixel = document.createElement('div');
       pixel.className = 'pixel';
-    
       pixel.style.position = 'absolute';
-      pixel.style.width = coord.width;
-      pixel.style.height = coord.height;
+      pixel.style.width = `${pixelWidth}px`;
+      pixel.style.height = `${pixelHeight}px`;
       pixel.style.backgroundColor = 'red';
     
       if (coord.col === 'right') {
-        pixel.style.left = '100%';
-        pixel.style.top = `${(coord.row / capt_settings.right_count) * 100}%`;
-        pixel.style.transform = 'translateX(-100%)';
+        // Right edge: position exactly within the container
+        const x = container.offsetWidth - horizontalMargin - pixelWidth;
+        const y = verticalMargin + (coord.row * verticalSpacing);
+        pixel.style.left = `${x}px`;
+        pixel.style.top = `${y}px`;
       } else if (coord.row === 'bottom') {
-        pixel.style.left = `${(coord.col / capt_settings.bottom_count) * 100}%`;
-        pixel.style.top = coord.topOffset;
-        pixel.style.transform = 'translateY(-100%)';
+        // Bottom edge: position exactly within the container
+        const x = horizontalMargin + (coord.col * horizontalSpacing);
+        const y = container.offsetHeight - verticalMargin - pixelHeight;
+        pixel.style.left = `${x}px`;
+        pixel.style.top = `${y}px`;
       } else if (coord.row === 0) {
-        pixel.style.left = `${(coord.col / capt_settings.top_count) * 100}%`;
-        pixel.style.top = coord.topOffset;
+        // Top edge: already correct
+        const x = horizontalMargin + (coord.col * horizontalSpacing);
+        pixel.style.left = `${x}px`;
+        pixel.style.top = `${verticalMargin}px`;
       } else {
-        // Left column
-        pixel.style.left = '0';
-        pixel.style.top = `${(coord.row / capt_settings.left_count) * 100}%`;
+        // Left edge: already correct
+        const x = horizontalMargin;
+        const y = verticalMargin + (coord.row * verticalSpacing);
+        pixel.style.left = `${x}px`;
+        pixel.style.top = `${y}px`;
       }
     
       container.appendChild(pixel);
