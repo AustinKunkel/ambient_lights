@@ -331,6 +331,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function updateEntirePixelFrame() {
     const edgeCoords = getEdgeIndices();
+    console.log("EdgeCoords:", edgeCoords);
     const container = document.getElementById('pixel-grid');
     container.innerHTML = '';
     edgePixels.length = 0;
