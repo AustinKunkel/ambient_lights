@@ -9,6 +9,7 @@
 #include "led_functions.h"
 #include "main.h"
 #include "csv_control.h"
+#include "server.h"
 
 static const struct lws_protocols protocols[];
 
@@ -18,9 +19,16 @@ static const struct lws_protocols protocols[];
 #define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
 #define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
 #define PORT 8080
+#define MAX_CLIENTS 10
 
 struct lws_context *context;
 
+typedef struct per_session_data {
+    struct  lws *wsi;
+} per_session_data_t;
+
+per_session_data_t* clients[MAX_CLIENTS];
+int client_count;
 
 int parse_led_settings_data_to_string(char *str) {
     return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
@@ -97,7 +105,12 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     switch (reason) {
     case LWS_CALLBACK_ESTABLISHED:
         printf("WebSocket connection established\n");
-        handle_get_led_settings(wsi);  // Send LED settings to the client
+        per_session_data_t *psd = (per_session_data_t*)user;
+        psd->wsi = wsi;
+        if(client_count < MAX_CLIENTS) {
+            handle_get_led_settings(wsi);  // Send LED settings to the client
+            clients[client_count++] = psd;
+        }
         break;
 
     case LWS_CALLBACK_RECEIVE: {
@@ -125,6 +138,17 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         break;
 
     case LWS_CALLBACK_CLOSED:
+        per_session_data_t* psd = (per_session_data_t*)user;
+        for (int i = 0; i < client_count; i++) {
+            if (clients[i] == psd) {
+                // Shift remaining clients
+                for (int j = i; j < client_count - 1; j++) {
+                    clients[j] = clients[j + 1];
+                }
+                client_count--;
+                break;
+            }
+        }
         printf("WebSocket connection closed\n");
         break;
 
@@ -231,6 +255,59 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     }
 
     handle_get_led_settings(wsi);
+}
+
+const char* side_to_string(int side) {
+    switch (side) {
+        case 0: "right";
+        case 1: "top";
+        case 2: "left";
+        case 3: "bottom";
+        default: return "unknown";
+    }
+}
+
+void color_to_hex(uint32_t color, char *buffer) {
+    snprintf(buffer, 8, "#%02X%02X%02X",
+        (color >> 16) & 0xFF,
+        (color >> 8) & 0xFF,
+        color & 0xFF);
+}
+
+void send_led_strip_colors(struct led_position* led_positions) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "led_pixel_data");
+
+    cJSON *data_array = cJSON_CreateArray();
+
+    for(int i = 0; i < led_settings.count; i++) {
+        cJSON *item = cJSON_CreateObject();
+        char color_hex[8];
+        color_to_hex(led_positions[i].color, color_hex);
+
+        cJSON_AddStringToObject(item, "side", side_to_string(led_positions[i].side));
+        cJSON_AddStringToObject(item, "color", color_hex);
+
+        cJSON_AddItemToArray(data_array, item);
+    }
+
+    cJSON_AddItemToObject(root, "data", data_array);
+    char* json_str = cJSON_PrintUnformatted(root);
+
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+
+        size_t len strlen(json_str);
+        unsigned char *buf = malloc(LWS_PRE + len);
+        if(buf) {
+            memcpy(buf + LWS_PRE, json_str, len);
+            lws_write(wsi, buf + LWS_PRE, len, LWS_WRITE_TEXT);
+            free(buf);
+        }
+    }
+
+    cJSON_Delete(root);
+    free(json_str);
 }
 
 // void handle_set_color(struct lws *wsi, cJSON *data) {
@@ -366,6 +443,9 @@ int main(void)
 {
     signal(SIGINT, stop_server);
     signal(SIGTERM, stop_server);
+    per_session_data_t* clients[MAX_CLIENTS] = {0};
+    client_count = 0;
+
     context = create_server_context();
     if (!context) {
         return -1;

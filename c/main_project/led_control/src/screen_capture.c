@@ -13,6 +13,7 @@
 #include "screen_capture.h"
 #include "screen_capture_functions.h"
 #include "csv_control.h"
+#include "server.h"
 
 #define DEVICE "/dev/video0"
 #define LEFT 2
@@ -27,15 +28,7 @@ int HEIGHT = 480;
 volatile bool stop_capture = false;
 pthread_t capture_thread;
 
-void *capture_loop(void *);
-
-struct led_position {
-  int x;
-  int y;
-  int side; // 0 for right, 1 for top, 2 for left, 3 for bottom
-};
-
-struct led_position *led_positions;
+struct led_position *led_positions; // server.h
 
 CaptureSettings sc_settings;
 
@@ -290,6 +283,22 @@ void setup_bottom_side(int count, struct led_position* led_list, int w, int h, i
     led_list[index].y = y_index;
     led_list[index].side = BOTTOM;
   }
+} 
+
+/**
+ * Loop that takes the current led_positions and
+ * sends them to the server to give to the client
+ */
+void send_led_positions_loop(void *) {
+  struct timespec ts;
+
+  ts.tv_sec = 0;
+  ts.tv_nsec = 100000000L;  // 100 milliseconds = 100,000,000 nanoseconds
+
+  while(!stop_capture) {
+    send_led_positions_loop(led_positions);
+    nanosleep(&ts, NULL);
+  }
 }
 
 void *capture_loop(void *);
@@ -327,6 +336,8 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
+
+
   printf("Capturing started...\n");
   return 0;
 }
@@ -343,6 +354,7 @@ void *capture_loop(void *strip_ptr) {
   }
   //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
   bool blend_mode_active = sc_settings.blend_mode > 0;
+  int i = 0;
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
@@ -351,12 +363,14 @@ void *capture_loop(void *strip_ptr) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
         uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
         set_led_32int_color(i, color);
+        led_positions[i].color = color;
       }
     } else {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
         int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
         set_led_color(i, r, g, b);
+        led_positions[i].color = (r << 16) | (g << 8) | b;
       }
     }
     ws2811_render(strip);
