@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const set_color_button = document.getElementById("set-color-button");
 
     getUserColors().then(data => {
-        userColors = data.colors || [];getCapture
+        userColors = data.colors || [];
         updateUserColors();
     });
 
