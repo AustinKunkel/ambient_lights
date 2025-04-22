@@ -184,9 +184,11 @@ label {
 #pixel-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10px, 1fr)); /* Will be overridden in JS */
-  gap: 1px;
-  width: 900px; /* for example */
+  width: 900px;
   height: 550px;
+  background-color: var(--surface);
+  border-radius: 10px;
+  box-shadow: 0 0 25px var(--surface);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -206,11 +208,11 @@ label {
   text-align: center;
   font-weight: 500;
   color: var(--text-secondary);
-  top: 1000px;
+  font-size: 45px;
+  top: 580px;
   left: 50%;
   transform: translateX(-50%);
   font-style: italic;
-  z-index: 10;
 }
 
 /***** Color picker *****/
