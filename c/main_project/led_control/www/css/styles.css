@@ -202,6 +202,9 @@ label {
 
 .capturing-screen-description {
   color: var(--text-secondary);
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /***** Color picker *****/
