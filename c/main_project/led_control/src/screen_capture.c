@@ -294,7 +294,7 @@ void *send_led_positions_loop(void *) {
   struct timespec ts;
 
   ts.tv_sec = 0;
-  ts.tv_nsec = 100000000L;  // 100 milliseconds = 100,000,000 nanoseconds
+  ts.tv_nsec = 33333333L;  // 33 milliseconds = 33,000,000 nanoseconds, 30fps
 
   while(!stop_capture) {
     send_led_strip_colors(led_positions);
