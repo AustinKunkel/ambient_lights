@@ -230,13 +230,7 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
         }
     }
 
-    char *json_str = cJSON_PrintUnformatted(json);
-    unsigned char buffer[LWS_PRE + 1024];
-    size_t json_len = strlen(json_str);
-    memcpy(&buffer[LWS_PRE], json_str, json_len);
-    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
-
-    free(json_str);
+    handle_get_led_settings(wsi);
 }
 
 // void handle_set_color(struct lws *wsi, cJSON *data) {
