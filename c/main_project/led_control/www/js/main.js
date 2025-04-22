@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     for (let i = 0; i < i_roof; i++) {
       indices.push({
         row: 0,
-        col: i,
+        col: i_roof - i,
         width: width,
         height: length,
         topOffset: `${containerPadding}%`
@@ -350,7 +350,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     for (let i = i_roof; i >= 0; i--) {
       indices.push({
         row: 'bottom',
-        col: i,
+        col: i_roof - i,
         width: width,
         height: length,
         topOffset: `calc(100% - ${containerPadding}%)`
