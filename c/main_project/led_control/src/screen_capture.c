@@ -290,7 +290,7 @@ void setup_bottom_side(int count, struct led_position* led_list, int w, int h, i
  * Loop that takes the current led_positions and
  * sends them to the server to give to the client
  */
-void send_led_positions_loop(void *) {
+void *send_led_positions_loop(void *) {
   struct timespec ts;
 
   ts.tv_sec = 0;
