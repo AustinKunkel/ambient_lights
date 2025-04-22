@@ -102,10 +102,10 @@ void dispatch_action(struct lws *wsi, const char *action, cJSON *data) {
 static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
+    per_session_data_t *psd = (per_session_data_t*)user;
     switch (reason) {
     case LWS_CALLBACK_ESTABLISHED:
         printf("WebSocket connection established\n");
-        per_session_data_t *psd = (per_session_data_t*)user;
         psd->wsi = wsi;
         if(client_count < MAX_CLIENTS) {
             handle_get_led_settings(wsi);  // Send LED settings to the client
@@ -138,7 +138,6 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         break;
 
     case LWS_CALLBACK_CLOSED:
-        per_session_data_t* psd = (per_session_data_t*)user;
         for (int i = 0; i < client_count; i++) {
             if (clients[i] == psd) {
                 // Shift remaining clients
@@ -297,7 +296,7 @@ void send_led_strip_colors(struct led_position* led_positions) {
     for(int  i = 0; i < client_count; i++) {
         struct lws *wsi = clients[i]->wsi;
 
-        size_t len strlen(json_str);
+        size_t len = strlen(json_str);
         unsigned char *buf = malloc(LWS_PRE + len);
         if(buf) {
             memcpy(buf + LWS_PRE, json_str, len);
