@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const containerPadding = 2; // percentage padding for better alignment
 
     // Right column
-    for (let i = 0; i < capt_settings.right_count - 2; i++) {
+    for (let i = 0; i < capt_settings.right_count; i++) {
       indices.push({
         row: i,
         col: 'right',
@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   
     // Top row
-    for (let i = 0; i < capt_settings.top_count; i++) {
+    for (let i = 0; i < capt_settings.top_count - 1; i++) {
       indices.push({
         row: 0,
         col: i,
