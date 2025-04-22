@@ -418,10 +418,35 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.updateEdgePixels = (colorArray) => {
-    console.log(colorArray);
-    for (let i = 0; i < edgePixels.length; i++) {
-      const color  = colorArray[i].color;
-      edgePixels[i].style.backgroundColor = color;
+    let groupedColors = [];
+    let i = 0;
+  
+    while (i < colorArray.length) {
+      const chunkSize = Math.min(spacing, colorArray.length - i);
+      let r = 0, g = 0, b = 0;
+  
+      for (let j = 0; j < chunkSize; j++) {
+        const color = colorArray[i + j].color;
+        const rgb = color.match(/\d+/g).map(Number);
+        r += rgb[0];
+        g += rgb[1];
+        b += rgb[2];
+      }
+  
+      // Average the RGB values
+      r = Math.round(r / chunkSize);
+      g = Math.round(g / chunkSize);
+      b = Math.round(b / chunkSize);
+  
+      groupedColors.push(`rgb(${r}, ${g}, ${b})`);
+      i += chunkSize;
     }
-  }
+  
+    // Apply to edgePixels
+    for (let j = 0; j < edgePixels.length; j++) {
+      if (groupedColors[j]) {
+        edgePixels[j].style.backgroundColor = groupedColors[j];
+      }
+    }
+  };
 })
