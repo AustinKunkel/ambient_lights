@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
     initializeColorPicker();
-    getEdgeIndices
+    updateEntirePixelFrame();
   }
 
   const leftCount = document.getElementById("left-led-count")
@@ -327,11 +327,13 @@ document.addEventListener("DOMContentLoaded", async function() {
     return indices;
   }
 
+  const edgePixels = [];
+
   function updateEntirePixelFrame() {
     const edgeCoords = getEdgeIndices();
     const container = document.getElementById('pixel-grid');
     container.innerHTML = '';
-    const edgePixels = [];
+    edgePixels.length = 0;
 
     const avg_horizontal_count = Math.round((capt_settings.top_count + capt_settings.bottom_count) / 2);
     const avg_vertical_count = Math.round((capt_settings.left_count + capt_settings.right_count) / 2);
