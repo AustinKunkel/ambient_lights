@@ -398,7 +398,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   window.updateEdgePixels = (colorArray) => {
     console.log(colorArray);
     for (let i = 0; i < edgePixels.length; i++) {
-      const color  = colorArray[i];
+      const color  = colorArray[i].color;
       edgePixels[i].style.backgroundColor = color;
     }
   }
