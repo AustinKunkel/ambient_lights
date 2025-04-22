@@ -134,7 +134,7 @@ header {
 .main-title {
   width: 70%; 
   text-align: center;
-  margin: 1em auto .5em auto;
+  margin: 0 auto .5em auto;
   scroll-margin-top: 130px;
 }
 

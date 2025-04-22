@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     const scrollY = window.scrollY;
 
-    if(scrollY >= 275) {
+    if(scrollY >= 120) {
       header.style.backgroundColor = "#121212";
       headerTitle.style.display = "block";
     } else {  
