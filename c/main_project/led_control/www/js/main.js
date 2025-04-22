@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const containerPadding = 2; // percentage padding for better alignment
 
     // Right column
-    for (let i = 0; i < capt_settings.right_count; i++) {
+    for (let i = 0; i < capt_settings.right_count - 2; i++) {
       indices.push({
         row: i,
         col: 'right',
