@@ -348,8 +348,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   function updateEdgePixels(colorArray) {
     console.log(colorArray);
     for (let i = 0; i < edgePixels.length; i++) {
-      const color = colorArray[i];
-      edgePixels[i].style.backgroundColor = color;
+      const { index, color } = colorArray[i];
+      edgePixels[index].style.backgroundColor = color;
     }
   }
 })
