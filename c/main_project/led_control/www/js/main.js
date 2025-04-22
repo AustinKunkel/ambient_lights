@@ -175,9 +175,17 @@ document.addEventListener("DOMContentLoaded", async function() {
     updateCaptureButton(led_settings.capture_screen > 0);
 
     const colorPickerContainer = document.getElementById('color-picker-container');
-    colorPickerContainer.style.opacity = led_settings.capture_screen > 0 ? 0 : 1; 
-
     const pixelFrameContainer = document.getElementById('pixel-grid');
+    if(led_settings.capture_screen > 0) {
+      colorPickerContainer.style.opacity = 0;
+      colorPickerContainer.style.pointerEvents = 'none';
+      pixelFrameContainer.style.opacity = 1;
+    } else {
+      colorPickerContainer.style.opacity = 1;
+      colorPickerContainer.style.pointerEvents = 'auto';
+      pixelFrameContainer.style.opacity =  0;
+    }
+    
     pixelFrameContainer.style.opacity = led_settings.capture_screen > 0 ? 1 : 0;
     initializeColorPicker();
     updateEntirePixelFrame();
