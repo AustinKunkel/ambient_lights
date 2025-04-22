@@ -323,7 +323,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     // Left column
-    for (let i = capt_settings.left_count; i > 0; i--) {
+    for (let i = capt_settings.left_count - 2; i > 0; i--) {
       indices.push({
         row: i,
         col: 0,
@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   
     // Bottom row
-    for (let i = capt_settings.bottom_count; i >= 0; i--) {
+    for (let i = capt_settings.bottom_count - 1; i >= 0; i--) {
       indices.push({
         row: 'bottom',
         col: i,
@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   window.updateEdgePixels = (colorArray) => {
     console.log(colorArray);
     for (let i = 0; i < edgePixels.length; i++) {
-      const { index, color } = colorArray[i];
+      const color  = colorArray[i];
       edgePixels[index].style.backgroundColor = color;
     }
   }

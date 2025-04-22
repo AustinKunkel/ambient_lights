@@ -276,7 +276,6 @@ void send_led_strip_colors(struct led_position* led_positions) {
             continue;
         }
         color_to_hex(led_positions[i].color, color_hex);
-        cJSON_AddNumberToObject(item,"index", i);
         cJSON_AddStringToObject(item, "color", color_hex);
 
         cJSON_AddItemToArray(data_array, item);
