@@ -372,6 +372,7 @@ void *capture_loop(void *strip_ptr) {
         uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
         set_led_32int_color(i, color);
         led_positions[i].color = color;
+        led_positions[i].valid = 1;
       }
     } else {
       for(int i = 0; i < LED_COUNT; i++) {
@@ -379,6 +380,7 @@ void *capture_loop(void *strip_ptr) {
         int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
         set_led_color(i, r, g, b);
         led_positions[i].color = (r << 16) | (g << 8) | b;
+        led_positions[i].valid = 1;
       }
     }
     ws2811_render(strip);
