@@ -256,16 +256,6 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     handle_get_led_settings(wsi);
 }
 
-const char* side_to_string(int side) {
-    switch (side) {
-        case 0: "right";
-        case 1: "top";
-        case 2: "left";
-        case 3: "bottom";
-        default: return "unknown";
-    }
-}
-
 void color_to_hex(uint32_t color, char *buffer) {
     snprintf(buffer, 8, "#%02X%02X%02X",
         (color >> 16) & 0xFF,
@@ -286,8 +276,7 @@ void send_led_strip_colors(struct led_position* led_positions) {
             continue;
         }
         color_to_hex(led_positions[i].color, color_hex);
-
-        cJSON_AddStringToObject(item, "side", side_to_string(led_positions[i].side));
+        cJSON_AddNumberToObject(item,"index", i);
         cJSON_AddStringToObject(item, "color", color_hex);
 
         cJSON_AddItemToArray(data_array, item);
