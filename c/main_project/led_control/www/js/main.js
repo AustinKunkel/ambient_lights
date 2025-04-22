@@ -300,59 +300,61 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function getEdgeIndices() {
     const indices = [];
-
-    const length = '10px';  // LED length (height for top/bottom, width for left/right)
-    const width = '10px';   // LED width (opposite)
-
-    const top_count = capt_settings.top_count;
-    const bottom_count = capt_settings.bottom_count;
-    const left_count = capt_settings.left_count;
-    const right_count = capt_settings.right_count;
-
-    // Top side (left to right)
-    for (let i = 0; i < top_count; i++) {
+  
+    // These control the size of each pixel
+    const length = '12px';  // longer side
+    const width = '12px';    // shorter side
+  
+    const containerPadding = 2; // percentage padding for better alignment
+  
+    // Top row
+    for (let i = 0; i < capt_settings.top_count; i++) {
       indices.push({
-        x: (i / top_count) * 100,
-        y: 0,
+        row: 0,
+        col: i,
         width: width,
-        height: length
+        height: length,
+        topOffset: `${containerPadding}%`
       });
     }
-
-    // Right side (top to bottom)
-    for (let i = 1; i < right_count - 1; i++) {
+  
+    // Right column
+    for (let i = 1; i < capt_settings.right_count - 1; i++) {
       indices.push({
-        x: 100,
-        y: (i / right_count) * 100,
+        row: i,
+        col: 'right',
         width: length,
         height: width
       });
     }
-
-    // Bottom side (right to left)
-    for (let i = bottom_count - 1; i >= 0; i--) {
+  
+    // Bottom row
+    for (let i = capt_settings.bottom_count - 1; i >= 0; i--) {
       indices.push({
-        x: (i / bottom_count) * 100,
-        y: 100,
+        row: 'bottom',
+        col: i,
         width: width,
-        height: length
+        height: length,
+        topOffset: `calc(100% - ${containerPadding}%)`
       });
     }
-
-    // Left side (bottom to top)
-    for (let i = left_count - 2; i > 0; i--) {
+  
+    // Left column
+    for (let i = capt_settings.left_count - 2; i > 0; i--) {
       indices.push({
-        x: 0,
-        y: (i / left_count) * 100,
+        row: i,
+        col: 0,
         width: length,
         height: width
       });
     }
-
+  
     return indices;
   }
 
   const edgePixels = [];
+
+  updateEntirePixelFrame();
 
   function updateEntirePixelFrame() {
     const edgeCoords = getEdgeIndices();
@@ -367,15 +369,29 @@ document.addEventListener("DOMContentLoaded", async function() {
     edgeCoords.forEach(coord => {
       const pixel = document.createElement('div');
       pixel.className = 'pixel';
-  
-      // Position using absolute positioning
+    
       pixel.style.position = 'absolute';
       pixel.style.width = coord.width;
       pixel.style.height = coord.height;
-      pixel.style.left = `${coord.x}%`;
-      pixel.style.top = `${coord.y}%`;
-      pixel.style.backgroundColor = "red";
-  
+      pixel.style.backgroundColor = 'red';
+    
+      if (coord.col === 'right') {
+        pixel.style.left = '100%';
+        pixel.style.top = `${(coord.row / capt_settings.right_count) * 100}%`;
+        pixel.style.transform = 'translateX(-100%)';
+      } else if (coord.row === 'bottom') {
+        pixel.style.left = `${(coord.col / capt_settings.bottom_count) * 100}%`;
+        pixel.style.top = coord.topOffset;
+        pixel.style.transform = 'translateY(-100%)';
+      } else if (coord.row === 0) {
+        pixel.style.left = `${(coord.col / capt_settings.top_count) * 100}%`;
+        pixel.style.top = coord.topOffset;
+      } else {
+        // Left column
+        pixel.style.left = '0';
+        pixel.style.top = `${(coord.row / capt_settings.left_count) * 100}%`;
+      }
+    
       container.appendChild(pixel);
       edgePixels.push(pixel);
     });
