@@ -34,14 +34,16 @@ function startWebSocket() {
   socket.onmessage = function(event) {
     //console.log('Message from server:', event.data);
     const message = JSON.parse(event.data);
-    console.log('Parsed Data:', message);
+    //console.log('Parsed Data:', message);
     const { action, data } = message;
 
     switch (action) {
       case "get_led_settings":
+        console.log('Message from server:', event.data);
         led_settings = {...data};
         updateLedSettings();
       case "get_capt_settings":
+        console.log('Message from server:', event.data);
         break;
       case "led_pixel_data":
         updateEdgePixels(data);
@@ -354,7 +356,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function updateEntirePixelFrame() {
     const edgeCoords = getEdgeIndices();
-    console.log("EdgeCoords:", edgeCoords);
+    //console.log("EdgeCoords:", edgeCoords);
     const container = document.getElementById('pixel-grid');
     container.innerHTML = '';
     edgePixels.length = 0;
@@ -397,7 +399,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     console.log(colorArray);
     for (let i = 0; i < edgePixels.length; i++) {
       const color  = colorArray[i];
-      edgePixels[index].style.backgroundColor = color;
+      edgePixels[i].style.backgroundColor = color;
     }
   }
 })
