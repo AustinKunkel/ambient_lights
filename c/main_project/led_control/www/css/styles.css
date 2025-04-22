@@ -191,6 +191,8 @@ label {
   left: 50%;
   transform: translateX(-50%);
   margin-top: 75px;
+  opacity: 0;
+  transition: opacity .2s ease-in;
 }
 .pixel {
   width: 100%;
@@ -210,6 +212,10 @@ label {
 .color-picker {
   opacity: 1;
   margin-top: 50px;
+}
+
+#color-picker-container {
+  transition: opacity .2s ease-in;
 }
 
 .color-input-error-label {

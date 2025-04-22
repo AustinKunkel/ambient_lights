@@ -173,6 +173,12 @@ document.addEventListener("DOMContentLoaded", async function() {
     soundReact.checked = led_settings.sound_react >= 1;
     showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
+
+    const colorPickerContainer = document.getElementById('color-picker-container');
+    colorPickerContainer.style.opacity = led_settings.capture_screen > 0 ? 0 : 1; 
+
+    const pixelFrameContainer = document.getElementById('pixel-grid');
+    pixelFrameContainer.style.opacity = led_settings.capture_screen > 0 ? 1 : 0;
     initializeColorPicker();
     updateEntirePixelFrame();
   }
@@ -294,7 +300,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     blendModeActive.checked = value > 0;
   }
 
-  const spacing = 3; // number of pixels to be averaged
+  const spacing = 1; // number of pixels to be averaged
 
   function getEdgeIndices() {
     const indices = [];
