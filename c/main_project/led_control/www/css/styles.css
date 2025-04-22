@@ -123,6 +123,7 @@ header {
   margin: -1em auto 0 auto;
   padding: 0;
   max-height: 0px;
+  overflow: hidden;
   opacity: 0;
   transition: max-height .2s ease, opacity .2s ease;
 }
