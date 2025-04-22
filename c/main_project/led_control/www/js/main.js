@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   const hOffsetInput = document.getElementById("h-offset-input")
 
   const avgColorInput = document.getElementById("avg-scrn-color-check")
-  const soundReact = document.getElementById("snd-rct-check")
+  //const soundReact = document.getElementById("snd-rct-check")
   const blendModeActive = document.getElementById('blend-mode-check');
   const captureButton = document.getElementById('capture_button');
   const blendDepthInput = document.getElementById('blend-depth-input');
@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     brightnessValue.textContent = led_settings.brightness;
     brightnessInput.value = led_settings.brightness;
     countInput.value = Number(led_settings.count);
-    soundReact.checked = led_settings.sound_react >= 1;
+    //soundReact.checked = led_settings.sound_react >= 1;
     showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
 
@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     const bottom = bottomCount.value;
     const isAvgColor = getAvgColor();
     const blendMode = getBlendMode();
-    const isSoundWithScreen = soundReact.checked ? 1 : 0;
+    const isSoundWithScreen = false//soundReact.checked ? 1 : 0;
     const hOffset = hOffsetInput.value;
     const vOffset = vOffsetInput.value;
     const blendDepth = blendDepthInput.value;
@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", async function() {
       updateCaptSettings(changes)
       requestChangeSoundReact(isSoundWithScreen)
       .then(changes => {
-        soundReact.checked = changes['srea'] >= 1;
+        //soundReact.checked = changes['srea'] >= 1;
         showScrnAndSndReactOptions()
       })
     })
