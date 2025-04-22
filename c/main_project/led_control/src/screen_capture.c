@@ -350,6 +350,26 @@ int start_capturing(ws2811_t *strip) {
   return 0;
 }
 
+/**
+ * "Blends" the 2 colors together by a factor
+ */
+uint32_t lerp_color(uint32_t from, uint32_t to, float alpha) {
+  uint8_t r1 = (from >> 16) & 0xFF;
+  uint8_t g1 = (from >> 8) & 0xFF;
+  uint8_t b1 = from & 0xFF;
+
+  uint8_t r2 = (to >> 16) & 0xFF;
+  uint8_t g2 = (to >> 8) & 0xFF;
+  uint8_t b2 = to & 0xFF;
+
+  uint8_t r = (uint8_t)(r1 + alpha * (r2 - r1));
+  uint8_t g = (uint8_t)(g1 + alpha * (g2 - g1));
+  uint8_t b = (uint8_t)(b1 + alpha * (b2 - b1));
+
+  return (r << 16) | (g << 8) | b;
+}
+
+
 uint32_t blend_colors(struct led_position*, unsigned char*, int, int);
 
 void *capture_loop(void *strip_ptr) {
@@ -363,17 +383,27 @@ void *capture_loop(void *strip_ptr) {
   //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
   bool blend_mode_active = sc_settings.blend_mode > 0;
   int i = 0;
+  float alpha = 0.2f; // higher provides faster transitions than lower
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
     if(blend_mode_active) {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
-        set_led_32int_color(i, color);
-        led_positions[i].color = color;
+        uint32_t target_color = blend_colors(led_positions, rgb_buffer,i, 5);
+        uint32_t smoothed_color = lerp_color(led_positions[i].color, target_color, alpha);
+
+        set_led_32int_color(i, smoothed_color);
+        led_positions[i].color = smoothed_color;
         led_positions[i].valid = 1;
       }
+      // for(int i = 0; i < LED_COUNT; i++) {
+      //   int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+      //   uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
+      //   set_led_32int_color(i, color);
+      //   led_positions[i].color = color;
+      //   led_positions[i].valid = 1;
+      // }
     } else {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
