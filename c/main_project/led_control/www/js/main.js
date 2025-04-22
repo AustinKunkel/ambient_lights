@@ -424,7 +424,6 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.updateEdgePixels = (colorArray) => {
-    const spacing = 3;
     let groupedColors = [];
     let i = 0;
   
