@@ -89,6 +89,9 @@ document.addEventListener("DOMContentLoaded", async function() {
             color = colorCodeInput.value;
         }
         led_settings.color = color;
+        led_settings.capture_screen = 0;
+        led_settings.sound_react = 0;
+        led_settings.fx_num = 0;
         setServerLEDSettings();
         getLEDSettings();
         // sendLedSettingsPost(led_settings).then(
