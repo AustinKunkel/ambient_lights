@@ -23,7 +23,7 @@ function startWebSocket() {
   };
 
   socket.onmessage = function(event) {
-    console.log('Message from server:', event.data);
+    //console.log('Message from server:', event.data);
 
     try {
       const message = JSON.parse(event.data);
@@ -37,6 +37,7 @@ function startWebSocket() {
         case "get_capt_settings":
           break;
         case "led_pixel_data":
+          updateEdgePixels(data);
           break;
       }
     } catch (e) {
@@ -345,6 +346,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   });
 
   function updateEdgePixels(colorArray) {
+    console.log(colorArray);
     for (let i = 0; i < edgePixels.length; i++) {
       const color = colorArray[i];
       edgePixels[i].style.backgroundColor = color;
