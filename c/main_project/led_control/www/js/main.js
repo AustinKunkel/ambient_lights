@@ -298,8 +298,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     const indices = [];
   
     // These control the size of each pixel
-    const length = '12px';  // longer side
-    const width = '12px';    // shorter side
+    const length = '15px';  // longer side
+    const width = '15px';    // shorter side
   
     const containerPadding = 2; // percentage padding for better alignment
 
