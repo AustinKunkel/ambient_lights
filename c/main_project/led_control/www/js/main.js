@@ -418,27 +418,40 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.updateEdgePixels = (colorArray) => {
+    const spacing = 3;
     let groupedColors = [];
     let i = 0;
+  
+    // Helper: Convert hex to RGB
+    const hexToRgb = (hex) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return { r, g, b };
+    };
+  
+    // Helper: Convert RGB to hex
+    const rgbToHex = ({ r, g, b }) => {
+      const toHex = (val) => val.toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    };
   
     while (i < colorArray.length) {
       const chunkSize = Math.min(spacing, colorArray.length - i);
       let r = 0, g = 0, b = 0;
   
       for (let j = 0; j < chunkSize; j++) {
-        const color = colorArray[i + j].color;
-        const rgb = color.match(/\d+/g).map(Number);
-        r += rgb[0];
-        g += rgb[1];
-        b += rgb[2];
+        const { r: rr, g: gg, b: bb } = hexToRgb(colorArray[i + j].color);
+        r += rr;
+        g += gg;
+        b += bb;
       }
   
-      // Average the RGB values
       r = Math.round(r / chunkSize);
       g = Math.round(g / chunkSize);
       b = Math.round(b / chunkSize);
   
-      groupedColors.push(`rgb(${r}, ${g}, ${b})`);
+      groupedColors.push(rgbToHex({ r, g, b }));
       i += chunkSize;
     }
   
