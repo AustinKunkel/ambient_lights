@@ -22,12 +22,12 @@ document.addEventListener("DOMContentLoaded", async function() {
   })
 
   window.showScrnAndSndReactOptions = function() {
-    const checkbox = document.getElementById("snd-rct-check");
+    //const checkbox = document.getElementById("snd-rct-check");
     const options = document.getElementById("scrn-sound-react-options");
-    if(checkbox.checked) {
-      options.style.display = 'block';
-    } else {
-      options.style.display = 'none';
-    }
+    // if(checkbox.checked) {
+    //   options.style.display = 'block';
+    // } else {
+    //   options.style.display = 'none';
+    // }
   }
 })
