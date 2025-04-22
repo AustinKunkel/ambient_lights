@@ -14,6 +14,7 @@
     <script src="js/modal-handler.js"></script>
     <script src="js/main.js"></script>
     <script src="js/sound_effects.js"></script>
+    <script src="js/setting-toggles.js"></script>
 
 </head>
 <body>
@@ -104,7 +105,7 @@
             <div id="color-easy-container" class="color-easy-container"></div>
         </section>
         <section class="led-settings" id="led-settings">
-            <h1>LED settings</h1>
+            <h2>LED settings</h2>
             <label for="count-input">LED count</label>
             <input 
                 type="number" 
@@ -115,11 +116,22 @@
                 step="1">
         </section>
         <section class="screen-capt-settings" id="screen-capt-settings">
-            <h1>Screen capture settings</h1>
+            <h2>Screen capture settings</h2>
             
+            <div class="setting-title-and-description">
+                <div class="setting-title">
+                    <div style="width: 40px;"></div>
+                  <h3>Pixel Offsets</h3>
+                  <i class="fa-solid fa-info setting-icon" id="offset-icon"></i>
+                </div>
+                <div class="setting-description" id="offset-description">
+                  <p>Determines how far inwards the pixels are read. It can help eliminate black bars or if you just want to read farther into the screen.</p>
+                  <i class="fa-solid fa-angle-up description-up-icon" id="offset-up-icon"></i>
+                </div>
+            </div>              
             <div class="offsets">
                 <div>
-                    <label for="v-offset-input">V-Offset</label>
+                    <label for="v-offset-input">V Offset</label>
                     <input 
                         class="offsets-input"
                         type="number" 
@@ -132,7 +144,7 @@
                 </div>
 
                 <div>
-                    <label for="h-offset-input">H-Offset</label>
+                    <label for="h-offset-input">H Offset</label>
                     <input
                         class="offsets-input"
                         type="number" 
@@ -148,11 +160,6 @@
                 <input type="checkbox" name="avg-scrn-color-check" id="avg-scrn-color-check">
                 <label for="avg-scrn-color-check">Use average color</label>
             </div>
-            <div>
-                <input type="checkbox" name="snd-rct-check" id="snd-rct-check" onclick="showScrnAndSndReactOptions()">
-                <label for="snd-rct-check">React to sound</label>
-            </div>
-
             <div>
                 <input type="checkbox" name="blend-mode-check" id="blend-mode-check">
                 <label for="blend-mode-check">Blend Mode</label>

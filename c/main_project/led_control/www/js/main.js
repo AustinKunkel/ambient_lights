@@ -162,7 +162,6 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   window.toggleSidebar = () => {
     sidebarOpen = !sidebarOpen;
-    console.log(sidebarOpen);
     sidebar.style.left = sidebarOpen ? 0 : '-100%';
   }
 
