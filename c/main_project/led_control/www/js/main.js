@@ -323,8 +323,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   
     // Top row
-    i_roof = Math.floor((capt_settings.top_count - 2) / spacing);
-    for (let i = 0; i < i_roof; i++) {
+    i_roof = Math.floor((capt_settings.top_count) / spacing);
+    for (let i = 0; i <= i_roof; i++) {
       indices.push({
         row: 0,
         col: i_roof - i,
