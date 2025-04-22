@@ -27,6 +27,7 @@ int HEIGHT = 480;
 
 volatile bool stop_capture = false;
 pthread_t capture_thread;
+pthread_t send_positions_thread;
 
 struct led_position *led_positions; // server.h
 
@@ -296,9 +297,11 @@ void send_led_positions_loop(void *) {
   ts.tv_nsec = 100000000L;  // 100 milliseconds = 100,000,000 nanoseconds
 
   while(!stop_capture) {
-    send_led_positions_loop(led_positions);
+    send_led_strip_colors(led_positions);
     nanosleep(&ts, NULL);
   }
+
+  return NULL;
 }
 
 void *capture_loop(void *);
@@ -336,7 +339,12 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
-
+  printf("Creating send led positions loop");
+  if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
+    stop_video_capture();
+    printf("Failed to create send positions thread!");
+    return 1;
+  }
 
   printf("Capturing started...\n");
   return 0;
@@ -473,6 +481,10 @@ int stop_capturing() {
     printf("Failed to join capture thread!\n");
     return 1;
   } 
+  if(pthread_join(send_positions_thread, NULL)) {
+    printf("Failed to join send positions thread!\n");
+    return 1;
+  }
   free(led_positions);
   stop_video_capture();
   printf("Capture thread joined.\n");

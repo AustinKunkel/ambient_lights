@@ -282,6 +282,12 @@ void send_led_strip_colors(struct led_position* led_positions) {
     for(int i = 0; i < led_settings.count; i++) {
         cJSON *item = cJSON_CreateObject();
         char color_hex[8];
+        if(led_positions[i].color == NULL || led_positions[i].side == NULL) {
+            cJSON_Delete(item);
+            cJSON_Delete(data_array);
+            cJSON_Delete(root);
+            return;
+        }
         color_to_hex(led_positions[i].color, color_hex);
 
         cJSON_AddStringToObject(item, "side", side_to_string(led_positions[i].side));
