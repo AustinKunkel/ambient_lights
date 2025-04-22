@@ -202,10 +202,15 @@ label {
 
 .capturing-screen-description {
   position: absolute;
+  width: 700px;
+  text-align: center;
+  font-weight: 500;
   color: var(--text-secondary);
-  top: 100px;
+  top: 1000px;
   left: 50%;
   transform: translateX(-50%);
+  font-style: italic;
+  z-index: 10;
 }
 
 /***** Color picker *****/
