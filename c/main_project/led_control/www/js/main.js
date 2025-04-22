@@ -340,7 +340,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     edgePixels.push(pixel);
   });
 
-  function updateEdgePixels(colorArray) {
+  window.updateEdgePixels = (colorArray) => {
     console.log(colorArray);
     for (let i = 0; i < edgePixels.length; i++) {
       const { index, color } = colorArray[i];
