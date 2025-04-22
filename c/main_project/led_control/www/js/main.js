@@ -346,8 +346,8 @@ document.addEventListener("DOMContentLoaded", async function() {
       pixel.style.position = 'absolute';
       pixel.style.width = coord.width;
       pixel.style.height = coord.height;
-      pixel.style.left = `${(coord.col / avg_horizontal_count ) * 100}%`;
-      pixel.style.top = `${(coord.row / avg_vertical_count) * 100}%`;
+      // pixel.style.left = `${(coord.col / avg_horizontal_count ) * 100}%`;
+      // pixel.style.top = `${(coord.row / avg_vertical_count) * 100}%`;
       pixel.style.backgroundColor = "red";
   
       container.appendChild(pixel);
