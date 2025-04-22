@@ -24,24 +24,19 @@ function startWebSocket() {
 
   socket.onmessage = function(event) {
     //console.log('Message from server:', event.data);
+    const message = JSON.parse(event.data);
+    console.log('Parsed Data:', message);
+    const { action, data } = message;
 
-    try {
-      const message = JSON.parse(event.data);
-      console.log('Parsed Data:', message);
-      const { action, data } = message;
-
-      switch (action) {
-        case "get_led_settings":
-          led_settings = {...data};
-          updateLedSettings();
-        case "get_capt_settings":
-          break;
-        case "led_pixel_data":
-          updateEdgePixels(data);
-          break;
-      }
-    } catch (e) {
-      console.log("received plain message:", event.data);
+    switch (action) {
+      case "get_led_settings":
+        led_settings = {...data};
+        updateLedSettings();
+      case "get_capt_settings":
+        break;
+      case "led_pixel_data":
+        updateEdgePixels(data);
+        break;
     }
   };
 
