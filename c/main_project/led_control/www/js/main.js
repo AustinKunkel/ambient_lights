@@ -300,6 +300,16 @@ document.addEventListener("DOMContentLoaded", async function() {
     const width = '12px';    // shorter side
   
     const containerPadding = 2; // percentage padding for better alignment
+
+    // Right column
+    for (let i = 0; i < capt_settings.right_count; i++) {
+      indices.push({
+        row: i,
+        col: 'right',
+        width: length,
+        height: width
+      });
+    }
   
     // Top row
     for (let i = 0; i < capt_settings.top_count; i++) {
@@ -311,19 +321,19 @@ document.addEventListener("DOMContentLoaded", async function() {
         topOffset: `${containerPadding}%`
       });
     }
-  
-    // Right column
-    for (let i = 1; i < capt_settings.right_count - 1; i++) {
+
+    // Left column
+    for (let i = capt_settings.left_count; i > 0; i--) {
       indices.push({
         row: i,
-        col: 'right',
+        col: 0,
         width: length,
         height: width
       });
     }
   
     // Bottom row
-    for (let i = capt_settings.bottom_count - 1; i >= 0; i--) {
+    for (let i = capt_settings.bottom_count; i >= 0; i--) {
       indices.push({
         row: 'bottom',
         col: i,
@@ -333,15 +343,7 @@ document.addEventListener("DOMContentLoaded", async function() {
       });
     }
   
-    // Left column
-    for (let i = capt_settings.left_count - 2; i > 0; i--) {
-      indices.push({
-        row: i,
-        col: 0,
-        width: length,
-        height: width
-      });
-    }
+
   
     return indices;
   }
