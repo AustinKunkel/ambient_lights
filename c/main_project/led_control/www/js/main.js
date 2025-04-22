@@ -301,29 +301,54 @@ document.addEventListener("DOMContentLoaded", async function() {
   function getEdgeIndices() {
     const indices = [];
 
-    const length = '10px';
-    const width = '10px';
+    const length = '10px';  // LED length (height for top/bottom, width for left/right)
+    const width = '10px';   // LED width (opposite)
 
-    // Top row
-    for (let i = 0; i < capt_settings.top_count; i++) {
-      indices.push({ row: 0, col: i, width: width, height: length });
+    const top_count = capt_settings.top_count;
+    const bottom_count = capt_settings.bottom_count;
+    const left_count = capt_settings.left_count;
+    const right_count = capt_settings.right_count;
+
+    // Top side (left to right)
+    for (let i = 0; i < top_count; i++) {
+      indices.push({
+        x: (i / top_count) * 100,
+        y: 0,
+        width: width,
+        height: length
+      });
     }
-  
-    // Right column
-    for (let i = 1; i < capt_settings.right_count - 1; i++) {
-      indices.push({ row: i, col: cols - 1, width: length, height: width });
+
+    // Right side (top to bottom)
+    for (let i = 1; i < right_count - 1; i++) {
+      indices.push({
+        x: 100,
+        y: (i / right_count) * 100,
+        width: length,
+        height: width
+      });
     }
-  
-    // Bottom row
-    for (let i = capt_settings.bottom_count - 1; i >= 0; i--) {
-      indices.push({ row: rows - 1, col: i, width: width, height: length });
+
+    // Bottom side (right to left)
+    for (let i = bottom_count - 1; i >= 0; i--) {
+      indices.push({
+        x: (i / bottom_count) * 100,
+        y: 100,
+        width: width,
+        height: length
+      });
     }
-  
-    // Left column
-    for (let i = capt_settings.left_count - 2; i > 0; i--) {
-      indices.push({ row: i, col: 0, width: length, height: width });
+
+    // Left side (bottom to top)
+    for (let i = left_count - 2; i > 0; i--) {
+      indices.push({
+        x: 0,
+        y: (i / left_count) * 100,
+        width: length,
+        height: width
+      });
     }
-  
+
     return indices;
   }
 
@@ -347,8 +372,8 @@ document.addEventListener("DOMContentLoaded", async function() {
       pixel.style.position = 'absolute';
       pixel.style.width = coord.width;
       pixel.style.height = coord.height;
-      // pixel.style.left = `${(coord.col / avg_horizontal_count ) * 100}%`;
-      // pixel.style.top = `${(coord.row / avg_vertical_count) * 100}%`;
+      pixel.style.left = `${coord.x}%`;
+      pixel.style.top = `${coord.y}%`;
       pixel.style.backgroundColor = "red";
   
       container.appendChild(pixel);
