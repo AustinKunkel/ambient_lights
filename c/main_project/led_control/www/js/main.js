@@ -165,7 +165,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     countInput.value = Number(led_settings.count);
     soundReact.checked = led_settings.sound_react >= 1;
     showScrnAndSndReactOptions();
-    console.log(led_settings);
     updateCaptureButton(led_settings.capture_screen > 0);
     initializeColorPicker();
   }

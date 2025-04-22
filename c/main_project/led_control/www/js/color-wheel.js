@@ -272,6 +272,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         led_settings.capture_screen = led_settings.capture_screen == 1 ? 0 : 1; // flip
 
         setServerLEDSettings();
+        getLEDSettings();
     }
 
     /**
