@@ -347,7 +347,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   
     // Bottom row
     i_roof = Math.floor((capt_settings.bottom_count - 2) / spacing);
-    for (let i = i_roof - 1; i >= 0; i--) {
+    for (let i = i_roof; i > 0; i--) {
       indices.push({
         row: 'bottom',
         col: i_roof - i,
