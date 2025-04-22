@@ -201,6 +201,7 @@ label {
 }
 
 .capturing-screen-description {
+  position: absolute;
   color: var(--text-secondary);
   top: 100px;
   left: 50%;
