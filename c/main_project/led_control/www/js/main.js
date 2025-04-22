@@ -23,12 +23,6 @@ let capt_settings = {
   'auto_offset' : 1
 }
 
-function sendGetLedSettings() {
-  sendLedSettingsGet().then((data) => {
-    console.log(data);
-  })
-}
-
 let socket;
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':8080', 'websocket');
@@ -263,7 +257,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   function updateCaptSettings(data) {
-    capt_settings = { ...data };
+    //capt_settings = { ...data };
 
     vOffsetInput.value = data['v-offset']
     hOffsetInput.value = data['h-offset']
