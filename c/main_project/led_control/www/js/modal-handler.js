@@ -7,7 +7,7 @@
   const ICONS = {
     [TYPE.OK]: "fa-solid fa-check",
     [TYPE.ERROR]: "fa-solid fa-exclamation",
-    [TYPE.WARNING]: "fa-solid fa-triangle-exclamation fa-lg"
+    [TYPE.WARNING]: "fa-solid fa-triangle-exclamation"
   }
 
   const COLORS = {
@@ -26,7 +26,6 @@
     const modal_icon = document.getElementById('message-icon');
     const modal_message = document.getElementById('modal-message');
 
-    // const iconClass = ICONS[type];
     const iconClass = ICONS[type];
     const color = COLORS[type];
 
@@ -44,7 +43,7 @@
       setTimeout(() => {
         modal.style.display = "none";
       }, 1000); // Match the duration of the opacity transition
-    }, 4000); // Delay before starting fade-out
+    }, 3000); // Delay before starting fade-out
   }
 
   function openAddColorMenu() {

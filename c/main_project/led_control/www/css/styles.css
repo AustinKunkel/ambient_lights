@@ -350,10 +350,9 @@ label {
 }
 
 #message-icon {
-  width: 80px;
-  height: 80px;
-  font-size: 60px;
-  padding: 10px;
+  height: 60px;
+  font-size: 50px;
+  width: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,7 +363,7 @@ label {
 }
 
 .message-container {
-  padding: 15px;
+  padding: 25px;
   width: fit-content;
   max-width: 90%;
   height: fit-content;
@@ -375,11 +374,12 @@ label {
   z-index: 10;
   justify-content: space-evenly;
   align-items: center;
-  box-shadow: 0 0 30px var(--bg-primary);
+  gap: 20px;
 
   background-color: var(--bg-secondary);
   border: 2px solid var(--surface);
   border-radius: 10px;
+  box-shadow: 0 0 30px var(--bg-primary);
 
   transition: all 1s ease-in;
   font-size: 45px;
