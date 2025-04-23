@@ -292,19 +292,19 @@ document.addEventListener("DOMContentLoaded", async function() {
         switch (countInputField.id) {
           case "left-led-count" : 
             capt_settings.left_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           case "right-led-count" : 
             capt_settings.right_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           case "top-led-count" : 
             capt_settings.top_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           case "bottom-led-count" : 
             capt_settings.bottom_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           default: break;
         }
@@ -326,19 +326,19 @@ document.addEventListener("DOMContentLoaded", async function() {
         switch (countInputField.id) {
           case "left-led-count" : 
             capt_settings.left_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           case "right-led-count" : 
             capt_settings.right_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           case "top-led-count" : 
             capt_settings.top_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           case "bottom-led-count" : 
             capt_settings.bottom_count = Number(countInputField.value);
-            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            saveCaptSettingsButtonContainer.classList.remove("hidden-container");
             break;
           default: break;
         }
