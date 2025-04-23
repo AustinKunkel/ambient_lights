@@ -18,7 +18,7 @@ static const struct lws_protocols protocols[];
 #define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
 #define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
 #define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
-#define PORT 8080
+#define PORT 80
 #define MAX_CLIENTS 10
 
 struct lws_context *context;
