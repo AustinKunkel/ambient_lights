@@ -224,19 +224,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     sidebarOpen = !sidebarOpen;
     sidebar.style.left = sidebarOpen ? 0 : '-100%';
 
-    const sidebarArrowIcons = document.querySelectorAll(".fa-angle-left");
-    sidebarArrowIcons.forEach(icon => {
-        const parentContainer = icon.closest(".sidebar-group");
-        if(!parentContainer) return;
-
-        icon.classList.toggle("rotated");
-
-        const subListContainer = parentContainer.querySelector(".sidebar-subgroup");
-        if (subListContainer) {
-          subListContainer.classList.toggle("expanded");
-        }
-    })
-
   }
 
   window.updateLedSettings = () => {
