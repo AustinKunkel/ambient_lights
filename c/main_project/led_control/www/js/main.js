@@ -408,6 +408,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     topCount.value = capt_settings.top_count;
     bottomCount.value = capt_settings.bottom_count;
     blendDepthInput.value = capt_settings.blend_depth;
+    document.getElementById('blend-depth-value').textContent = blendDepthInput.value;
 
     autoOffsetInput.checked = capt_settings.auto_offset > 0;
     if(capt_settings.auto_offset > 0) {
