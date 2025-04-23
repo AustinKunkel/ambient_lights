@@ -248,9 +248,32 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   const leftCount = document.getElementById("left-led-count")
+  leftCount.addEventListener("input", () => {
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+    capt_settings.left_count = leftCount.value;
+    console.log(capt_settings.left_count);
+  })
+
   const rightCount = document.getElementById("right-led-count")
+  rightCount.addEventListener("input", () => {
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+    capt_settings.right_count = rightCount.value;
+    console.log(capt_settings.right_count);
+  })
+
   const topCount = document.getElementById("top-led-count")
+  topCount.addEventListener("input", () => {
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+    capt_settings.top_count = topCount.value;
+    console.log(capt_settings.top_count);
+  })
+
   const bottomCount = document.getElementById("bottom-led-count")
+  bottomCount.addEventListener("input", () => {
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+    capt_settings.bottom_count = bottomCount.value;
+    console.log(capt_settings.bottom_count);
+  })
 
   let customResXInput = document.getElementById('custom-res-width');
   let customResYInput = document.getElementById('custom-res-height');

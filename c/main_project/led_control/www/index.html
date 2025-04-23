@@ -128,6 +128,16 @@
         </div>
         <section class="screen-capt-settings" id="screen-capt-settings">
             <h2>Screen capture settings</h2>
+            <div class="toggle-container" style="margin-top: 1em;">
+                <label class="toggle-switch">
+                    <label for=""></label>
+                    <input type="checkbox" id="avg-scrn-color-check" name="avg-scrn-color-check" onchange="toggleAutoOffsetMode()">
+                    <span class="slider"></span>
+                </label>
+                <label for="avg-scrn-color-check" class="toggle-label">Average Screen Color</label>
+            </div>  
+            <div class="small-divider"></div>
+
             <div class="setting-title-and-description">
                 <div class="setting-title">
                     <div style="width: 40px;"></div>
@@ -135,6 +145,7 @@
                   <i class="fa-solid fa-info setting-icon"></i>
                 </div>
                 <div class="setting-description">
+                  <div style="width: 100px;"></div>
                   <p>Determines how far inwards the pixels are read. 
                     It can help eliminate black bars or if you just want to read farther into the screen.
                     Auto Offset will automatically generate the offsets for the black bars.
@@ -171,10 +182,10 @@
             </div>
             <div class="toggle-container" style="margin-top: 1em;">
                 <label class="toggle-switch">
-                    <input type="checkbox" id="auto-offset-toggle" onchange="toggleAutoOffsetMode()">
+                    <input type="checkbox" id="auto-offset-toggle" name="auto-offset-toggle" onchange="toggleAutoOffsetMode()">
                     <span class="slider"></span>
                 </label>
-                <div class="toggle-label">Auto Offset</div>
+                <label class="toggle-label" for="auto-offset-toggle">Auto Offset</label>
             </div>    
             <div class="small-divider"></div>
             <div class="setting-title-and-description">
@@ -184,6 +195,7 @@
                   <i class="fa-solid fa-info setting-icon"></i>
                 </div>
                 <div class="setting-description">
+                    <div style="width: 100px;"></div>
                   <p>Adjust the blend settings for the capture. 
                     A higher blend depth increases color blending, but can increase latency. 
                     A higher transition rate will transition the LED colors faster.
@@ -194,10 +206,10 @@
             <div class="blend-settings">
                 <div class="justify-left-center toggle-container">
                     <label class="toggle-switch">
-                        <input type="checkbox" id="blend-toggle" onchange="toggleBlendMode()">
+                        <input type="checkbox" id="blend-toggle" name="blend-toggle" onchange="toggleBlendMode()">
                         <span class="slider"></span>
                     </label>
-                    <div class="toggle-label">Blend Mode</div>
+                    <label for="blend-toggle" class="toggle-label">Blend Mode</label>
                 </div>     
                 <input type="checkbox" name="blend-mode-check" id="blend-mode-check" style="display: none;">
                 <label for="blend-mode-check" style="display: none;">Blend Mode Enabled</label>
@@ -219,41 +231,50 @@
                     <input type="range" class="range-input" name="color-transition-input" id="color-transition-input" min="0" max="1" value=".5", step=".01">
                 </div>
             </div>
-            <div class="small-divider"></div>
-            <div>
-                <input type="checkbox" name="avg-scrn-color-check" id="avg-scrn-color-check">
-                <label for="avg-scrn-color-check">Use average color</label>
-            </div>
-
+            <!--
             <div id="scrn-sound-react-options" style="display: none;">
                 <select name="sound-effect-select" id="sound-effect-select">
                 </select>
             </div>
-
-            <h3>LED counts</h3>
+            -->
+            <div class="small-divider"></div>
+            <div class="setting-title-and-description">
+                <div class="setting-title">
+                  <h3>LED Counts</h3>
+                  <i class="fa-solid fa-info setting-icon"></i>
+                </div>
+                <div class="setting-description">
+                    <div style="width: 100px;"></div>
+                  <p>
+                    Each count represents the number of LEDs on each side of the screen.
+                    <br><em>* When looking from the back, the left and right sides are switched</em>
+                  </p>
+                  <i class="fa-solid fa-angle-up description-up-icon"></i>
+                </div>
+            </div>
             <div class="led-counts">
                 <div class="led-count-input-group">
                     <label for="left-led-count">Left </label>
-                    <input type="number" name="left-led-count" id="left-led-count" min="0">
+                    <input type="number" name="left-led-count" id="left-led-count" min="0" placeholder="0" step="1">
                 </div>
 
                 <div class="led-count-input-group">
                     <label for="right-led-count">Right</label>
-                    <input type="number" name="right-led-count" id="right-led-count" min="0">
+                    <input type="number" name="right-led-count" id="right-led-count" min="0" placeholder="0" step="1">
                 </div>
 
                 <div class="led-count-input-group">
                     <label for="top-led-count">Top</label>
-                    <input type="number" name="top-led-count" id="top-led-count" min="0">
+                    <input type="number" name="top-led-count" id="top-led-count" min="0" placeholder="0" step="1">
                 </div>
 
                 <div class="led-count-input-group">
                     <label for="bottom-led-count">Bottom</label>
-                    <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">
+                    <input type="number" name="bottom-led-count" id="bottom-led-count" min="0" placeholder="0" step="1">
                 </div>
             </div>
-
-            <div class="resolution-settings" id="resolution-settings">
+            <div class="small-divider"></div>
+            <div style="display: none" class="resolution-settings" id="resolution-settings">
             <h3>Screen Capture Resolution</h3>
                 <h4>Custom Resolution: </h4>
                 <div class="custom-resolution">
