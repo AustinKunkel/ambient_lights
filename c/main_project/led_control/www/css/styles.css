@@ -97,7 +97,7 @@ header {
 .small-divider {
   width: 70% !important;
   height: 2px;
-  margin: 1em auto !important;
+  margin: 1.5em auto !important;
   background-color: var(--divider);
 }
 
