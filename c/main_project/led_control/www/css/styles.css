@@ -612,6 +612,9 @@ input {
   justify-content: center;
   align-items: center;
 }
+.save-settings-container > * {
+  box-shadow: 0 0 20px var(--bg-primary);
+}
 
 .save-settings-button {
   width: 200px;
@@ -628,6 +631,7 @@ input {
   user-select: none;
   pointer-events: none;
 }
+
 
 .range-control {
   width: 100%;

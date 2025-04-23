@@ -1,7 +1,6 @@
 function toggleBlendMode() {
-  const isEnabled = document.getElementById("blend-toggle").checked;
-  //console.log(isEnabled ? "Blend mode enabled" : "Blend mode disabled");
-  // Add your LED blend mode logic here
+  capt_settings.blend_mode = document.getElementById("blend-toggle").checked ? 1 : 0;
+  saveCaptSettingsButtonContainer.classList.remove("hidden-container");
 }
 
 function toggleAutoOffsetMode() {
@@ -16,6 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const colorTransitionValue = document.getElementById("color-transition-value");
   colorTransitionInput.addEventListener("input", () => {
     // set capture settings.transition to the value
+    capt_settings.transition_rate = parseFloat(colorTransitionInput.value);
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
     colorTransitionValue.textContent = colorTransitionInput.value;
   })
 

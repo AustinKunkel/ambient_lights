@@ -93,6 +93,17 @@ function setServerLEDSettings() {
   }
 }
 
+function setServerCaptSettings() {
+  if(socket && socket.readyState == WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      action: "set_capt_settings",
+      data : capt_settings
+    }));
+  } else {
+    console.log("Websocket is not open");
+  }
+}
+
 function sendMessage() {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send('Hello from the browser!');
@@ -178,7 +189,13 @@ document.addEventListener("DOMContentLoaded", async function() {
   //const soundReact = document.getElementById("snd-rct-check")
   const blendModeActive = document.getElementById('blend-mode-check');
   const captureButton = document.getElementById('capture_button');
+
   const blendDepthInput = document.getElementById('blend-depth-input');
+  blendDepthInput.addEventListener("input", () => {
+    capt_settings.blend_depth = Number(blendDepthInput.value);
+
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+  })
 
   const hamburgerIcon = document.getElementById('hamburger-icon');
 
@@ -256,31 +273,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.saveCaptSettings = function() {
-    const left = leftCount.value;
-    const right = rightCount.value;
-    const top = topCount.value;
-    const bottom = bottomCount.value;
-    const isAvgColor = getAvgColor();
-    const blendMode = getBlendMode();
-    const isSoundWithScreen = false//soundReact.checked ? 1 : 0;
-    const hOffset = hOffsetInput.value;
-    const vOffset = vOffsetInput.value;
-    const blendDepth = blendDepthInput.value;
 
-    if(isUsingCustomRes) {
-      resX = customResXInput.value
-      resY = customResYInput.value
-    }
-
-    requestChangeCapt(`left-count=${left}&right-count=${right}&top-count=${top}&bottom-count=${bottom}&avg-color=${isAvgColor}&h-offset=${hOffset}&v-offset=${vOffset}&res-x=${resX}&res-y=${resY}&blend-mode=${blendMode}&blend-depth=${blendDepth}`)
-    .then(changes => {
-      updateCaptSettings(changes)
-      requestChangeSoundReact(isSoundWithScreen)
-      .then(changes => {
-        //soundReact.checked = changes['srea'] >= 1;
-        showScrnAndSndReactOptions()
-      })
-    })
 
   }
 
@@ -312,7 +305,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.updateCaptSettings = () => { 
-
+    saveCaptSettingsButtonContainer.classList.add("hidden-container");
     const autoOffsetInput = document.getElementById("auto-offset-toggle");
 
     vOffsetInput.value = capt_settings.v_offset;

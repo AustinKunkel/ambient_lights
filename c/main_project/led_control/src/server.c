@@ -270,7 +270,7 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) { // writes data to csv file
         printf("Failed to write led_settings\n");
     } else { // success
-        if(!just_brightness) { // dont reset the led strip and everything
+        if(!just_brightness) { // reset the led strip and everything
             update_leds();
         }
     }
@@ -360,7 +360,7 @@ void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
     if(write_data(SC_SETTINGS_FILENAME, SC_SETTINGS_HEADER, capt_settings_str)) {
         printf("Failed to write sc_settings\n");
     }
-
+    update_leds();
     handle_get_capt_settings(wsi);
 }
 
