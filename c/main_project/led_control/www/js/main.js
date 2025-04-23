@@ -88,6 +88,7 @@ function setServerLEDSettings() {
       action: "set_led_settings",
       data: led_settings
     }));
+    message_pop_up(TYPE.OK, "Saved");
   } else {
     console.log("WebSocket is not open.");
   }
@@ -99,6 +100,7 @@ function setServerCaptSettings() {
       action: "set_capt_settings",
       data : capt_settings
     }));
+    message_pop_up(TYPE.OK, "Saved");
   } else {
     console.log("Websocket is not open");
   }
@@ -339,6 +341,11 @@ document.addEventListener("DOMContentLoaded", async function() {
     blendDepthInput.value = capt_settings.blend_depth;
 
     autoOffsetInput.checked = capt_settings.auto_offset > 0;
+    if(capt_settings.auto_offset > 0) {
+      document.getElementById('offsets').classList.add('grayed-out');
+    } else {
+      document.getElementById('offsets').classList.remove('grayed-out');
+    }
 
     resX = capt_settings.res_x;
     resY = capt_settings.res_y;

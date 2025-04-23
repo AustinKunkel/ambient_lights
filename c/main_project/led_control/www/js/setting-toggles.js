@@ -4,7 +4,14 @@ function toggleBlendMode() {
 }
 
 function toggleAutoOffsetMode() {
-  capt_settings.auto_offset = document.getElementById("auto-offset-toggle").checked ? 1 : 0;
+  const isChecked = document.getElementById("auto-offset-toggle").checked;
+  capt_settings.auto_offset = isChecked ? 1 : 0;
+  if(isChecked) {
+    document.getElementById('offsets').classList.add('grayed-out');
+  } else {
+    document.getElementById('offsets').classList.remove('grayed-out');
+  }
+
   saveCaptSettingsButtonContainer.classList.remove("hidden-container");
 }
 

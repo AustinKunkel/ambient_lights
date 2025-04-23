@@ -5,9 +5,15 @@
   }
 
   const ICONS = {
-    [TYPE.OK]: "fa-solid fa-circle-check",
-    [TYPE.ERROR]: "fa-solid fa-circle-exclamation",
+    [TYPE.OK]: "fa-solid fa-check",
+    [TYPE.ERROR]: "fa-solid fa-exclamation",
     [TYPE.WARNING]: "fa-solid fa-triangle-exclamation fa-lg"
+  }
+
+  const COLORS = {
+    [TYPE.OK]: "#4CAF50",
+    [TYPE.ERROR]: "#FF5252",
+    [TYPE.WARNING]: "#FFC107"
   }
 
   function message_pop_up(type,message) {
@@ -20,9 +26,13 @@
     const modal_icon = document.getElementById('message-icon');
     const modal_message = document.getElementById('modal-message');
 
+    // const iconClass = ICONS[type];
     const iconClass = ICONS[type];
+    const color = COLORS[type];
 
     modal_icon.className = iconClass;
+
+    modal_icon.style.color = color;
 
     modal_message.innerHTML = message;
 

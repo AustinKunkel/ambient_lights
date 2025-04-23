@@ -82,7 +82,9 @@ header {
 }
 
 .grayed-out {
-  background-color: var(--disabled);
+  opacity: .5;
+  user-select: none;
+  pointer-events: none;
 }
 
 .divider {
@@ -116,7 +118,7 @@ header {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  width: 60%;
+  max-width: 80%;
   margin: auto;
 }
 
@@ -326,13 +328,13 @@ h1 {
 }
 
 h2 {
-  font-size:  80px;
-  font-weight: 500;
+  font-size:  85px;
+  font-weight: 600;
 }
 
 h3 {
-  font-size: 60px;
-  font-weight: 500;
+  font-size: 65px;
+  font-weight: 600;
   margin: 0;
 }
 
@@ -347,22 +349,40 @@ label {
   font-size: 45px;
 }
 
-.message-container {
+#message-icon {
+  width: 80px;
+  height: 80px;
+  font-size: 60px;
   padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-message {
+  text-align: center;
+}
+
+.message-container {
+  padding: 15px;
   width: fit-content;
+  max-width: 90%;
   height: fit-content;
   position: fixed;
   top: 175px;
   left: 50%;
-  margin-top: -1em;
   transform: translate(-50%, 0);
-  z-index: 100;
-  margin: auto;
-  justify-content: center;
+  z-index: 10;
+  justify-content: space-evenly;
+  align-items: center;
+  box-shadow: 0 0 30px var(--bg-primary);
+
   background-color: var(--bg-secondary);
   border: 2px solid var(--surface);
   border-radius: 10px;
-  transition: all 1s ease-in
+
+  transition: all 1s ease-in;
+  font-size: 45px;
 }
 
 #home {
@@ -802,6 +822,7 @@ input {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
+  transition: opacity .2s ease;
 }
 
 .offsets > * {
