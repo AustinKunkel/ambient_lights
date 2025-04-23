@@ -48,10 +48,10 @@ char *update_leds() {
         screen_capture_task.task_status = 1;
     } else if(led_settings.sound_react) { // TODO: Sound Effect functions
         printf("Creating task: Sound Capture...\n");
-        if(pthread_create(&sound_effect_task.thread_id, NULL, NULL, NULL)) {
-            printf("Error creating Sound Effect thread!\n");
-            return"{\"Error\": \"Error creating Sound Effect thread!\"}";
-        }
+        // if(pthread_create(&sound_effect_task.thread_id, NULL, NULL, NULL)) {
+        //     printf("Error creating Sound Effect thread!\n");
+        //     return"{\"Error\": \"Error creating Sound Effect thread!\"}";
+        // }
     } else if(led_settings.fx_num > 0) {
            printf("Creating task: Effect...\n");
         // TODO: Effect functions
