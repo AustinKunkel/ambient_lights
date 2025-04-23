@@ -720,6 +720,11 @@ input {
   margin: 0px 0 10px 0;
 }
 
+.range-min, .range-max {
+  font-size: 40px;
+  color: var(--text-secondary);
+}
+
 .range-input {
   -webkit-appearance: none;
   width: 400px;

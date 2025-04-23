@@ -119,8 +119,12 @@
             </div>
 
             <div class="range-control" style="margin-top: 20px;">
-                <label for="brightness-input">Brightness: <span id="brightness-value">255</span></label>
-                <input type="range" class="range-input" id="brightness-input" min="0" max="255" value="50" step="1">
+                <label for="brightness-input">Brightness: <span id="brightness-value">50</span></label>
+                <div style="display: flex; justify-content: space-evenly; align-items: center;gap: 30px;">
+                    <p class="range-min">0</p>
+                    <input type="range" class="range-input" id="brightness-input" min="0" max="255" value="50" step="1">
+                    <p class="range-max">255</p>
+                </div>
             </div>
 
             <div class="user-colors-container">
@@ -267,7 +271,11 @@
 
                 <div class="range-control">
                     <label for="color-transition-input">Color Transition Rate: <span id="color-transition-value">.5</span></label>
-                    <input type="range" class="range-input" name="color-transition-input" id="color-transition-input" min="0" max="1" value=".5", step=".01">
+                    <div style="display: flex; justify-content: space-evenly; align-items: center;gap: 30px;">
+                        <p class="range-min">0</p>
+                        <input type="range" class="range-input" name="color-transition-input" id="color-transition-input" min="0" max="1" value=".5", step=".01">
+                        <p class="range-max">1</p>
+                    </div>
                 </div>
             </div>
             <!--
