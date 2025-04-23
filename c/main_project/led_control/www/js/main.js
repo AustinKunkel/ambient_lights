@@ -128,10 +128,6 @@ document.addEventListener("DOMContentLoaded", async function() {
   //   led_settings = { ...data }; 
   //   updateLedSettings();
   // })
-
-  requestGetCaptSettings().then (data => {
-    updateCaptSettings(data)
-  })
   const brightnessValue = document.getElementById("brightness-value");
   const brightnessInput = document.getElementById("brightness-input");
   brightnessInput.addEventListener("input", () => {
@@ -315,7 +311,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   }
 
-  function updateCaptSettings() { 
+  window.updateCaptSettings = () => { 
 
     const autoOffsetInput = document.getElementById("auto-offset-toggle");
 
