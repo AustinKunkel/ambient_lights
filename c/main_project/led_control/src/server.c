@@ -328,7 +328,10 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
         }
     }
 
-    handle_get_led_settings(wsi);
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+        handle_get_led_settings(wsi); // write data to all active clients
+    }
 }
 
 void color_to_hex(uint32_t color, char *buffer) {
@@ -414,7 +417,11 @@ void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
         printf("Failed to write sc_settings\n");
     }
     update_leds();
-    handle_get_capt_settings(wsi);
+
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+        handle_get_capt_settings(wsi); // write data to all active clients
+    }
 }
 
 void send_led_strip_colors(struct led_position* led_positions) {
