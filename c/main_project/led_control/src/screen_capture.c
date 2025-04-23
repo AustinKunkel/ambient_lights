@@ -205,11 +205,12 @@ int setup_strip_capture(ws2811_t *strip) {
     return 1;
   }
 
-  if(auto_align_offsets()) {
-    printf("Aligning offsets failed!\n");
-    return 1;
+  if(sc_settings.auto_offset) {
+    if(auto_align_offsets()) {
+      printf("Aligning offsets failed!\n");
+      return 1;
+    }
   }
-
   int next_index = 0;
   printf("Setting up right side...\n");
   setup_right_side(sc_settings.right_count, led_positions, WIDTH, HEIGHT, sc_settings.h_offset, next_index, -1);
