@@ -439,7 +439,7 @@ document.addEventListener("DOMContentLoaded", async function() {
       pixel.style.position = 'absolute';
       pixel.style.width = `${pixelWidth}px`;
       pixel.style.height = `${pixelHeight}px`;
-      pixel.style.backgroundColor = 'red';
+      pixel.style.backgroundColor = 'black';
     
       if (coord.col === 'right') {
         // Right edge: position exactly within the container
