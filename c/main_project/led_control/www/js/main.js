@@ -273,8 +273,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.saveCaptSettings = function() {
-
-
+    setServerCaptSettings();
   }
 
   let isReactingToSound = false;
