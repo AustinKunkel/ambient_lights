@@ -20,7 +20,8 @@ let capt_settings = {
   'res_y' : 480,
   'blend_depth' : 5,
   'blend_mode' : 1,
-  'auto_offset' : 1
+  'auto_offset' : 1,
+  'transition_rate': .3
 }
 
 let saveCaptSettingsButtonContainer = null;
@@ -46,7 +47,7 @@ function startWebSocket() {
         updateLedSettings();
       case "get_capt_settings":
         console.log('Message from server:', event.data);
-        capt_settings = { ...data };
+        capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
         break;
       case "led_pixel_data":
@@ -336,6 +337,11 @@ document.addEventListener("DOMContentLoaded", async function() {
     avgColorInput.checked = capt_settings.avg_color > 0;
 
     document.getElementById("blend-toggle").checked = capt_settings.blend_mode > 0;
+
+    const colorTransitionInput = document.getElementById("color-transition-input");
+    const colorTransitionValue = document.getElementById("color-transition-value");
+    colorTransitionInput.value = capt_settings.transition_rate;
+    colorTransitionValue.textContent = colorTransitionInput.value;
   }
 
   function getAvgColor() {
