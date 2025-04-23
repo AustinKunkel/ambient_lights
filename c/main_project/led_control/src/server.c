@@ -99,6 +99,59 @@ int initialize_led_settings() {
     }
 }
 
+int initialize_sc_settings() {
+    char data_line[512];
+  printf("reading sc_settings.csv...\n");
+  if(read_one_line(SC_SETTINGS_FILENAME, data_line, sizeof(data_line)) == 0)
+  {
+    char *line_ptr = data_line;
+    printf("Setting sc settings variables...\n");
+    sc_settings.v_offset = atoi(next_token(&line_ptr));
+    printf("v_offset: %d\t", sc_settings.v_offset);
+    
+    sc_settings.h_offset = atoi(next_token(&line_ptr));
+    printf("h_offset: %d\t", sc_settings.h_offset);
+    
+    sc_settings.avg_color = atoi(next_token(&line_ptr));
+    printf("avg_color: %d\t", sc_settings.avg_color);
+    
+    sc_settings.left_count = atoi(next_token(&line_ptr));
+    printf("left_count: %d\t", sc_settings.left_count);
+    
+    sc_settings.right_count = atoi(next_token(&line_ptr));
+    printf("right_count: %d\t", sc_settings.right_count);
+    
+    sc_settings.top_count = atoi(next_token(&line_ptr));
+    printf("top_count: %d\t", sc_settings.top_count);
+    
+    sc_settings.bottom_count = atoi(next_token(&line_ptr));
+    printf("bottom_count: %d\t", sc_settings.bottom_count);
+    
+    sc_settings.res_x = atoi(next_token(&line_ptr));
+    printf("res_x: %d\t", sc_settings.res_x);
+    
+    sc_settings.res_y = atoi(next_token(&line_ptr));
+    printf("res_y: %d\t", sc_settings.res_y);
+    
+    sc_settings.blend_depth = atoi(next_token(&line_ptr));
+    printf("blend_depth: %d\t", sc_settings.blend_depth);
+    
+    sc_settings.blend_mode = atoi(next_token(&line_ptr));
+    printf("blend_mode: %d\t", sc_settings.blend_mode);    
+
+    sc_settings.auto_offset = atoi(next_token(&line_ptr));
+    printf("Auto offset: %d\t", sc_settings.auto_offset);
+
+    sc_settings.transition_rate = atof(next_token(&line_ptr));
+    printf("Transition Rate: %.2f\n", sc_settings.transition_rate);
+
+    return true;
+  } else {
+    perror("Unable to read from sc_settings.csv!!\n");
+    return false;
+  }
+}
+
 void handle_get_led_settings(struct lws *wsi);
 void handle_set_led_settings(struct lws *wsi, cJSON *data);
 void handle_get_capt_settings(struct lws *wsi);
@@ -543,6 +596,11 @@ int main(void)
 
     if(initialize_led_settings()) {
         printf("Error initializing Led settings!\n");
+        return 1;
+    }
+
+    if(initialize_sc_settings()) {
+        printf("Error initialized sc_settings!\n");
         return 1;
     }
 
