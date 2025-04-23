@@ -37,6 +37,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  const sidebarArrowIcons = document.querySelectorAll(".fa-angle-left");
+  sidebarArrowIcons.forEach(icon => {
+    icon.addEventListener("click", () => {
+      const parentContainer = icon.closest(".sidebar-group");
+      if(!parentContainer) return;
 
+      icon.classList.toggle("rotated");
+
+      const subListContainer = parentContainer.querySelector(".sidebar-subgroup");
+      if (subListContainer) {
+        subListContainer.classList.toggle("expanded");
+      }
+    })
+  })
   
 });

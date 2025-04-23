@@ -23,13 +23,52 @@
             <i class="fa-solid fa-xmark" id="sidebar-x" onclick="toggleSidebar()"></i>
             <img src="favicon.png" width="75px" height="75px" alt="Logo" />
         </div>
-        <ul class="sidebar-list">
-            <li onclick="toggleSidebar()" class="sidebar-link"><a href="#home">Home</a></li>
-            <li onclick="toggleSidebar()" class="sidebar-link"><a href="#led-settings">Led Settings</a></li>
-            <li onclick="toggleSidebar()" class="sidebar-link"><a href="#screen-capt-settings">Screen Capture Settings</a></li>
-            <li onclick="toggleSidebar()" class="sidebar-link"><a href="#resolution-settings">Resolution Settings</a></li>
-            <li onclick="toggleSidebar()" class="sidebar-link"><a href="#debug-options">Debug Options</a></li>
-        </ul>
+        <div class="sidebar-list">
+            <div class="sidebar-group">
+                <div class="sidebar-link-section">
+                    <a href="#home" onclick="toggleSidebar()">Home</a>
+                </div>
+            </div>
+            <div class="sidebar-group">
+                <div class="sidebar-link-section">
+                    <a href="#led-settings" onclick="toggleSidebar()">LED Settings</a>
+                    <i class="fa-solid fa-angle-left left-list-arrow"></i>
+                </div>
+                <div class="sidebar-subgroup">
+                    <div class="sidebar-link-subsection">
+                        <a href="#led-count-label" onclick="toggleSidebar()">Total LED Count</a>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-group">
+                <div class="sidebar-link-section">
+                    <a href="#screen-capt-settings" onclick="toggleSidebar()">Screen Capture Settings</a>
+                    <i class="fa-solid fa-angle-left left-list-arrow"></i>
+                </div>
+                <div class="sidebar-subgroup">
+                    <div class="sidebar-link-subsection">
+                        <a href="#pixel-offsets" onclick="toggleSidebar()">Pixel Offsets</a>
+                    </div>
+                    <div class="sidebar-link-subsection">
+                        <a href="#blend-settings" onclick="toggleSidebar()">Blend Settings</a>
+                    </div>
+                    <div class="sidebar-link-subsection">
+                        <a href="#led-counts" onclick="toggleSidebar()">LED Counts</a>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-group">
+                <div class="sidebar-link-section">
+                    <a href="#resolution-settings" onclick="toggleSidebar()">Resolution Settings</a>
+                    <i class="fa-solid fa-angle-left left-list-arrow"></i>
+                </div>
+            </div>
+            <div class="sidebar-group">
+                <div class="sidebar-link-section">
+                    <a href="#debug-options" onclick="toggleSidebar()">Debug Options</a>
+                </div>
+            </div>
+        </div>
     </div>
     <header>
         <i class="fa-solid fa-bars" id="hamburger-icon" onclick="toggleSidebar()"></i>
@@ -38,7 +77,7 @@
     </header>
     <main>
         <section id="home">
-            <h1 class="main-title" >Ambient LED Control</h1>
+            <h1 class="main-title">Ambient LED Control</h1>
             <div id="add-color-menu" style="display: none;">
                 <button onclick="closeAddColorMenu()"><i class="fa-regular fa-circle-xmark"></i></button>
                 
@@ -107,7 +146,7 @@
         <div class="divider"></div>
         <section class="led-settings" id="led-settings">
             <h2>LED settings</h2>
-            <label for="count-input">LED count</label>
+            <label for="count-input" id="led-count-label">Total LED count</label>
             <div style="display: inline-flex; gap: 20px;">
                 <input 
                     type="number" 
@@ -139,7 +178,7 @@
             <div class="small-divider"></div>
 
             <div class="setting-title-and-description">
-                <div class="setting-title">
+                <div class="setting-title" id="pixel-offsets">
                     <div style="width: 40px;"></div>
                   <h3>Pixel Offsets</h3>
                   <i class="fa-solid fa-info setting-icon"></i>
@@ -189,7 +228,7 @@
             </div>    
             <div class="small-divider"></div>
             <div class="setting-title-and-description">
-                <div class="setting-title">
+                <div class="setting-title" id="blend-settings">
                     <div style="width: 40px;"></div>
                   <h3>Blend Settings</h3>
                   <i class="fa-solid fa-info setting-icon"></i>
@@ -239,7 +278,7 @@
             -->
             <div class="small-divider"></div>
             <div class="setting-title-and-description">
-                <div class="setting-title">
+                <div class="setting-title" id="led-counts">
                   <h3>LED Counts</h3>
                   <i class="fa-solid fa-info setting-icon"></i>
                 </div>
@@ -312,8 +351,6 @@
                 </select>
                 <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
             </div> 
-
-            <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
         </section>
         <section id="debug-options">
             <h2>Debug Options</h2>
