@@ -330,10 +330,10 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
-  if(setup_strip(LED_COUNT)) {
-    printf("Failed to initialize LED strip!\n");
-    return 1;
-  } 
+  // if(setup_strip(LED_COUNT)) {
+  //   printf("Failed to initialize LED strip!\n");
+  //   return 1;
+  // } 
   printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
 
@@ -357,7 +357,7 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
-  printf("Creating send led positions loop");
+  printf("Creating send led positions loop...\n");
   if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
     stop_video_capture();
     printf("Failed to create send positions thread!");

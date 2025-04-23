@@ -33,8 +33,7 @@ char *update_leds() {
     stop_current_task();
     printf("Stopped current task...\n");
     if(get_led_count() != led_settings.count) {
-        cleanup_strip();
-        if(setup_strip(led_settings.count)) {
+        if(change_led_count(led_settings.count)) {
             return "{\"Error\": \"Failed to set up the strip with the count\"}";
         }
     }
