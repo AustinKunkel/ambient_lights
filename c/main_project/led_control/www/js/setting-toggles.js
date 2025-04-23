@@ -1,5 +1,12 @@
 function toggleBlendMode() {
-  capt_settings.blend_mode = document.getElementById("blend-toggle").checked ? 1 : 0;
+  const isChecked = document.getElementById("blend-toggle").checked;
+  capt_settings.blend_mode = isChecked ? 1 : 0;
+  if(!isChecked) {
+    document.getElementById('blend-options').classList.add('grayed-out');
+  } else {
+    document.getElementById('blend-options').classList.remove('grayed-out');
+  }
+
   saveCaptSettingsButtonContainer.classList.remove("hidden-container");
 }
 

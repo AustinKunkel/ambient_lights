@@ -194,10 +194,11 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const blendDepthInput = document.getElementById('blend-depth-input');
   blendDepthInput.addEventListener("input", () => {
-    capt_settings.blend_depth = Number(blendDepthInput.value);
-
+    const value = blendDepthInput.value;
+    document.getElementById('blend-depth-value').textContent = value;
+    capt_settings.blend_depth = Number(value);  // Ensure this matches your settings object
     saveCaptSettingsButtonContainer.classList.remove("hidden-container");
-  })
+  });
 
   const hamburgerIcon = document.getElementById('hamburger-icon');
 
@@ -277,6 +278,74 @@ document.addEventListener("DOMContentLoaded", async function() {
     console.log(capt_settings.bottom_count);
   })
 
+  const countDecrementIcons = document.querySelectorAll(".decrement-icon");
+  countDecrementIcons.forEach(icon => {
+    icon.addEventListener("click", () => {
+      // Find the nearest .setting-title-and-description or .blend-settings container
+      const parentContainer = icon.closest(".led-counts-input");
+      if (!parentContainer) return;
+
+      // Find the description inside that container
+      const countInputField = parentContainer.querySelector('input[type="number"]');
+      if (countInputField) {
+        countInputField.value--;
+        switch (countInputField.id) {
+          case "left-led-count" : 
+            capt_settings.left_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          case "right-led-count" : 
+            capt_settings.right_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          case "top-led-count" : 
+            capt_settings.top_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          case "bottom-led-count" : 
+            capt_settings.bottom_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          default: break;
+        }
+      }
+    });
+  });
+
+  const countIncrementIcons = document.querySelectorAll(".increment-icon");
+  countIncrementIcons.forEach(icon => {
+    icon.addEventListener("click", () => {
+      // Find the nearest .setting-title-and-description or .blend-settings container
+      const parentContainer = icon.closest(".led-counts-input");
+      if (!parentContainer) return;
+
+      // Find the description inside that container
+      const countInputField = parentContainer.querySelector('input[type="number"]');
+      if (countInputField) {
+        countInputField.value++;
+        switch (countInputField.id) {
+          case "left-led-count" : 
+            capt_settings.left_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          case "right-led-count" : 
+            capt_settings.right_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          case "top-led-count" : 
+            capt_settings.top_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          case "bottom-led-count" : 
+            capt_settings.bottom_count = Number(countInputField.value);
+            saveCaptSettingsButtonContainer.classList.remove("hidden-button");
+            break;
+          default: break;
+        }
+      }
+    });
+  });
+
   let customResXInput = document.getElementById('custom-res-width');
   let customResYInput = document.getElementById('custom-res-height');
   let resX = 0;
@@ -355,6 +424,11 @@ document.addEventListener("DOMContentLoaded", async function() {
     avgColorInput.checked = capt_settings.avg_color > 0;
 
     document.getElementById("blend-toggle").checked = capt_settings.blend_mode > 0;
+    if(capt_settings.blend_mode <= 0) {
+      document.getElementById('blend-options').classList.add('grayed-out');
+    } else {
+      document.getElementById('blend-options').classList.remove('grayed-out');
+    }
 
     const colorTransitionInput = document.getElementById("color-transition-input");
     const colorTransitionValue = document.getElementById("color-transition-value");
