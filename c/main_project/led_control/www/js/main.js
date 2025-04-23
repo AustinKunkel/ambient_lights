@@ -46,6 +46,8 @@ function startWebSocket() {
         updateLedSettings();
       case "get_capt_settings":
         console.log('Message from server:', event.data);
+        capt_settings = { ...data };
+        updateCaptSettings();
         break;
       case "led_pixel_data":
         updateEdgePixels(data);
@@ -172,6 +174,8 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     saveCaptSettingsButtonContainer.classList.remove("hidden-container");
   })
+
+  
 
   const avgColorInput = document.getElementById("avg-scrn-color-check")
   //const soundReact = document.getElementById("snd-rct-check")
@@ -310,24 +314,28 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   }
 
-  function updateCaptSettings(data) {
-    //capt_settings = { ...data };
+  function updateCaptSettings() { 
 
-    vOffsetInput.value = data['v-offset']
-    hOffsetInput.value = data['h-offset']
-    leftCount.value = data['left-count']
-    rightCount.value = data['right-count']
-    topCount.value = data['top-count']
-    bottomCount.value = data['bottom-count']
-    blendDepthInput.value = data['blend-depth']
+    const autoOffsetInput = document.getElementById("auto-offset-toggle");
 
-    resX = data['res-x']
-    resY = data['res-y']
+    vOffsetInput.value = capt_settings.v_offset;
+    hOffsetInput.value = capt_settings.h_offset;
+    leftCount.value = capt_settings.left_count;
+    rightCount.value = capt_settings.right_count;
+    topCount.value = capt_settings.top_count;
+    bottomCount.value = capt_settings.bottom_count;
+    blendDepthInput.value = capt_settings.blend_depth;
+
+    autoOffsetInput.checked = capt_settings.auto_offset > 0;
+
+    resX = capt_settings.res_x;
+    resY = capt_settings.res_y;
     customResXInput.value = resX;
     customResYInput.value = resY;
-    
-    setAvgColor(+data['avg-color']);
-    setBlendMode(+data['blend-mode']);
+
+    avgColorInput.checked = capt_settings.avg_color > 0;
+
+    document.getElementById("blend-toggle").checked = capt_settings.blend_mode > 0;
   }
 
   function getAvgColor() {
