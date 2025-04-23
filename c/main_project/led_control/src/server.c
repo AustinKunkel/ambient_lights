@@ -145,10 +145,10 @@ int initialize_sc_settings() {
     sc_settings.transition_rate = atof(next_token(&line_ptr));
     printf("Transition Rate: %.2f\n", sc_settings.transition_rate);
 
-    return true;
+    return 0;
   } else {
     perror("Unable to read from sc_settings.csv!!\n");
-    return false;
+    return 1;
   }
 }
 
