@@ -226,7 +226,6 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     const sidebarArrowIcons = document.querySelectorAll(".fa-angle-left");
     sidebarArrowIcons.forEach(icon => {
-      icon.addEventListener("click", () => {
         const parentContainer = icon.closest(".sidebar-group");
         if(!parentContainer) return;
 
@@ -236,7 +235,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         if (subListContainer) {
           subListContainer.classList.toggle("expanded");
         }
-      })
     })
 
   }
