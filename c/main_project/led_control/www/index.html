@@ -79,9 +79,9 @@
                 </div>
             </div>
 
-            <div class="brightness-control">
+            <div class="range-control" style="margin-top: 20px;">
                 <label for="brightness-input">Brightness: <span id="brightness-value">255</span></label>
-                <input type="range" id="brightness-input" min="0" max="255" value="50" step="1">
+                <input type="range" class="range-input" id="brightness-input" min="0" max="255" value="50" step="1">
             </div>
 
             <div class="user-colors-container">
@@ -122,11 +122,11 @@
                 <div class="setting-title">
                     <div style="width: 40px;"></div>
                   <h3>Pixel Offsets</h3>
-                  <i class="fa-solid fa-info setting-icon" id="offset-icon"></i>
+                  <i class="fa-solid fa-info setting-icon"></i>
                 </div>
-                <div class="setting-description" id="offset-description">
+                <div class="setting-description">
                   <p>Determines how far inwards the pixels are read. It can help eliminate black bars or if you just want to read farther into the screen.</p>
-                  <i class="fa-solid fa-angle-up description-up-icon" id="offset-up-icon"></i>
+                  <i class="fa-solid fa-angle-up description-up-icon"></i>
                 </div>
             </div>              
             <div class="offsets">
@@ -156,15 +156,45 @@
                         step="1">   
                 </div>
             </div>
+            <div class="setting-title-and-description">
+                <div class="setting-title">
+                    <div style="width: 40px;"></div>
+                  <h3>Blend Settings</h3>
+                  <i class="fa-solid fa-info setting-icon"></i>
+                </div>
+                <div class="setting-description">
+                  <p>Adjust the blend settings for the capture. 
+                    A higher blend depth increases color blending, but can increase latency. 
+                    A higher transition rate will transition the LED colors faster.
+                  </p>
+                  <i class="fa-solid fa-angle-up description-up-icon"></i>
+                </div>
+            </div>
+            <div class="blend-settings">
+                <div class="justify-left-center toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="blend-toggle" onchange="toggleBlendMode()">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="toggle-label">Blend Mode</div>
+                </div>     
+                <input type="checkbox" name="blend-mode-check" id="blend-mode-check" style="display: none;">
+                <label for="blend-mode-check" style="display: none;">Blend Mode Enabled</label>
+
+                <div class="justify-left-center">
+                    <input type="number" name="blend-depth-input" id="blend-depth-input" min="1" step="1">
+                    <label for="blend-depth-input">Blend Depth</label>
+                </div>
+
+                <div class="range-control">
+                    <label for="color-transition-input">Color Transition Rate: <span id="color-transition-value">.5</span></label>
+                    <input type="range" class="range-input" name="color-transition-input" id="color-transition-input" min="0" max="1" value=".5", step=".01">
+                </div>
+            </div>
+
             <div>
                 <input type="checkbox" name="avg-scrn-color-check" id="avg-scrn-color-check">
                 <label for="avg-scrn-color-check">Use average color</label>
-            </div>
-            <div>
-                <input type="checkbox" name="blend-mode-check" id="blend-mode-check">
-                <label for="blend-mode-check">Blend Mode</label>
-                <input type="number" name="blend-depth-input" id="blend-depth-input" min="1" step="1">
-                <label for="blend-depth-input">Blend Depth</label>
             </div>
 
             <div id="scrn-sound-react-options" style="display: none;">
