@@ -227,7 +227,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     brightnessInput.value = led_settings.brightness;
     countInput.value = Number(led_settings.count);
     //soundReact.checked = led_settings.sound_react >= 1;
-    showScrnAndSndReactOptions();
+    //showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
 
     const colorPickerContainer = document.getElementById('color-picker-container');
