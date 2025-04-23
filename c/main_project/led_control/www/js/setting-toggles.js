@@ -4,6 +4,11 @@ function toggleBlendMode() {
   // Add your LED blend mode logic here
 }
 
+function toggleAutoOffsetMode() {
+  capt_settings.auto_offset = document.getElementById("auto-offset-toggle").checked ? 1 : 0;
+  saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
 

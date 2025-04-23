@@ -42,6 +42,24 @@ int parse_led_settings_data_to_string(char *str) {
     );
 }
 
+int parse_screen_settings_data_to_string(char *str) {
+    return sprintf(str, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.2f",
+        sc_settings.v_offset,
+        sc_settings.h_offset,
+        sc_settings.avg_color,
+        sc_settings.left_count,
+        sc_settings.right_count,
+        sc_settings.top_count,
+        sc_settings.bottom_count,
+        sc_settings.res_x,
+        sc_settings.res_y,
+        sc_settings.blend_depth,
+        sc_settings.blend_mode,
+        sc_settings.auto_offset,
+        sc_settings.transition_rate
+    );
+}
+
 int initialize_led_settings() {
     char data_line[512];
     printf("reading led_settings.csv...\n");
@@ -83,6 +101,8 @@ int initialize_led_settings() {
 
 void handle_get_led_settings(struct lws *wsi);
 void handle_set_led_settings(struct lws *wsi, cJSON *data);
+void handle_get_capt_settings(struct lws *wsi);
+void handle_set_capt_settings(struct lws *wsi, cJSON *data);
 // void handle_set_color(struct lws *wsi, cJSON *data);
 
 /**
@@ -93,6 +113,10 @@ void dispatch_action(struct lws *wsi, const char *action, cJSON *data) {
         handle_get_led_settings(wsi);
     } else if (strcmp(action, "set_led_settings") == 0) {
         handle_set_led_settings(wsi, data);
+    } else if(strcmp(action, "get_capt_settings") == 0) {
+        handle_get_capt_settings(wsi);
+    } else if (strcmp(action, "set_capt_settings") == 0) {
+        handle_set_capt_settings(wsi, data);
     } else {
         printf("Unknown action: %s\n", action);
     }
@@ -109,6 +133,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         psd->wsi = wsi;
         if(client_count < MAX_CLIENTS) {
             handle_get_led_settings(wsi);  // Send LED settings to the client
+            handle_get_capt_settings(wsi);
             clients[client_count++] = psd;
         }
         break;
@@ -215,7 +240,6 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     if (cJSON_IsNumber(count)) temp_settings.count = count->valueint;
     if (cJSON_IsNumber(id)) temp_settings.id = id->valueint;
 
-    const char *response_text;
     int just_brightness = 0;
 
     if(temp_settings.color == led_settings.color &&
@@ -229,7 +253,6 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
      // just change brightness
          led_settings.brightness = temp_settings.brightness;
          update_led_vars();
-         response_text = "{\"Success\":\"Changed brightness\"}";
          just_brightness = 1;
      } else { // some other variable has changed, we will update led_settings
          led_settings.brightness = temp_settings.brightness;
@@ -246,14 +269,60 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     //printf("current led settings: %s\n", led_settings_str);
     if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) { // writes data to csv file
         printf("Failed to write led_settings\n");
-        response_text = "{\"Error\":\"Failed to write led settings\"}";
     } else { // success
         if(!just_brightness) { // dont reset the led strip and everything
-            response_text = update_leds();
+            update_leds();
         }
     }
 
     handle_get_led_settings(wsi);
+}
+
+void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
+    if (!cJSON_IsObject(json)) return;
+
+    if(!json) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+
+    cJSON *v_offset = cJSON_GetObjectItemCaseSensitive(json, "v_offset");
+    cJSON *h_offset = cJSON_GetObjectItemCaseSensitive(json, "h_offset");    
+    cJSON *avg_color = cJSON_GetObjectItemCaseSensitive(json, "avg_color");    
+    cJSON *left_count = cJSON_GetObjectItemCaseSensitive(json, "left_count");
+    cJSON *right_count = cJSON_GetObjectItemCaseSensitive(json, "right_count");
+    cJSON *top_count = cJSON_GetObjectItemCaseSensitive(json, "top_count");
+    cJSON *bottom_count = cJSON_GetObjectItemCaseSensitive(json, "bottom_count");
+    cJSON *res_x = cJSON_GetObjectItemCaseSensitive(json, "res_x");
+    cJSON *res_y = cJSON_GetObjectItemCaseSensitive(json, "res_y");
+    cJSON *blend_depth = cJSON_GetObjectItemCaseSensitive(json, "blend_depth");
+    cJSON *blend_mode = cJSON_GetObjectItemCaseSensitive(json, "blend_mode");
+    cJSON *auto_offset = cJSON_GetObjectItemCaseSensitive(json, "auto_offset");
+    cJSON *transition_rate = cJSON_GetObjectItemCaseSensitive(json, "transition_rate");
+
+    if (cJSON_IsNumber(v_offset)) sc_settings.v_offset = v_offset->valueint;
+    if (cJSON_IsNumber(h_offset)) sc_settings.h_offset = h_offset->valueint;
+    if (cJSON_IsNumber(avg_color)) sc_settings.avg_color = avg_color->valueint;
+    if (cJSON_IsNumber(left_count)) sc_settings.left_count = left_count->valueint;
+    if (cJSON_IsNumber(right_count)) sc_settings.right_count = right_count->valueint;
+    if (cJSON_IsNumber(top_count)) sc_settings.top_count = top_count->valueint;
+    if (cJSON_IsNumber(bottom_count)) sc_settings.bottom_count = bottom_count->valueint;
+    if (cJSON_IsNumber(res_x)) sc_settings.res_x = res_x->valueint;
+    if (cJSON_IsNumber(res_y)) sc_settings.res_y = res_y->valueint;
+    if (cJSON_IsNumber(blend_depth)) sc_settings.blend_depth = blend_depth->valueint;
+    if (cJSON_IsNumber(blend_mode)) sc_settings.blend_mode = blend_mode->valueint;
+    if (cJSON_IsNumber(auto_offset)) sc_settings.auto_offset = auto_offset->valueint;
+    if (cJSON_IsNumber(transition_rate)) sc_settings.transition_rate = transition_rate->valuedouble;
+    
+    char capt_settings_str[512];
+    parse_screen_settings_data_to_string(capt_settings_str);
+
+    const char *response_text;
+    if(write_data(SC_SETTINGS_FILENAME, SC_SETTINGS_HEADER, capt_settings_str)) {
+        printf("Failed to write sc_settings\n");
+    }
+
+    handle_get_capt_settings(wsi);
 }
 
 void color_to_hex(uint32_t color, char *buffer) {
@@ -261,6 +330,38 @@ void color_to_hex(uint32_t color, char *buffer) {
         (color >> 16) & 0xFF,
         (color >> 8) & 0xFF,
         color & 0xFF);
+}
+
+void handle_get_capt_settings(struct lws *wsi) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "get_capt_settings");
+    cJSON_AddStringToObject(root, "status", "ok");
+
+    cJSON *data = cJSON_CreateObject();
+    cJSON_AddNumberToObject(data, "v_offset", sc_settings.v_offset);
+    cJSON_AddNumberToObject(data, "h_offset", sc_settings.h_offset);
+    cJSON_AddNumberToObject(data, "avg_color", sc_settings.avg_color);
+    cJSON_AddNumberToObject(data, "left_count", sc_settings.left_count);
+    cJSON_AddNumberToObject(data, "right_count", sc_settings.right_count);
+    cJSON_AddNumberToObject(data, "top_count", sc_settings.top_count);
+    cJSON_AddNumberToObject(data, "bottom_count", sc_settings.bottom_count);
+    cJSON_AddNumberToObject(data, "res_x", sc_settings.res_x);
+    cJSON_AddNumberToObject(data, "res_y", sc_settings.res_y);
+    cJSON_AddNumberToObject(data, "blend_depth", sc_settings.blend_depth);
+    cJSON_AddNumberToObject(data, "blend_mode", sc_settings.blend_mode);
+    cJSON_AddNumberToObject(data, "auto_offset", sc_settings.auto_offset);
+    cJSON_AddNumberToObject(data, "transition_rate", sc_settings.transition_rate);
+
+    cJSON_AddItemToObject(root, "data", data);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    unsigned char buffer[LWS_PRE + 1024];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], lson_len, LWS_WRITE_TEXT);
+
+    free(json_str);
+    cJSON_Delete(root);
 }
 
 void send_led_strip_colors(struct led_position* led_positions) {

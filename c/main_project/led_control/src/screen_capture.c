@@ -31,7 +31,21 @@ pthread_t send_positions_thread;
 
 struct led_position *led_positions; // server.h
 
-CaptureSettings sc_settings;
+CaptureSettings sc_settings = {
+  .v_offset = 0,
+  .h_offset = 0,
+  .avg_color = 0,
+  .left_count = 36,
+  .right_count = 37,
+  .top_count = 66,
+  .bottom_count = 67,
+  .res_x = 640,
+  .res_y = 480,
+  .blend_depth = 5,
+  .blend_mode = 1,
+  .auto_offset = 1,
+  .transition_rate = .3
+};
 
 /**
  * Uses the sc_settings variable and initailizes the struct based on csv file
@@ -79,7 +93,10 @@ bool initialize_settings() {
     printf("blend_mode: %d\t", sc_settings.blend_mode);    
 
     sc_settings.auto_offset = atoi(next_token(&line_ptr));
-    printf("Auto offset: %d\n", sc_settings.auto_offset);
+    printf("Auto offset: %d\t", sc_settings.auto_offset);
+
+    sc_settings.transition_rate = atof(next_token(&line_ptr));
+    printf("Transition Rate: %.2f\n", sc_settings.transition_rate);
 
     WIDTH = sc_settings.res_x;
     HEIGHT = sc_settings.res_y;
@@ -383,14 +400,14 @@ void *capture_loop(void *strip_ptr) {
   //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
   bool blend_mode_active = sc_settings.blend_mode > 0;
   int i = 0;
-  float alpha = 0.2f; // higher provides faster transitions than lower
+  float alpha = sc_settings.transition_rate; // higher provides faster transitions than lower
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
     if(blend_mode_active) {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        uint32_t target_color = blend_colors(led_positions, rgb_buffer,i, 5);
+        uint32_t target_color = blend_colors(led_positions, rgb_buffer,i, sc_settings.blend_depth);
         uint32_t smoothed_color = lerp_color(led_positions[i].color, target_color, alpha);
 
         set_led_32int_color(i, smoothed_color);

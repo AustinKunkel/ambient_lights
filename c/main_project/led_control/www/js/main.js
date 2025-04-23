@@ -23,6 +23,8 @@ let capt_settings = {
   'auto_offset' : 1
 }
 
+let saveCaptSettingsButtonContainer = null;
+
 let socket;
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':8080', 'websocket');
@@ -69,6 +71,14 @@ function getLEDSettings() {
   }
 }
 
+function getCaptSettings() {
+  if(socket && socket.readyState == WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      action : "get_capt_settings"
+    }))
+  }
+}
+
 function setServerLEDSettings() {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
@@ -99,7 +109,17 @@ window.onload = function() {
   startWebSocket();
 };
 
+function saveLEDCount() {
+  setServerLEDSettings();
+
+  const saveCountButton = document.getElementById("count-save-button");
+  saveCountButton.disabled = true;
+  saveCountButton.classList.add("disabled-button");
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
+
+  saveCaptSettingsButtonContainer = document.getElementById("save-capt-settings-container");
 
   // sendLedSettingsGet().then(data => {
   //   led_settings = { ...data }; 
@@ -121,18 +141,37 @@ document.addEventListener("DOMContentLoaded", async function() {
       // });
   })
 
-  const countInput = document.getElementById("count-input")
-  countInput.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      led_settings.count = Number(countInput.value);
-      sendLedSettingsPost(led_settings).then(() => {
-        // request get settings and update led_settings
-      });
-    }
-  })
+  const countInput = document.getElementById("count-input");
+  const saveCountButton = document.getElementById("count-save-button");
+  countInput.addEventListener("input", () => {
+    
+    led_settings.count = Number(countInput.value);
 
-  const vOffsetInput = document.getElementById("v-offset-input")
+    saveCountButton.disabled = false;
+    saveCountButton.classList.remove("disabled-button");
+
+  })
+  // countInput.addEventListener("keydown", function(event) {
+  //   if (event.key === "Enter") {
+  //     led_settings.count = Number(countInput.value);
+  //     sendLedSettingsPost(led_settings).then(() => {
+  //       // request get settings and update led_settings
+  //     });
+  //   }
+  // })
+
+  const vOffsetInput = document.getElementById("v-offset-input");
+  vOffsetInput.addEventListener("input", () => {
+    capt_settings.v_offset = Number(vOffsetInput.value);
+
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+  })
   const hOffsetInput = document.getElementById("h-offset-input")
+  hOffsetInput.addEventListener("input", () => {
+    capt_settings.h_offset = Number(hOffsetInput.value);
+
+    saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+  })
 
   const avgColorInput = document.getElementById("avg-scrn-color-check")
   //const soundReact = document.getElementById("snd-rct-check")

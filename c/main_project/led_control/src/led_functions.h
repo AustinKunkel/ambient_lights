@@ -30,6 +30,7 @@ typedef struct {
 } LEDSettings;
 
 extern LEDSettings led_settings;
+extern CaptureSettings sc_settings;
 
 int setup_strip(int);
 void cleanup_strip();

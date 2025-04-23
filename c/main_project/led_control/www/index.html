@@ -104,20 +104,30 @@
             </div>
             <div id="color-easy-container" class="color-easy-container"></div>
         </section>
+        <div class="divider"></div>
         <section class="led-settings" id="led-settings">
             <h2>LED settings</h2>
             <label for="count-input">LED count</label>
-            <input 
-                type="number" 
-                name="count-input" 
-                id="count-input" 
-                min="0" 
-                max="400"
-                step="1">
+            <div style="display: inline-flex; gap: 20px;">
+                <input 
+                    type="number" 
+                    name="count-input" 
+                    id="count-input" 
+                    min="0" 
+                    max="400"
+                    step="1">
+                <button id="count-save-button" class="save-button disabled-button" disabled onclick="saveLEDCount()">Save</button>
+            </div>
+
         </section>
+        <div class="divider"></div>
+
+        <div id="save-capt-settings-container" class="save-settings-container hidden-container">
+            <i class="fa-solid fa-rotate-left" onclick="getCaptSettings()"></i>
+            <button id="save-capt-settings-button" class="save-settings-button" onclick="saveCaptSettings()">Save</button>
+        </div>
         <section class="screen-capt-settings" id="screen-capt-settings">
             <h2>Screen capture settings</h2>
-            
             <div class="setting-title-and-description">
                 <div class="setting-title">
                     <div style="width: 40px;"></div>
@@ -125,7 +135,10 @@
                   <i class="fa-solid fa-info setting-icon"></i>
                 </div>
                 <div class="setting-description">
-                  <p>Determines how far inwards the pixels are read. It can help eliminate black bars or if you just want to read farther into the screen.</p>
+                  <p>Determines how far inwards the pixels are read. 
+                    It can help eliminate black bars or if you just want to read farther into the screen.
+                    Auto Offset will automatically generate the offsets for the black bars.
+                </p>
                   <i class="fa-solid fa-angle-up description-up-icon"></i>
                 </div>
             </div>              
@@ -156,6 +169,14 @@
                         step="1">   
                 </div>
             </div>
+            <div class="toggle-container" style="margin-top: 1em;">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-offset-toggle" onchange="toggleAutoOffsetMode()">
+                    <span class="slider"></span>
+                </label>
+                <div class="toggle-label">Auto Offset</div>
+            </div>    
+            <div class="small-divider"></div>
             <div class="setting-title-and-description">
                 <div class="setting-title">
                     <div style="width: 40px;"></div>
@@ -182,7 +203,14 @@
                 <label for="blend-mode-check" style="display: none;">Blend Mode Enabled</label>
 
                 <div class="justify-left-center">
-                    <input type="number" name="blend-depth-input" id="blend-depth-input" min="1" step="1">
+                    <input 
+                        type="number" 
+                        name="blend-depth-input" 
+                        id="blend-depth-input" 
+                        min="1" 
+                        step="1" 
+                        placeholder="0"
+                        >
                     <label for="blend-depth-input">Blend Depth</label>
                 </div>
 
@@ -191,7 +219,7 @@
                     <input type="range" class="range-input" name="color-transition-input" id="color-transition-input" min="0" max="1" value=".5", step=".01">
                 </div>
             </div>
-
+            <div class="small-divider"></div>
             <div>
                 <input type="checkbox" name="avg-scrn-color-check" id="avg-scrn-color-check">
                 <label for="avg-scrn-color-check">Use average color</label>
@@ -223,8 +251,6 @@
                     <label for="bottom-led-count">Bottom</label>
                     <input type="number" name="bottom-led-count" id="bottom-led-count" min="0">
                 </div>
-
-                <button class="save-button" type="submit" onclick="saveCaptSettings()">Save</button>
             </div>
 
             <div class="resolution-settings" id="resolution-settings">
