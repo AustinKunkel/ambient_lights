@@ -278,6 +278,45 @@ void handle_set_led_settings(struct lws *wsi, cJSON *json) {
     handle_get_led_settings(wsi);
 }
 
+void color_to_hex(uint32_t color, char *buffer) {
+    snprintf(buffer, 8, "#%02X%02X%02X",
+        (color >> 16) & 0xFF,
+        (color >> 8) & 0xFF,
+        color & 0xFF);
+}
+
+void handle_get_capt_settings(struct lws *wsi) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "get_capt_settings");
+    cJSON_AddStringToObject(root, "status", "ok");
+
+    cJSON *data = cJSON_CreateObject();
+    cJSON_AddNumberToObject(data, "v_offset", sc_settings.v_offset);
+    cJSON_AddNumberToObject(data, "h_offset", sc_settings.h_offset);
+    cJSON_AddNumberToObject(data, "avg_color", sc_settings.avg_color);
+    cJSON_AddNumberToObject(data, "left_count", sc_settings.left_count);
+    cJSON_AddNumberToObject(data, "right_count", sc_settings.right_count);
+    cJSON_AddNumberToObject(data, "top_count", sc_settings.top_count);
+    cJSON_AddNumberToObject(data, "bottom_count", sc_settings.bottom_count);
+    cJSON_AddNumberToObject(data, "res_x", sc_settings.res_x);
+    cJSON_AddNumberToObject(data, "res_y", sc_settings.res_y);
+    cJSON_AddNumberToObject(data, "blend_depth", sc_settings.blend_depth);
+    cJSON_AddNumberToObject(data, "blend_mode", sc_settings.blend_mode);
+    cJSON_AddNumberToObject(data, "auto_offset", sc_settings.auto_offset);
+    cJSON_AddNumberToObject(data, "transition_rate", sc_settings.transition_rate);
+
+    cJSON_AddItemToObject(root, "data", data);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    unsigned char buffer[LWS_PRE + 1024];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+
+    free(json_str);
+    cJSON_Delete(root);
+}
+
 void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
     if (!cJSON_IsObject(json)) return;
 
@@ -323,45 +362,6 @@ void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
     }
 
     handle_get_capt_settings(wsi);
-}
-
-void color_to_hex(uint32_t color, char *buffer) {
-    snprintf(buffer, 8, "#%02X%02X%02X",
-        (color >> 16) & 0xFF,
-        (color >> 8) & 0xFF,
-        color & 0xFF);
-}
-
-void handle_get_capt_settings(struct lws *wsi) {
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "action", "get_capt_settings");
-    cJSON_AddStringToObject(root, "status", "ok");
-
-    cJSON *data = cJSON_CreateObject();
-    cJSON_AddNumberToObject(data, "v_offset", sc_settings.v_offset);
-    cJSON_AddNumberToObject(data, "h_offset", sc_settings.h_offset);
-    cJSON_AddNumberToObject(data, "avg_color", sc_settings.avg_color);
-    cJSON_AddNumberToObject(data, "left_count", sc_settings.left_count);
-    cJSON_AddNumberToObject(data, "right_count", sc_settings.right_count);
-    cJSON_AddNumberToObject(data, "top_count", sc_settings.top_count);
-    cJSON_AddNumberToObject(data, "bottom_count", sc_settings.bottom_count);
-    cJSON_AddNumberToObject(data, "res_x", sc_settings.res_x);
-    cJSON_AddNumberToObject(data, "res_y", sc_settings.res_y);
-    cJSON_AddNumberToObject(data, "blend_depth", sc_settings.blend_depth);
-    cJSON_AddNumberToObject(data, "blend_mode", sc_settings.blend_mode);
-    cJSON_AddNumberToObject(data, "auto_offset", sc_settings.auto_offset);
-    cJSON_AddNumberToObject(data, "transition_rate", sc_settings.transition_rate);
-
-    cJSON_AddItemToObject(root, "data", data);
-
-    char *json_str = cJSON_PrintUnformatted(root);
-    unsigned char buffer[LWS_PRE + 1024];
-    size_t json_len = strlen(json_str);
-    memcpy(&buffer[LWS_PRE], json_str, json_len);
-    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
-
-    free(json_str);
-    cJSON_Delete(root);
 }
 
 void send_led_strip_colors(struct led_position* led_positions) {
