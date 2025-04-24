@@ -254,7 +254,7 @@ function startWebSocket() {
   };
 
   socket.onmessage = function(event) {
-    //console.log('Message from server:', event.data);
+    console.log('Message from server:', event.data);
     const message = JSON.parse(event.data);
     //console.log('Parsed Data:', message);
     const { action, data } = message;
