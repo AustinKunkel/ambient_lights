@@ -241,8 +241,6 @@ let saveCaptSettingsButtonContainer = null;
 
 let socket;
 
-let alreadySetPixelFrame = false;
-
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
 
@@ -250,7 +248,6 @@ function startWebSocket() {
     console.log('WebSocket connection opened.');
     hideReconnectOverlay();
     message_pop_up(TYPE.OK, "Connected.");
-    alreadySetPixelFrame = false;
   };
 
   socket.onmessage = function(event) {
@@ -264,16 +261,13 @@ function startWebSocket() {
        //console.log('Message from server:', event.data);
         led_settings = {...data};
         updateLedSettings();
+        updateEntirePixelFrame();
       case "get_capt_settings":
        // console.log('Message from server:', event.data);
         capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
         break;
       case "led_pixel_data":
-        if(!alreadySetPixelFrame) {
-          updateEntirePixelFrame();
-          alreadySetPixelFrame = true;
-        }
         updateEdgePixels(data);
         break;
     }
