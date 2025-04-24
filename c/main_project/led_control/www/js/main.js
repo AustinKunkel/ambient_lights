@@ -24,6 +24,219 @@ let capt_settings = {
   'transition_rate': .3
 }
 
+function getEdgeIndices() {
+  const indices = [];
+
+  // These control the size of each pixel
+  const length = '15px';  // longer side
+  const width = '15px';    // shorter side
+
+  const containerPadding = 0; // percentage padding for better alignment
+
+  // Right column
+  let i_roof = Math.floor((capt_settings.right_count - 2));
+  for (let i = 0; i < i_roof; i++) {
+    indices.push({
+      row: i_roof - i,
+      col: 'right',
+      width: length,
+      height: width
+    });
+  }
+
+  // Top row
+  i_roof = Math.floor((capt_settings.top_count - 1));
+  for (let i = 0; i <= i_roof; i++) {
+    indices.push({
+      row: 0,
+      col: i_roof - i,
+      width: width,
+      height: length,
+      topOffset: `${containerPadding}%`
+    });
+  }
+
+  // Left column
+  i_roof = Math.floor((capt_settings.left_count - 2));
+  for (let i = i_roof; i > 0; i--) {
+    indices.push({
+      row: i,
+      col: 0,
+      width: length,
+      height: width
+    });
+  }
+
+  // Bottom row
+  i_roof = Math.floor((capt_settings.bottom_count - 2));
+  for (let i = i_roof; i > 0; i--) {
+    indices.push({
+      row: 'bottom',
+      col: i_roof - i,
+      width: width,
+      height: length,
+      topOffset: `calc(100% - ${containerPadding}%)`
+    });
+  }
+  return indices;
+}
+
+const edgePixels = [];
+
+function updateEntirePixelFrame () {
+  const edgeCoords = getEdgeIndices();
+  const container = document.getElementById('pixel-grid');
+  container.innerHTML = ''; // Clear the container
+  edgePixels.length = 0; // Clear the edgePixels array
+
+  const horizontalMargin = 5; // Horizontal space between sides (left, right)
+  const verticalMargin = 5; // Vertical space between sides (top, bottom)
+
+  // Calculate the available space after subtracting margins
+  const availableWidth = container.offsetWidth - (2 * horizontalMargin);
+  const availableHeight = container.offsetHeight - (2 * verticalMargin);
+
+  // Calculate spacing for each side based on available space
+  const horizontalSpacing = availableWidth / Math.floor(capt_settings.top_count);
+  const verticalSpacing = availableHeight / Math.floor(capt_settings.left_count);
+
+  // Ensure pixels take up the available space without overshooting
+  const pixelWidth = horizontalSpacing; // Each pixel will take up the full width space
+  const pixelHeight = verticalSpacing; // Each pixel will take up the full height space
+
+  edgeCoords.forEach(coord => {
+    const pixel = document.createElement('div');
+    pixel.className = 'pixel';
+    pixel.style.position = 'absolute';
+    pixel.style.width = `${pixelWidth}px`;
+    pixel.style.height = `${pixelHeight}px`;
+    pixel.style.backgroundColor = 'black';
+  
+    if (coord.col === 'right') {
+      // Right edge: position exactly within the container
+      const x = container.offsetWidth - horizontalMargin - pixelWidth;
+      const y = verticalMargin + (coord.row * verticalSpacing);
+      pixel.style.left = `${x}px`;
+      pixel.style.top = `${y}px`;
+    } else if (coord.row === 'bottom') {
+      // Bottom edge: position exactly within the container
+      const x = horizontalMargin + (coord.col * horizontalSpacing);
+      const y = container.offsetHeight - verticalMargin - pixelHeight;
+      pixel.style.left = `${x}px`;
+      pixel.style.top = `${y}px`;
+    } else if (coord.row === 0) {
+      // Top edge: already correct
+      const x = horizontalMargin + (coord.col * horizontalSpacing);
+      pixel.style.left = `${x}px`;
+      pixel.style.top = `${verticalMargin}px`;
+    } else {
+      // Left edge: already correct
+      const x = horizontalMargin;
+      const y = verticalMargin + (coord.row * verticalSpacing);
+      pixel.style.left = `${x}px`;
+      pixel.style.top = `${y}px`;
+    }
+  
+    container.appendChild(pixel);
+    edgePixels.push(pixel);
+  });
+}
+
+function updateEdgePixels (colorArray) {
+  let groupedColors = [];
+  let i = 0;
+
+  // Helper: Convert hex to RGB
+  const hexToRgb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b };
+  };
+
+  // Helper: Convert RGB to hex
+  const rgbToHex = ({ r, g, b }) => {
+    const toHex = (val) => val.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  };
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+  
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+        case g: h = ((b - r) / d + 2); break;
+        case b: h = ((r - g) / d + 4); break;
+      }
+      h /= 6;
+    }
+    return [h, s, l];
+  }
+  
+  function hslToRgb(h, s, l) {
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l; // achromatic
+    } else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return [
+      Math.round(r * 255),
+      Math.round(g * 255),
+      Math.round(b * 255)
+    ];
+  }
+
+  while (i < colorArray.length) {
+    const chunkSize = Math.min(1, colorArray.length - i);
+    let r = 0, g = 0, b = 0;
+
+    for (let j = 0; j < chunkSize; j++) {
+      const { r: rr, g: gg, b: bb } = hexToRgb(colorArray[i + j].color);
+      r += rr;
+      g += gg;
+      b += bb;
+    }
+    r = Math.round(r / chunkSize);
+    g = Math.round(g / chunkSize);
+    b = Math.round(b / chunkSize);
+
+    let [h, s, l] = rgbToHsl(r, g, b);
+    l = Math.min(1, l + .15); // brighten
+
+    [r, g, b] = hslToRgb(h, s, l);
+
+    groupedColors.push(rgbToHex({ r, g, b }));
+    i += chunkSize;
+  }
+
+  // Apply to edgePixels
+  for (let j = 0; j < edgePixels.length; j++) {
+    if (groupedColors[j]) {
+      edgePixels[j].style.backgroundColor = groupedColors[j];
+    }
+  }
+};
+
 let saveCaptSettingsButtonContainer = null;
 
 let socket;
@@ -143,6 +356,8 @@ function saveLEDCount() {
 }
 
 document.addEventListener("DOMContentLoaded", async function() {
+
+  updateEntirePixelFrame();
 
   saveCaptSettingsButtonContainer = document.getElementById("save-capt-settings-container");
 
@@ -461,221 +676,4 @@ document.addEventListener("DOMContentLoaded", async function() {
   function setBlendMode(value) {
     blendModeActive.checked = value > 0;
   }
-
-  const spacing = 1; // number of pixels to be averaged
-
-  function getEdgeIndices() {
-    const indices = [];
-  
-    // These control the size of each pixel
-    const length = '15px';  // longer side
-    const width = '15px';    // shorter side
-  
-    const containerPadding = 0; // percentage padding for better alignment
-
-    // Right column
-    let i_roof = Math.floor((capt_settings.right_count - 2)/ spacing);
-    for (let i = 0; i < i_roof; i++) {
-      indices.push({
-        row: i_roof - i,
-        col: 'right',
-        width: length,
-        height: width
-      });
-    }
-  
-    // Top row
-    i_roof = Math.floor((capt_settings.top_count - 1) / spacing);
-    for (let i = 0; i <= i_roof; i++) {
-      indices.push({
-        row: 0,
-        col: i_roof - i,
-        width: width,
-        height: length,
-        topOffset: `${containerPadding}%`
-      });
-    }
-
-    // Left column
-    i_roof = Math.floor((capt_settings.left_count - 2) / spacing);
-    for (let i = i_roof; i > 0; i--) {
-      indices.push({
-        row: i,
-        col: 0,
-        width: length,
-        height: width
-      });
-    }
-  
-    // Bottom row
-    i_roof = Math.floor((capt_settings.bottom_count - 2) / spacing);
-    for (let i = i_roof; i > 0; i--) {
-      indices.push({
-        row: 'bottom',
-        col: i_roof - i,
-        width: width,
-        height: length,
-        topOffset: `calc(100% - ${containerPadding}%)`
-      });
-    }
-    return indices;
-  }
-
-  const edgePixels = [];
-
-  updateEntirePixelFrame();
-
-  window.updateEntirePixelFrame = () => {
-    const edgeCoords = getEdgeIndices();
-    const container = document.getElementById('pixel-grid');
-    container.innerHTML = ''; // Clear the container
-    edgePixels.length = 0; // Clear the edgePixels array
-  
-    const horizontalMargin = 5; // Horizontal space between sides (left, right)
-    const verticalMargin = 5; // Vertical space between sides (top, bottom)
-  
-    // Calculate the available space after subtracting margins
-    const availableWidth = container.offsetWidth - (2 * horizontalMargin);
-    const availableHeight = container.offsetHeight - (2 * verticalMargin);
-  
-    // Calculate spacing for each side based on available space
-    const horizontalSpacing = availableWidth / Math.floor(capt_settings.top_count / spacing);
-    const verticalSpacing = availableHeight / Math.floor(capt_settings.left_count / spacing);
-  
-    // Ensure pixels take up the available space without overshooting
-    const pixelWidth = horizontalSpacing; // Each pixel will take up the full width space
-    const pixelHeight = verticalSpacing; // Each pixel will take up the full height space
-  
-    edgeCoords.forEach(coord => {
-      const pixel = document.createElement('div');
-      pixel.className = 'pixel';
-      pixel.style.position = 'absolute';
-      pixel.style.width = `${pixelWidth}px`;
-      pixel.style.height = `${pixelHeight}px`;
-      pixel.style.backgroundColor = 'black';
-    
-      if (coord.col === 'right') {
-        // Right edge: position exactly within the container
-        const x = container.offsetWidth - horizontalMargin - pixelWidth;
-        const y = verticalMargin + (coord.row * verticalSpacing);
-        pixel.style.left = `${x}px`;
-        pixel.style.top = `${y}px`;
-      } else if (coord.row === 'bottom') {
-        // Bottom edge: position exactly within the container
-        const x = horizontalMargin + (coord.col * horizontalSpacing);
-        const y = container.offsetHeight - verticalMargin - pixelHeight;
-        pixel.style.left = `${x}px`;
-        pixel.style.top = `${y}px`;
-      } else if (coord.row === 0) {
-        // Top edge: already correct
-        const x = horizontalMargin + (coord.col * horizontalSpacing);
-        pixel.style.left = `${x}px`;
-        pixel.style.top = `${verticalMargin}px`;
-      } else {
-        // Left edge: already correct
-        const x = horizontalMargin;
-        const y = verticalMargin + (coord.row * verticalSpacing);
-        pixel.style.left = `${x}px`;
-        pixel.style.top = `${y}px`;
-      }
-    
-      container.appendChild(pixel);
-      edgePixels.push(pixel);
-    });
-  }
-
-  window.updateEdgePixels = (colorArray) => {
-    let groupedColors = [];
-    let i = 0;
-  
-    // Helper: Convert hex to RGB
-    const hexToRgb = (hex) => {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      return { r, g, b };
-    };
-  
-    // Helper: Convert RGB to hex
-    const rgbToHex = ({ r, g, b }) => {
-      const toHex = (val) => val.toString(16).padStart(2, '0');
-      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-    };
-
-    function rgbToHsl(r, g, b) {
-      r /= 255; g /= 255; b /= 255;
-      const max = Math.max(r, g, b), min = Math.min(r, g, b);
-      let h, s, l = (max + min) / 2;
-    
-      if (max === min) {
-        h = s = 0;
-      } else {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-          case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-          case g: h = ((b - r) / d + 2); break;
-          case b: h = ((r - g) / d + 4); break;
-        }
-        h /= 6;
-      }
-      return [h, s, l];
-    }
-    
-    function hslToRgb(h, s, l) {
-      let r, g, b;
-      if (s === 0) {
-        r = g = b = l; // achromatic
-      } else {
-        const hue2rgb = (p, q, t) => {
-          if (t < 0) t += 1;
-          if (t > 1) t -= 1;
-          if (t < 1/6) return p + (q - p) * 6 * t;
-          if (t < 1/2) return q;
-          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-          return p;
-        };
-        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
-      }
-      return [
-        Math.round(r * 255),
-        Math.round(g * 255),
-        Math.round(b * 255)
-      ];
-    }
-  
-    while (i < colorArray.length) {
-      const chunkSize = Math.min(spacing, colorArray.length - i);
-      let r = 0, g = 0, b = 0;
-  
-      for (let j = 0; j < chunkSize; j++) {
-        const { r: rr, g: gg, b: bb } = hexToRgb(colorArray[i + j].color);
-        r += rr;
-        g += gg;
-        b += bb;
-      }
-      r = Math.round(r / chunkSize);
-      g = Math.round(g / chunkSize);
-      b = Math.round(b / chunkSize);
-
-      let [h, s, l] = rgbToHsl(r, g, b);
-      l = Math.min(1, l + .15); // brighten
-
-      [r, g, b] = hslToRgb(h, s, l);
-  
-      groupedColors.push(rgbToHex({ r, g, b }));
-      i += chunkSize;
-    }
-  
-    // Apply to edgePixels
-    for (let j = 0; j < edgePixels.length; j++) {
-      if (groupedColors[j]) {
-        edgePixels[j].style.backgroundColor = groupedColors[j];
-      }
-    }
-  };
 })
