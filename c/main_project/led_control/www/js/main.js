@@ -33,6 +33,7 @@ function startWebSocket() {
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
     hideReconnectOverlay();
+    message_pop_up(TYPE.OK, "Connected.");
   };
 
   socket.onmessage = function(event) {
