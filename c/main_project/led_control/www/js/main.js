@@ -525,7 +525,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   updateEntirePixelFrame();
 
-  function updateEntirePixelFrame() {
+  window.updateEntirePixelFrame = () => {
     const edgeCoords = getEdgeIndices();
     const container = document.getElementById('pixel-grid');
     container.innerHTML = ''; // Clear the container
