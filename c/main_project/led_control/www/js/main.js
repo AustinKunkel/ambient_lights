@@ -36,7 +36,7 @@ function startWebSocket() {
     message_pop_up(TYPE.OK, "Connected.");
   };
 
-  bool alreadySetPixelFrame = false;
+  let alreadySetPixelFrame = false;
   socket.onmessage = function(event) {
     //console.log('Message from server:', event.data);
     const message = JSON.parse(event.data);
