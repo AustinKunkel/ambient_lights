@@ -240,6 +240,9 @@ function updateEdgePixels (colorArray) {
 let saveCaptSettingsButtonContainer = null;
 
 let socket;
+
+let alreadySetPixelFrame = false;
+
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
 
@@ -247,9 +250,9 @@ function startWebSocket() {
     console.log('WebSocket connection opened.');
     hideReconnectOverlay();
     message_pop_up(TYPE.OK, "Connected.");
+    alreadySetPixelFrame = false;
   };
 
-  let alreadySetPixelFrame = false;
   socket.onmessage = function(event) {
     //console.log('Message from server:', event.data);
     const message = JSON.parse(event.data);
