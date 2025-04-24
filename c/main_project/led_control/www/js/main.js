@@ -238,9 +238,9 @@ function updateEdgePixels (colorArray) {
 };
 
 let saveCaptSettingsButtonContainer = null;
+let isFirstConnection = true; // Track first connection
 
 let socket;
-
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
 
@@ -248,6 +248,11 @@ function startWebSocket() {
     console.log('WebSocket connection opened.');
     hideReconnectOverlay();
     message_pop_up(TYPE.OK, "Connected.");
+
+    if (isFirstConnection) {
+      updateEntirePixelFrame(); // Update on first connection
+      isFirstConnection = false;
+    }
   };
 
   socket.onmessage = function(event) {
@@ -263,9 +268,17 @@ function startWebSocket() {
         updateLedSettings();
         updateEntirePixelFrame();
       case "get_capt_settings":
-       // console.log('Message from server:', event.data);
+        const settingsChanged = JSON.stringify(capt_settings) !== JSON.stringify({
+          ...data, 
+          transition_rate: parseFloat(data.transition_rate.toFixed(2))
+        });
+        
         capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
+        
+        if (settingsChanged) {
+          updateEntirePixelFrame(); // Only update if settings changed
+        }
         break;
       case "led_pixel_data":
         updateEdgePixels(data);
@@ -353,8 +366,6 @@ function saveLEDCount() {
 }
 
 document.addEventListener("DOMContentLoaded", async function() {
-
-  updateEntirePixelFrame();
 
   saveCaptSettingsButtonContainer = document.getElementById("save-capt-settings-container");
 
