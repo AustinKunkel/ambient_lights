@@ -36,6 +36,7 @@ function startWebSocket() {
     message_pop_up(TYPE.OK, "Connected.");
   };
 
+  bool alreadySetPixelFrame = false;
   socket.onmessage = function(event) {
     //console.log('Message from server:', event.data);
     const message = JSON.parse(event.data);
@@ -53,6 +54,10 @@ function startWebSocket() {
         updateCaptSettings();
         break;
       case "led_pixel_data":
+        if(!alreadySetPixelFrame) {
+          updateEntirePixelFrame();
+          alreadySetPixelFrame = true;
+        }
         updateEdgePixels(data);
         break;
     }
@@ -252,7 +257,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     pixelFrameContainer.style.opacity = led_settings.capture_screen > 0 ? 1 : 0;
     initializeColorPicker();
-    updateEntirePixelFrame();
   }
 
   const leftCount = document.getElementById("left-led-count")
