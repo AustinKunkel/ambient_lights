@@ -49,7 +49,7 @@ function startWebSocket() {
         updateLedSettings();
       case "get_capt_settings":
         console.log('Message from server:', event.data);
-        capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate) };
+        capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
         break;
       case "led_pixel_data":
