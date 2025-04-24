@@ -25,10 +25,12 @@ function toggleAutoOffsetMode() {
 
 function showReconnectOverlay() {
   document.getElementById("fullscreen-overlay").classList.remove("hidden-container");
+  document.body.classList.add('no-scroll');
 }
 
 function hideReconnectOverlay() {
   document.getElementById("fullscreen-overlay").classList.add("hidden-container");
+  document.body.classList.remove('no-scroll');
 }
 
 document.addEventListener("DOMContentLoaded", () => {

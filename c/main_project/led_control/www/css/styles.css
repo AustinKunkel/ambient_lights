@@ -32,6 +32,11 @@ body {
   background-color: var(--bg-primary);
 }
 
+body.no-scroll {
+  overflow: hidden;
+  touch-action: none;
+}
+
 button {
   padding: none;
   border: none;
