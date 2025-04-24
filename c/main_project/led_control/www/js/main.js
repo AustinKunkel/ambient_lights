@@ -241,7 +241,7 @@ let saveCaptSettingsButtonContainer = null;
 
 let socket;
 function startWebSocket() {
-  socket = new WebSocket('ws://' + window.location.hostname);
+  socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
 
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
