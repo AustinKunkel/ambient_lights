@@ -594,6 +594,52 @@ document.addEventListener("DOMContentLoaded", async function() {
       const toHex = (val) => val.toString(16).padStart(2, '0');
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     };
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+    
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+          case g: h = ((b - r) / d + 2); break;
+          case b: h = ((r - g) / d + 4); break;
+        }
+        h /= 6;
+      }
+      return [h, s, l];
+    }
+    
+    function hslToRgb(h, s, l) {
+      let r, g, b;
+      if (s === 0) {
+        r = g = b = l; // achromatic
+      } else {
+        const hue2rgb = (p, q, t) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+      return [
+        Math.round(r * 255),
+        Math.round(g * 255),
+        Math.round(b * 255)
+      ];
+    }
   
     while (i < colorArray.length) {
       const chunkSize = Math.min(spacing, colorArray.length - i);
@@ -605,13 +651,14 @@ document.addEventListener("DOMContentLoaded", async function() {
         g += gg;
         b += bb;
       }
-      brightness_factor = 50;
-      r = Math.round(r / chunkSize) + 50;
-      if(r > 255) {r = 255;}
-      g = Math.round(g / chunkSize) + 50;
-      if(g > 255) { g = 255;}
-      b = Math.round(b / chunkSize) + 50;
-      if(b > 255) { b = 255};
+      r = Math.round(r / chunkSize);
+      g = Math.round(g / chunkSize);
+      b = Math.round(b / chunkSize);
+
+      let [h, s, l] = rgbToHsl(r, g, b);
+      l = Math.min(1, l + .5); // brighten
+
+      [r, g, b] = hslToRgb(h, s, l);
   
       groupedColors.push(rgbToHex({ r, g, b }));
       i += chunkSize;
