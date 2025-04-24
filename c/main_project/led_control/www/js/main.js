@@ -656,7 +656,7 @@ document.addEventListener("DOMContentLoaded", async function() {
       b = Math.round(b / chunkSize);
 
       let [h, s, l] = rgbToHsl(r, g, b);
-      l = Math.min(1, l + .5); // brighten
+      l = Math.min(1, l + .2); // brighten
 
       [r, g, b] = hslToRgb(h, s, l);
   
