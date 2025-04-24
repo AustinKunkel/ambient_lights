@@ -258,11 +258,11 @@ function startWebSocket() {
 
     switch (action) {
       case "get_led_settings":
-        console.log('Message from server:', event.data);
+       //console.log('Message from server:', event.data);
         led_settings = {...data};
         updateLedSettings();
       case "get_capt_settings":
-        console.log('Message from server:', event.data);
+       // console.log('Message from server:', event.data);
         capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
         break;
