@@ -100,6 +100,23 @@
                 <div id="modal-message"></div>
             </div>
 
+            <div class="fullscreen-overlay hidden-container" id="fullscreen-overlay">
+                <div class="reconnect-message-container" id="reconnect-message">
+                    <div class="reconnect-message-header">
+                        <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+                        <p>You're disconnected.</p>
+                        <i class="fa-solid fa-triangle-exclamation" style="opacity: 0;"></i>
+                    </div>
+                    <div class="reconnect-message-body">
+                        <p>You won't be able to send or receive data.</p>
+                    </div>
+                    <div class="reconnect-message-footer">
+                        <button id="cancel-reconnect-button" onclick="hideReconnectOverlay()">Cancel</button>
+                        <button onclick="startWebSocket()" id="reconnect-button">Reconnect</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="pixel-grid">
             </div>
             <p class="capturing-screen-description">Currently Capturing Screen</p>

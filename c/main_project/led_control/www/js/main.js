@@ -32,6 +32,7 @@ function startWebSocket() {
 
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
+    hideReconnectOverlay();
   };
 
   socket.onmessage = function(event) {
@@ -47,7 +48,7 @@ function startWebSocket() {
         updateLedSettings();
       case "get_capt_settings":
         console.log('Message from server:', event.data);
-        capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
+        capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate) };
         updateCaptSettings();
         break;
       case "led_pixel_data":
@@ -58,10 +59,12 @@ function startWebSocket() {
 
   socket.onclose = function(event) {
     console.log('WebSocket connection closed.');
+    showReconnectOverlay();
   };
 
   socket.onerror = function(error) {
     console.error('WebSocket error:', error);
+    message_pop_up(TYPE.ERROR, "Websocket Error");
   };
 }
 
@@ -519,7 +522,6 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function updateEntirePixelFrame() {
     const edgeCoords = getEdgeIndices();
-    console.log("EdgeCoords:", edgeCoords);
     const container = document.getElementById('pixel-grid');
     container.innerHTML = ''; // Clear the container
     edgePixels.length = 0; // Clear the edgePixels array
@@ -656,7 +658,7 @@ document.addEventListener("DOMContentLoaded", async function() {
       b = Math.round(b / chunkSize);
 
       let [h, s, l] = rgbToHsl(r, g, b);
-      l = Math.min(1, l + .1); // brighten
+      l = Math.min(1, l + .15); // brighten
 
       [r, g, b] = hslToRgb(h, s, l);
   

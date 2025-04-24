@@ -23,6 +23,14 @@ function toggleAutoOffsetMode() {
 }
 
 
+function showReconnectOverlay() {
+  document.getElementById("fullscreen-overlay").classList.remove("hidden-container");
+}
+
+function hideReconnectOverlay() {
+  document.getElementById("fullscreen-overlay").classList.add("hidden-container");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
   const colorTransitionInput = document.getElementById("color-transition-input");
