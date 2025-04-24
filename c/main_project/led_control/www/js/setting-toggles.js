@@ -23,14 +23,30 @@ function toggleAutoOffsetMode() {
 }
 
 
-function showReconnectOverlay() {
+function showReconnectOverlay(reconnectTime=-1, failedToConnect=false) {
   document.getElementById("fullscreen-overlay").classList.remove("hidden-container");
   document.body.classList.add('no-scroll');
+
+  const reconnectTimer = document.getElementById("reconnect-timer");
+
+  if(reconnectTime >= 0) {
+    reconnectTimer.closest('p').style.display = "block";
+    reconnectTimer.innerHTML = reconnectTime;
+  } else if(failedToConnect){
+    document.getElementById('failed-to-connect-dialog').style.display = "block";
+    reconnectTimer.innerHTML = '';
+    reconnectTimer.closest('p').style.display = "none";
+  }
 }
 
 function hideReconnectOverlay() {
   document.getElementById("fullscreen-overlay").classList.add("hidden-container");
   document.body.classList.remove('no-scroll');
+
+  const reconnectTimer = document.getElementById("reconnect-timer");
+  reconnectTimer.innerHTML = '';
+  reconnectTimer.closest('p').style.display = "none";
+  document.getElementById('failed-to-connect-dialog').style.display = "none";
 }
 
 document.addEventListener("DOMContentLoaded", () => {

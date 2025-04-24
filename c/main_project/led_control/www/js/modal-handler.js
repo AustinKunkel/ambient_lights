@@ -43,7 +43,7 @@
       setTimeout(() => {
         modal.style.display = "none";
       }, 1000); // Match the duration of the opacity transition
-    }, 3000); // Delay before starting fade-out
+    }, 2000); // Delay before starting fade-out
   }
 
   function openAddColorMenu() {

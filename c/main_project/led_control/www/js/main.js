@@ -238,6 +238,10 @@ function updateEdgePixels (colorArray) {
 };
 
 let saveCaptSettingsButtonContainer = null;
+
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const BASE_RECONNECT_DELAY = 1000; // 1 second
 let isFirstConnection = true; // Track first connection
 
 let socket;
@@ -246,6 +250,7 @@ function startWebSocket() {
 
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
+    reconnectAttempts = 0;
     hideReconnectOverlay();
     message_pop_up(TYPE.OK, "Connected.");
 
@@ -289,12 +294,52 @@ function startWebSocket() {
   socket.onclose = function(event) {
     console.log('WebSocket connection closed.');
     showReconnectOverlay();
+    attemptReconnect();
   };
 
   socket.onerror = function(error) {
     console.error('WebSocket error:', error);
     message_pop_up(TYPE.ERROR, "Websocket Error");
   };
+}
+
+function attemptReconnect() {
+  if(reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+    const delay = BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
+    reconnectAttempts++;
+
+    const countdownSeconds = Math.round(delay / 1000);
+
+    console.log(`Attempting reconnect #${reconnectAttempts} in ${delay}ms...`);
+    showReconnectOverlay(countdownSeconds);
+
+    let remaining = countdownSeconds;
+    countdownInterval = setInterval(() => {
+      remaining--;
+      if(remaining >= 0) {
+        showReconnectOverlay(remaining);
+      }
+
+      if(remaining <= 0) {
+        clearInterval(countdownInterval);
+      }
+    }, 1000);
+
+    reconnectTimer = setTimeout(() => {
+      clearInterval(countdownInterval);
+      showReconnectOverlay(0);
+      startWebSocket();
+    }, delay);
+ } else {
+  showReconnectOverlay(-1, true);
+ }
+}
+
+function cancelReconnect() {
+  clearTimeout(reconnectTimer);
+  clearInterval(countdownInterval);
+  reconnectAttempts = MAX_RECONNECT_ATTEMPTS;
+  hideReconnectOverlay();
 }
 
 function getLEDSettings() {

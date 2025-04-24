@@ -109,9 +109,14 @@
                     </div>
                     <div class="reconnect-message-body">
                         <p>You won't be able to send or receive data.</p>
+                        <p class="reconnect-timer" style="display: none;">Attempting to reconnect in 
+                            <span style="color: var(--accent)" id="reconnect-timer"></span>
+                             seconds...
+                        </p>
+                        <p class="reconnect-timer" style="display: none" id="failed-to-connect-dialog">Failed to automatically reconnect</p>
                     </div>
                     <div class="reconnect-message-footer">
-                        <button id="cancel-reconnect-button" onclick="hideReconnectOverlay()">Cancel</button>
+                        <button id="cancel-reconnect-button" onclick="cancelReconnect()">Cancel</button>
                         <button onclick="startWebSocket()" id="reconnect-button">Reconnect</button>
                     </div>
                 </div>
