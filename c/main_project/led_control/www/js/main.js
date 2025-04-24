@@ -605,10 +605,13 @@ document.addEventListener("DOMContentLoaded", async function() {
         g += gg;
         b += bb;
       }
-  
-      r = Math.round(r / chunkSize);
-      g = Math.round(g / chunkSize);
-      b = Math.round(b / chunkSize);
+      brightness_factor = 50;
+      r = Math.round(r / chunkSize) + 50;
+      if(r > 255) {r = 255;}
+      g = Math.round(g / chunkSize) + 50;
+      if(g > 255) { g = 255;}
+      b = Math.round(b / chunkSize) + 50;
+      if(b > 255) { b = 255};
   
       groupedColors.push(rgbToHex({ r, g, b }));
       i += chunkSize;
