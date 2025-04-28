@@ -474,7 +474,7 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
   // read inwards from the edge
   if(pixel_side == TOP) {
     for(int j = 10; j <= depth; j += 10) { // increment by 10 (can be changed but for now it works)
-      int new_y = current_pixel.y - j; // find the new y to read from the frame
+      int new_y = current_pixel.y + j; // find the new y to read from the frame
       if(new_y >= HEIGHT) break; // if it hits the bottom, dont read further
 
       int check_index = (new_y * WIDTH + current_pixel.x) * 3; // formula to read any pixel (x, y) from the frame
@@ -485,7 +485,7 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     }
   } else if(pixel_side == BOTTOM) { // same applies from aboves
     for(int j = 10; j <= depth; j += 10) {
-      int new_y = current_pixel.y + j;
+      int new_y = current_pixel.y - j;
       if(new_y < 0) break; // if we hit the top
 
       int check_index = (new_y * WIDTH + current_pixel.x) * 3;
@@ -496,7 +496,7 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     }
   } else if(pixel_side == LEFT) {
     for(int j = 10; j <= depth; j += 10) {
-      int new_x = current_pixel.x - j;
+      int new_x = current_pixel.x + j;
       if(new_x >= WIDTH) break;
 
       int check_index = (current_pixel.y * WIDTH + new_x) * 3;
@@ -507,7 +507,7 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
     }
   } else { // right
     for(int j = 10; j <= depth; j += 10) {
-      int new_x = current_pixel.x + j;
+      int new_x = current_pixel.x - j;
       if(new_x < 0) break;
 
       int check_index = (current_pixel.y * WIDTH + new_x) * 3;
