@@ -385,7 +385,7 @@ label {
   max-width: 90%;
   height: fit-content;
   position: fixed;
-  top: 175px;
+  top: 300px;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 10;
@@ -398,7 +398,7 @@ label {
   border-radius: 10px;
   box-shadow: 0 0 30px var(--bg-primary);
 
-  transition: all 1s ease-in;
+  transition: all .5s ease;
   font-size: 45px;
 }
 
@@ -452,6 +452,12 @@ label {
   font-size: 45px;
   border-top: 2px solid var(--divider);
   border-bottom: 2px solid var(--divider);
+}
+
+.reconnect-timer {
+  font-size: 40px;
+  font-style: italic;
+  color: var(--icon-secondary);
 }
 
 .reconnect-message-footer {
