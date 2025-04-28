@@ -210,11 +210,6 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         cJSON_Delete(json);
         break;
     }
-
-    case LWS_CALLBACK_SERVER_WRITEABLE:
-        // You can implement write queue flushing here if needed
-        break;
-
     case LWS_CALLBACK_CLOSED:
         for (int i = 0; i < client_count; i++) {
             if (clients[i] == psd) {
