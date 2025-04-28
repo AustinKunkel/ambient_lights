@@ -1,3 +1,6 @@
 [submodule "c/external/cJSON"]
 	path = c/external/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "c/extern/libwebsockets"]
+	path = c/extern/libwebsockets
+	url = https://github.com/warmcat/libwebsockets.git

@@ -16,6 +16,7 @@ typedef struct {
   short blend_mode;
   int blend_depth;
   short auto_offset;
+  float transition_rate;
 } CaptureSettings;
 
 typedef struct {
@@ -29,6 +30,7 @@ typedef struct {
 } LEDSettings;
 
 extern LEDSettings led_settings;
+extern CaptureSettings sc_settings;
 
 int setup_strip(int);
 void cleanup_strip();

@@ -5,9 +5,15 @@
   }
 
   const ICONS = {
-    [TYPE.OK]: "fa-solid fa-circle-check",
-    [TYPE.ERROR]: "fa-solid fa-circle-exclamation",
-    [TYPE.WARNING]: "fa-solid fa-triangle-exclamation fa-lg"
+    [TYPE.OK]: "fa-solid fa-check",
+    [TYPE.ERROR]: "fa-solid fa-exclamation",
+    [TYPE.WARNING]: "fa-solid fa-triangle-exclamation"
+  }
+
+  const COLORS = {
+    [TYPE.OK]: "#4CAF50",
+    [TYPE.ERROR]: "#FF5252",
+    [TYPE.WARNING]: "#FFC107"
   }
 
   function message_pop_up(type,message) {
@@ -21,8 +27,11 @@
     const modal_message = document.getElementById('modal-message');
 
     const iconClass = ICONS[type];
+    const color = COLORS[type];
 
     modal_icon.className = iconClass;
+
+    modal_icon.style.color = color;
 
     modal_message.innerHTML = message;
 
@@ -34,7 +43,7 @@
       setTimeout(() => {
         modal.style.display = "none";
       }, 1000); // Match the duration of the opacity transition
-    }, 4000); // Delay before starting fade-out
+    }, 2000); // Delay before starting fade-out
   }
 
   function openAddColorMenu() {

@@ -13,6 +13,7 @@
 #include "screen_capture.h"
 #include "screen_capture_functions.h"
 #include "csv_control.h"
+#include "server.h"
 
 #define DEVICE "/dev/video0"
 #define LEFT 2
@@ -26,18 +27,25 @@ int HEIGHT = 480;
 
 volatile bool stop_capture = false;
 pthread_t capture_thread;
+pthread_t send_positions_thread;
 
-void *capture_loop(void *);
+struct led_position *led_positions; // server.h
 
-struct led_position {
-  int x;
-  int y;
-  int side; // 0 for right, 1 for top, 2 for left, 3 for bottom
+CaptureSettings sc_settings = {
+  .v_offset = 0,
+  .h_offset = 0,
+  .avg_color = 0,
+  .left_count = 36,
+  .right_count = 37,
+  .top_count = 66,
+  .bottom_count = 67,
+  .res_x = 640,
+  .res_y = 480,
+  .blend_depth = 5,
+  .blend_mode = 1,
+  .auto_offset = 1,
+  .transition_rate = .3
 };
-
-struct led_position *led_positions;
-
-CaptureSettings sc_settings;
 
 /**
  * Uses the sc_settings variable and initailizes the struct based on csv file
@@ -85,7 +93,10 @@ bool initialize_settings() {
     printf("blend_mode: %d\t", sc_settings.blend_mode);    
 
     sc_settings.auto_offset = atoi(next_token(&line_ptr));
-    printf("Auto offset: %d\n", sc_settings.auto_offset);
+    printf("Auto offset: %d\t", sc_settings.auto_offset);
+
+    sc_settings.transition_rate = atof(next_token(&line_ptr));
+    printf("Transition Rate: %.2f\n", sc_settings.transition_rate);
 
     WIDTH = sc_settings.res_x;
     HEIGHT = sc_settings.res_y;
@@ -194,11 +205,12 @@ int setup_strip_capture(ws2811_t *strip) {
     return 1;
   }
 
-  if(auto_align_offsets()) {
-    printf("Aligning offsets failed!\n");
-    return 1;
+  if(sc_settings.auto_offset) {
+    if(auto_align_offsets()) {
+      printf("Aligning offsets failed!\n");
+      return 1;
+    }
   }
-
   int next_index = 0;
   printf("Setting up right side...\n");
   setup_right_side(sc_settings.right_count, led_positions, WIDTH, HEIGHT, sc_settings.h_offset, next_index, -1);
@@ -290,6 +302,24 @@ void setup_bottom_side(int count, struct led_position* led_list, int w, int h, i
     led_list[index].y = y_index;
     led_list[index].side = BOTTOM;
   }
+} 
+
+/**
+ * Loop that takes the current led_positions and
+ * sends them to the server to give to the client
+ */
+void *send_led_positions_loop(void *) {
+  struct timespec ts;
+
+  ts.tv_sec = 0;
+  ts.tv_nsec = 33333333L;  // 33 milliseconds = 33,000,000 nanoseconds, 30fps
+
+  while(!stop_capture) {
+    send_led_strip_colors(led_positions);
+    nanosleep(&ts, NULL);
+  }
+
+  return NULL;
 }
 
 void *capture_loop(void *);
@@ -300,10 +330,10 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
-  if(setup_strip(LED_COUNT)) {
-    printf("Failed to initialize LED strip!\n");
-    return 1;
-  } 
+  // if(setup_strip(LED_COUNT)) {
+  //   printf("Failed to initialize LED strip!\n");
+  //   return 1;
+  // } 
   printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
 
@@ -327,9 +357,36 @@ int start_capturing(ws2811_t *strip) {
     return 1;
   }
 
+  printf("Creating send led positions loop...\n");
+  if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
+    stop_video_capture();
+    printf("Failed to create send positions thread!");
+    return 1;
+  }
+
   printf("Capturing started...\n");
   return 0;
 }
+
+/**
+ * "Blends" the 2 colors together by a factor
+ */
+uint32_t lerp_color(uint32_t from, uint32_t to, float alpha) {
+  uint8_t r1 = (from >> 16) & 0xFF;
+  uint8_t g1 = (from >> 8) & 0xFF;
+  uint8_t b1 = from & 0xFF;
+
+  uint8_t r2 = (to >> 16) & 0xFF;
+  uint8_t g2 = (to >> 8) & 0xFF;
+  uint8_t b2 = to & 0xFF;
+
+  uint8_t r = (uint8_t)(r1 + alpha * (r2 - r1));
+  uint8_t g = (uint8_t)(g1 + alpha * (g2 - g1));
+  uint8_t b = (uint8_t)(b1 + alpha * (b2 - b1));
+
+  return (r << 16) | (g << 8) | b;
+}
+
 
 uint32_t blend_colors(struct led_position*, unsigned char*, int, int);
 
@@ -343,20 +400,35 @@ void *capture_loop(void *strip_ptr) {
   }
   //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
   bool blend_mode_active = sc_settings.blend_mode > 0;
+  int i = 0;
+  float alpha = sc_settings.transition_rate; // higher provides faster transitions than lower
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
     if(blend_mode_active) {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
-        set_led_32int_color(i, color);
+        uint32_t target_color = blend_colors(led_positions, rgb_buffer,i, sc_settings.blend_depth);
+        uint32_t smoothed_color = lerp_color(led_positions[i].color, target_color, alpha);
+
+        set_led_32int_color(i, smoothed_color);
+        led_positions[i].color = smoothed_color;
+        led_positions[i].valid = 1;
       }
+      // for(int i = 0; i < LED_COUNT; i++) {
+      //   int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+      //   uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
+      //   set_led_32int_color(i, color);
+      //   led_positions[i].color = color;
+      //   led_positions[i].valid = 1;
+      // }
     } else {
       for(int i = 0; i < LED_COUNT; i++) {
         int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
         int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
         set_led_color(i, r, g, b);
+        led_positions[i].color = (r << 16) | (g << 8) | b;
+        led_positions[i].valid = 1;
       }
     }
     ws2811_render(strip);
@@ -459,6 +531,10 @@ int stop_capturing() {
     printf("Failed to join capture thread!\n");
     return 1;
   } 
+  if(pthread_join(send_positions_thread, NULL)) {
+    printf("Failed to join send positions thread!\n");
+    return 1;
+  }
   free(led_positions);
   stop_video_capture();
   printf("Capture thread joined.\n");

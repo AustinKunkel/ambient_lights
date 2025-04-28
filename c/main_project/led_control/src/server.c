@@ -1,73 +1,34 @@
-#include <microhttpd.h>
-#include <stdlib.h>
+#include <libwebsockets.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <signal.h>
+#include <fcntl.h>
 #include "../../cJSON/cJSON.h"
 #include "led_functions.h"
 #include "main.h"
 #include "csv_control.h"
+#include "server.h"
 
-#define WEB_ROOT "./led_control/www"  // Directory containing HTML, CSS, JS files
+static const struct lws_protocols protocols[];
+
+#define WEB_ROOT "./led_control/www"  // Path for static files
 #define LED_SETTINGS_FILENAME "led_control/data/led_settings.csv"
 #define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
 #define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
 #define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
-#define PORT 8080
+#define PORT 80
+#define MAX_CLIENTS 10
 
-static struct MHD_Daemon *server;  // Declare server globally
+struct lws_context *context;
 
-int handle_get_request(struct MHD_Connection*, const char*);
-int handle_post_request(struct MHD_Connection*, const char*, const char*, size_t*, void**);
-int handle_delete_request(struct MHD_Connection*, const char*);
+typedef struct per_session_data {
+    struct  lws *wsi;
+} per_session_data_t;
 
-// Function to determine the Content-Type based on file extension
-const char *get_content_type(const char *path) {
-    if (strstr(path, ".html")) return "text/html";
-    if (strstr(path, ".css")) return "text/css";
-    if (strstr(path, ".js")) return "application/javascript";
-    if (strstr(path, ".png")) return "image/png";
-    if (strstr(path, ".jpg")) return "image/jpeg";
-    if (strstr(path, ".gif")) return "image/gif";
-    if (strstr(path, ".ico")) return "image/x-icon";
-    return "text/plain";
-}
-
-// Function to check if a file exists
-int file_exists(const char *filename) {
-    struct stat buffer;
-    return (stat(filename, &buffer) == 0);
-}
-
-// Function to serve files from the "www" directory
-enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
-    const char *url, const char *method,
-    const char *version, const char *upload_data,
-    long unsigned int *upload_data_size, void **con_cls) {
-
-
-  if (strcmp(method, "GET") == 0) {
-  return handle_get_request(connection, url);
-  } 
-  else if (strcmp(method, "POST") == 0) {
-  return handle_post_request(connection, url, upload_data, upload_data_size, con_cls);
-  } 
-  else if (strcmp(method, "DELETE") == 0) {
-  return handle_delete_request(connection, url);
-  }
-
-  return MHD_NO;
-}
-
-void stop_server(int signo) {
-    printf("\nStopping server...\n");
-    if (server) {
-        MHD_stop_daemon(server);
-    }
-    exit(0);
-}
+per_session_data_t* clients[MAX_CLIENTS];
+int client_count;
 
 int parse_led_settings_data_to_string(char *str) {
     return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
@@ -78,6 +39,24 @@ int parse_led_settings_data_to_string(char *str) {
         led_settings.fx_num,
         led_settings.count,
         led_settings.id
+    );
+}
+
+int parse_screen_settings_data_to_string(char *str) {
+    return sprintf(str, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.2f",
+        sc_settings.v_offset,
+        sc_settings.h_offset,
+        sc_settings.avg_color,
+        sc_settings.left_count,
+        sc_settings.right_count,
+        sc_settings.top_count,
+        sc_settings.bottom_count,
+        sc_settings.res_x,
+        sc_settings.res_y,
+        sc_settings.blend_depth,
+        sc_settings.blend_mode,
+        sc_settings.auto_offset,
+        sc_settings.transition_rate
     );
 }
 
@@ -120,76 +99,149 @@ int initialize_led_settings() {
     }
 }
 
-int main(int argc, char **argv) {
-    // Register signal handler for CTRL+C
-    signal(SIGINT, stop_server);
-    signal(SIGTERM, stop_server);
-
-    // Start the server
-    server = MHD_start_daemon(
-        MHD_USE_INTERNAL_POLLING_THREAD,  // Use polling mode
-        PORT, NULL, NULL,
-        &request_handler, NULL,
-        MHD_OPTION_END
-    );
-
-    if (!server) {
-        printf("Failed to start server\n");
-        return 1;
-    }
-
-    if(initialize_led_settings()) {
-        printf("Error initializing Led settings!\n");
-        return 1;
-    }
-
-    printf("Server running on http://localhost:%d/\n", PORT);
-    printf("Press CTRL+C to stop the server.\n");
-
-    if(setup_strip(led_settings.count) != 0) {
-        printf("Problem setting up strip...\n");
-        return 1;
-    }
-
-    set_strip_32int_color(led_settings.color);
-    set_brightness(led_settings.brightness);
-    show_strip();
-
-    // Keep the server running until stopped
-    while (1) {
-        sleep(1);
-    }
+int initialize_sc_settings() {
+    char data_line[512];
+  printf("reading sc_settings.csv...\n");
+  if(read_one_line(SC_SETTINGS_FILENAME, data_line, sizeof(data_line)) == 0)
+  {
+    char *line_ptr = data_line;
+    printf("Setting sc settings variables...\n");
+    sc_settings.v_offset = atoi(next_token(&line_ptr));
+    printf("v_offset: %d\t", sc_settings.v_offset);
     
+    sc_settings.h_offset = atoi(next_token(&line_ptr));
+    printf("h_offset: %d\t", sc_settings.h_offset);
+    
+    sc_settings.avg_color = atoi(next_token(&line_ptr));
+    printf("avg_color: %d\t", sc_settings.avg_color);
+    
+    sc_settings.left_count = atoi(next_token(&line_ptr));
+    printf("left_count: %d\t", sc_settings.left_count);
+    
+    sc_settings.right_count = atoi(next_token(&line_ptr));
+    printf("right_count: %d\t", sc_settings.right_count);
+    
+    sc_settings.top_count = atoi(next_token(&line_ptr));
+    printf("top_count: %d\t", sc_settings.top_count);
+    
+    sc_settings.bottom_count = atoi(next_token(&line_ptr));
+    printf("bottom_count: %d\t", sc_settings.bottom_count);
+    
+    sc_settings.res_x = atoi(next_token(&line_ptr));
+    printf("res_x: %d\t", sc_settings.res_x);
+    
+    sc_settings.res_y = atoi(next_token(&line_ptr));
+    printf("res_y: %d\t", sc_settings.res_y);
+    
+    sc_settings.blend_depth = atoi(next_token(&line_ptr));
+    printf("blend_depth: %d\t", sc_settings.blend_depth);
+    
+    sc_settings.blend_mode = atoi(next_token(&line_ptr));
+    printf("blend_mode: %d\t", sc_settings.blend_mode);    
+
+    sc_settings.auto_offset = atoi(next_token(&line_ptr));
+    printf("Auto offset: %d\t", sc_settings.auto_offset);
+
+    sc_settings.transition_rate = atof(next_token(&line_ptr));
+    printf("Transition Rate: %.2f\n", sc_settings.transition_rate);
+
+    return 0;
+  } else {
+    perror("Unable to read from sc_settings.csv!!\n");
+    return 1;
+  }
+}
+
+void handle_get_led_settings(struct lws *wsi);
+void handle_set_led_settings(struct lws *wsi, cJSON *data);
+void handle_get_capt_settings(struct lws *wsi);
+void handle_set_capt_settings(struct lws *wsi, cJSON *data);
+// void handle_set_color(struct lws *wsi, cJSON *data);
+
+/**
+ * Helper function to distribute actions to their correct handler functions
+ */
+void dispatch_action(struct lws *wsi, const char *action, cJSON *data) {
+    if (strcmp(action, "get_led_settings") == 0) {
+        handle_get_led_settings(wsi);
+    } else if (strcmp(action, "set_led_settings") == 0) {
+        handle_set_led_settings(wsi, data);
+    } else if(strcmp(action, "get_capt_settings") == 0) {
+        handle_get_capt_settings(wsi);
+    } else if (strcmp(action, "set_capt_settings") == 0) {
+        handle_set_capt_settings(wsi, data);
+    } else {
+        printf("Unknown action: %s\n", action);
+    }
+}
+
+// --- Main WebSocket callback ---
+static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
+    void *user, void *in, size_t len)
+{
+    per_session_data_t *psd = (per_session_data_t*)user;
+    switch (reason) {
+    case LWS_CALLBACK_ESTABLISHED:
+        printf("WebSocket connection established\n");
+        psd->wsi = wsi;
+        if(client_count < MAX_CLIENTS) {
+            handle_get_led_settings(wsi);  // Send LED settings to the client
+            handle_get_capt_settings(wsi);
+            clients[client_count++] = psd;
+        }
+        break;
+
+    case LWS_CALLBACK_RECEIVE: {
+        printf("Received message: %.*s\n", (int)len, (char *)in);
+
+        cJSON *json = cJSON_Parse((char *)in);
+        if (!json) {
+            printf("Invalid JSON\n");
+            break;
+        }
+
+        cJSON *action = cJSON_GetObjectItem(json, "action");
+        cJSON *data = cJSON_GetObjectItem(json, "data");
+
+        if (cJSON_IsString(action)) {
+            dispatch_action(wsi, action->valuestring, data);
+        }
+
+        cJSON_Delete(json);
+        break;
+    }
+    case LWS_CALLBACK_CLOSED:
+        for (int i = 0; i < client_count; i++) {
+            if (clients[i] == psd) {
+                // Shift remaining clients
+                for (int j = i; j < client_count - 1; j++) {
+                    clients[j] = clients[j + 1];
+                }
+                client_count--;
+                break;
+            }
+        }
+        printf("WebSocket connection closed\n");
+        break;
+
+    default:
+        break;
+    }
     return 0;
 }
 
-int handle_get_api_request(struct MHD_Connection *connection, const char *url) {
-    led_settings.brightness = 125;
-    led_settings.color = 0xCC6CE7;
-    led_settings.capture_screen = 0;
-    const char *json_response = update_leds();
-
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(json_response), (void *)json_response, MHD_RESPMEM_PERSISTENT);
-    
-    MHD_add_response_header(response, "Content-Type", "application/json");
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    
-    MHD_destroy_response(response);
-    return ret;
-}
-
-int handle_get_led_settings_request(struct MHD_Connection *connection, const char *url) {
+void handle_get_led_settings(struct lws *wsi) {
     cJSON *root = cJSON_CreateObject();
-
+    cJSON_AddStringToObject(root, "action", "get_led_settings");
     cJSON_AddStringToObject(root, "status", "ok");
-    cJSON_AddNumberToObject(root, "code", 200);
 
     cJSON *data = cJSON_CreateObject();
     cJSON_AddNumberToObject(data, "brightness", led_settings.brightness);
-    char color_str[8]; // "#RRGGBB" + null terminator = 8 bytes 
+
+    char color_str[8];
     snprintf(color_str, sizeof(color_str), "#%06X", led_settings.color);
     cJSON_AddStringToObject(data, "color", color_str);
+
     cJSON_AddNumberToObject(data, "capture_screen", led_settings.capture_screen);
     cJSON_AddNumberToObject(data, "sound_react", led_settings.sound_react);
     cJSON_AddNumberToObject(data, "fx_num", led_settings.fx_num);
@@ -197,72 +249,23 @@ int handle_get_led_settings_request(struct MHD_Connection *connection, const cha
     cJSON_AddNumberToObject(data, "id", led_settings.id);
 
     cJSON_AddItemToObject(root, "data", data);
-    char *json_str = cJSON_PrintUnformatted(root);  // Caller must free this
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    unsigned char buffer[LWS_PRE + 1024];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+
+    free(json_str);
     cJSON_Delete(root);
-    
-    struct MHD_Response *response;
-    response = MHD_create_response_from_buffer(strlen(json_str), (void *)json_str, MHD_RESPMEM_MUST_FREE);
-
-    MHD_add_response_header(response, "Content-Type", "application/json");
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    
-    MHD_destroy_response(response);
-    return ret;
 }
 
-int handle_serve_static_files(struct MHD_Connection *connection, const char *url) {
-    char file_path[512];
-    struct stat file_stat;
-    int fd;
+void handle_set_led_settings(struct lws *wsi, cJSON *json) {
+    if (!cJSON_IsObject(json)) return;
 
-    if (strcmp(url, "/") == 0) 
-        snprintf(file_path, sizeof(file_path), "%s/index.html", WEB_ROOT);
-    else 
-        snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT, url);
-
-    if (stat(file_path, &file_stat) != 0) {
-        const char *not_found = "404 Not Found";
-        struct MHD_Response *response = MHD_create_response_from_buffer(strlen(not_found),
-                                                                        (void *)not_found, 
-                                                                        MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        return ret;
-    }
-
-    fd = open(file_path, O_RDONLY);
-    if (fd < 0) return MHD_NO;
-
-    struct MHD_Response *response = MHD_create_response_from_fd(file_stat.st_size, fd);
-    MHD_add_response_header(response, "Content-Type", get_content_type(file_path));
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-
-    return ret;
-}
-
-int handle_get_request(struct MHD_Connection *connection, const char *url) {
-    char file_path[512];
-    struct stat file_stat;
-    int fd;
-   
-    if(strncmp(url, "/api", 4) == 0) {
-      return handle_get_api_request(connection, url);
-    } else if(strncmp(url, "/led-settings", 13) == 0) {
-      return handle_get_led_settings_request(connection, url);
-    } else {
-      return handle_serve_static_files(connection, url);
-    }
-}
-
-int handle_post_led_settings(struct MHD_Connection *connection, const char *upload_data) {
-    //printf("%s\n", upload_data);
-    //printf("Upload data length: %zu\n", strlen(upload_data)); // Check length
-    //const char *test = "{\"brightness\":\"71\",\"color\":\"#FFFFFF\",\"capture_screen\":0,\"sound_react\":0,\"fx_num\":0,\"count\":206,\"id\":0}";
-    cJSON *json = cJSON_Parse(upload_data);
     if(!json) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
-        return 1;
+        return;
     }
     cJSON *brightness = cJSON_GetObjectItemCaseSensitive(json, "brightness");
     cJSON *color = cJSON_GetObjectItemCaseSensitive(json, "color");
@@ -284,103 +287,98 @@ int handle_post_led_settings(struct MHD_Connection *connection, const char *uplo
     if (cJSON_IsNumber(fx_num)) temp_settings.fx_num = fx_num->valueint;
     if (cJSON_IsNumber(count)) temp_settings.count = count->valueint;
     if (cJSON_IsNumber(id)) temp_settings.id = id->valueint;
-    cJSON_Delete(json);
-
-    const char *response_text;
 
     int just_brightness = 0;
 
-    printf("Compare:\n"
-        "  brightness:      %d vs %d\n"
-        "  color:           #%06X vs #%06X\n"
-        "  capture_screen:  %d vs %d\n"
-        "  sound_react:     %d vs %d\n"
-        "  fx_num:          %d vs %d\n"
-        "  count:           %d vs %d\n"
-        "  id:              %d vs %d\n",
-        temp_settings.brightness, led_settings.brightness,
-        temp_settings.color, led_settings.color,
-        temp_settings.capture_screen, led_settings.capture_screen,
-        temp_settings.sound_react, led_settings.sound_react,
-        temp_settings.fx_num, led_settings.fx_num,
-        temp_settings.count, led_settings.count,
-        temp_settings.id, led_settings.id);
- 
-
-        
     if(temp_settings.color == led_settings.color &&
-       temp_settings.capture_screen == led_settings.capture_screen &&
-       temp_settings.sound_react == led_settings.sound_react &&
-       temp_settings.fx_num == led_settings.fx_num &&
-       temp_settings.count == led_settings.count &&
-       temp_settings.id == led_settings.id)
-    {
-    // if only the brightness could be different, no need to stop any services,
-    // just change brightness
-        led_settings.brightness = temp_settings.brightness;
-        update_led_vars();
-        response_text = "{\"Success\":\"Changed brightness\"}";
-        just_brightness = 1;
-    } else { // some other variable has changed, we will update led_settings
-        led_settings.brightness = temp_settings.brightness;
-        led_settings.color = temp_settings.color;
-        led_settings.capture_screen = temp_settings.capture_screen;
-        led_settings.sound_react = temp_settings.sound_react;
-        led_settings.fx_num = temp_settings.fx_num;
-        led_settings.count = temp_settings.count;
-        led_settings.id = temp_settings.id;
-    }
-
-    int response_code;
+        temp_settings.capture_screen == led_settings.capture_screen &&
+        temp_settings.sound_react == led_settings.sound_react &&
+        temp_settings.fx_num == led_settings.fx_num &&
+        temp_settings.count == led_settings.count &&
+        temp_settings.id == led_settings.id)
+     {
+     // if only the brightness could be different, no need to stop any services,
+     // just change brightness
+         led_settings.brightness = temp_settings.brightness;
+         update_led_vars();
+         just_brightness = 1;
+     } else { // some other variable has changed, we will update led_settings
+         led_settings.brightness = temp_settings.brightness;
+         led_settings.color = temp_settings.color;
+         led_settings.capture_screen = temp_settings.capture_screen;
+         led_settings.sound_react = temp_settings.sound_react;
+         led_settings.fx_num = temp_settings.fx_num;
+         led_settings.count = temp_settings.count;
+         led_settings.id = temp_settings.id;
+     }
 
     char led_settings_str[256];
     parse_led_settings_data_to_string(led_settings_str);
     //printf("current led settings: %s\n", led_settings_str);
-    if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) {
+    if(write_data(LED_SETTINGS_FILENAME, LED_SETTINGS_HEADER, led_settings_str)) { // writes data to csv file
         printf("Failed to write led_settings\n");
-        response_text = "{\"Error\":\"Failed to write led settings\"}";
-        response_code = MHD_HTTP_INTERNAL_SERVER_ERROR;
     } else { // success
-        if(!just_brightness) { // dont reset the led strip and everything
-            response_text = update_leds();
+        if(!just_brightness) { // reset the led strip and everything
+            update_leds();
         }
-        response_code = MHD_HTTP_OK;
     }
-    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
-                                                  (void *)response_text, 
-                                                  MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, response_code, response);
-    MHD_destroy_response(response);
 
-    return ret;
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+        handle_get_led_settings(wsi); // write data to all active clients
+    }
 }
 
-int parse_sc_settings_data_to_string(char *str, CaptureSettings *settings) {
-    return sprintf(str, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-        settings->v_offset,
-        settings->h_offset,
-        settings->avg_color,
-        settings->left_count,
-        settings->right_count,
-        settings->top_count,
-        settings->bottom_count,
-        settings->res_x,
-        settings->res_y,
-        settings->blend_depth,
-        settings->blend_mode,
-        settings->auto_offset
-    );
+void color_to_hex(uint32_t color, char *buffer) {
+    snprintf(buffer, 8, "#%02X%02X%02X",
+        (color >> 16) & 0xFF,
+        (color >> 8) & 0xFF,
+        color & 0xFF);
 }
 
-int handle_post_sc_settings(struct MHD_Connection *connection, const char *upload_data) {
-    cJSON *json = cJSON_Parse(upload_data);
+void handle_get_capt_settings(struct lws *wsi) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "get_capt_settings");
+    cJSON_AddStringToObject(root, "status", "ok");
+
+    cJSON *data = cJSON_CreateObject();
+    cJSON_AddNumberToObject(data, "v_offset", sc_settings.v_offset);
+    cJSON_AddNumberToObject(data, "h_offset", sc_settings.h_offset);
+    cJSON_AddNumberToObject(data, "avg_color", sc_settings.avg_color);
+    cJSON_AddNumberToObject(data, "left_count", sc_settings.left_count);
+    cJSON_AddNumberToObject(data, "right_count", sc_settings.right_count);
+    cJSON_AddNumberToObject(data, "top_count", sc_settings.top_count);
+    cJSON_AddNumberToObject(data, "bottom_count", sc_settings.bottom_count);
+    cJSON_AddNumberToObject(data, "res_x", sc_settings.res_x);
+    cJSON_AddNumberToObject(data, "res_y", sc_settings.res_y);
+    cJSON_AddNumberToObject(data, "blend_depth", sc_settings.blend_depth);
+    cJSON_AddNumberToObject(data, "blend_mode", sc_settings.blend_mode);
+    cJSON_AddNumberToObject(data, "auto_offset", sc_settings.auto_offset);
+    cJSON_AddNumberToObject(data, "transition_rate", sc_settings.transition_rate);
+
+    cJSON_AddItemToObject(root, "data", data);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    unsigned char buffer[LWS_PRE + 1024];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+
+    free(json_str);
+    cJSON_Delete(root);
+}
+
+void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
+    if (!cJSON_IsObject(json)) return;
+
     if(!json) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
-        return 1;
+        return;
     }
+
     cJSON *v_offset = cJSON_GetObjectItemCaseSensitive(json, "v_offset");
-    cJSON *h_offset = cJSON_GetObjectItemCaseSensitive(json, "h_offset");
-    cJSON *avg_color = cJSON_GetObjectItemCaseSensitive(json, "avg_color");
+    cJSON *h_offset = cJSON_GetObjectItemCaseSensitive(json, "h_offset");    
+    cJSON *avg_color = cJSON_GetObjectItemCaseSensitive(json, "avg_color");    
     cJSON *left_count = cJSON_GetObjectItemCaseSensitive(json, "left_count");
     cJSON *right_count = cJSON_GetObjectItemCaseSensitive(json, "right_count");
     cJSON *top_count = cJSON_GetObjectItemCaseSensitive(json, "top_count");
@@ -390,120 +388,241 @@ int handle_post_sc_settings(struct MHD_Connection *connection, const char *uploa
     cJSON *blend_depth = cJSON_GetObjectItemCaseSensitive(json, "blend_depth");
     cJSON *blend_mode = cJSON_GetObjectItemCaseSensitive(json, "blend_mode");
     cJSON *auto_offset = cJSON_GetObjectItemCaseSensitive(json, "auto_offset");
+    cJSON *transition_rate = cJSON_GetObjectItemCaseSensitive(json, "transition_rate");
 
-    CaptureSettings temp_settings = { // some default values that are guaranteed
-        .v_offset = 0,
-        .h_offset = 0,
-        .avg_color = 0,
-        .left_count = 36,
-        .top_count = 66,
-        .right_count = 37,
-        .bottom_count = 67,
-        .res_x = 640,
-        .res_y = 480,
-        .blend_depth = 5,
-        .blend_mode = 0,
-        .auto_offset = 1
-    };
+    if (cJSON_IsNumber(v_offset)) sc_settings.v_offset = v_offset->valueint;
+    if (cJSON_IsNumber(h_offset)) sc_settings.h_offset = h_offset->valueint;
+    if (cJSON_IsNumber(avg_color)) sc_settings.avg_color = avg_color->valueint;
+    if (cJSON_IsNumber(left_count)) sc_settings.left_count = left_count->valueint;
+    if (cJSON_IsNumber(right_count)) sc_settings.right_count = right_count->valueint;
+    if (cJSON_IsNumber(top_count)) sc_settings.top_count = top_count->valueint;
+    if (cJSON_IsNumber(bottom_count)) sc_settings.bottom_count = bottom_count->valueint;
+    if (cJSON_IsNumber(res_x)) sc_settings.res_x = res_x->valueint;
+    if (cJSON_IsNumber(res_y)) sc_settings.res_y = res_y->valueint;
+    if (cJSON_IsNumber(blend_depth)) sc_settings.blend_depth = blend_depth->valueint;
+    if (cJSON_IsNumber(blend_mode)) sc_settings.blend_mode = blend_mode->valueint;
+    if (cJSON_IsNumber(auto_offset)) sc_settings.auto_offset = auto_offset->valueint;
+    if (cJSON_IsNumber(transition_rate)) sc_settings.transition_rate = transition_rate->valuedouble;
+    
+    char capt_settings_str[512];
+    parse_screen_settings_data_to_string(capt_settings_str);
 
-    if (cJSON_IsNumber(left_count)) temp_settings.left_count = left_count->valueint;
-    if (cJSON_IsNumber(right_count)) temp_settings.right_count = right_count->valueint;
-    if (cJSON_IsNumber(top_count)) temp_settings.top_count = top_count->valueint;
-    if (cJSON_IsNumber(bottom_count)) temp_settings.bottom_count = bottom_count->valueint;
-    if (cJSON_IsNumber(res_x)) temp_settings.res_x = res_x->valueint;
-    if (cJSON_IsNumber(res_y)) temp_settings.res_y = res_y->valueint;
-    if (cJSON_IsNumber(blend_depth)) temp_settings.blend_depth = blend_depth->valueint;
-    if (cJSON_IsNumber(blend_mode)) temp_settings.blend_mode = blend_mode->valueint;
-    if (cJSON_IsNumber(auto_offset)) temp_settings.auto_offset = auto_offset->valueint;
-
-    cJSON_Delete(json);
     const char *response_text;
-    int response_code;
-
-    char capt_settings_str[256];
-    parse_sc_settings_data_to_string(capt_settings_str, &temp_settings);
-    //printf("current led settings: %s\n", led_settings_str);
     if(write_data(SC_SETTINGS_FILENAME, SC_SETTINGS_HEADER, capt_settings_str)) {
         printf("Failed to write sc_settings\n");
-        response_text = "{\"Error\":\"Failed to write sc settings\"}";
-        response_code = MHD_HTTP_INTERNAL_SERVER_ERROR;
-    } else { // success
-        response_text = update_leds();
-        response_code = MHD_HTTP_OK;
     }
-    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
-                                                  (void *)response_text, 
-                                                  MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, response_code, response);
-    MHD_destroy_response(response);
+    update_leds();
 
-    return ret;
-}
-  
-int handle_post_request(struct MHD_Connection *connection, const char *url,
-  const char *upload_data, size_t *upload_data_size, void **con_cls) {
-  
-  static char post_data[1024]; // Buffer to store received data
-
-  if (*con_cls == NULL) {
-    *con_cls = post_data;
-    post_data[0] = '\0';
-    return MHD_YES;
-  }
-
-  printf("[DEBUG] handle_post_request called. upload_data_size: %zu\n", *upload_data_size);
-  
-  // If there's upload data, accumulate it
-  if (*upload_data_size > 0) {
-    size_t len = *upload_data_size;
-    if (len >= sizeof(post_data)) len = sizeof(post_data) - 1;
-    memcpy(post_data, upload_data, len);
-    post_data[len] = '\0';
-
-    printf("[DEBUG] Received chunk (%zu bytes): %s\n", len, post_data);
-
-    *upload_data_size = 0;
-    return MHD_YES;
-  }
-
-  // All data received; now process
-  if(strncmp(url, "/led-settings", 14) == 0) {
-    return handle_post_led_settings(connection, post_data);
-  } else if(strncmp(url, "/sc-settings", 13) == 0) {
-    return handle_post_sc_settings(connection, post_data);
-  } else {
-    // Send a response back to the client
-    led_settings.brightness = 125;
-    led_settings.capture_screen = 1;
-    const char *response_text =  update_leds();
-    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
-                                                    (void *)response_text, 
-                                                    MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-    
-    return ret; // Ensure a response is returned
-  }
-}
-  
-int handle_delete_request(struct MHD_Connection *connection, const char *url) {
-    if (strncmp(url, "/api", 4) == 0) {
-        led_settings.capture_screen = 0;
-        led_settings.brightness = 0;
-        const char *response_text = update_leds();
-        struct MHD_Response *response = MHD_create_response_from_buffer(strlen(response_text),
-                                                                        (void *)response_text, 
-                                                                        MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-        MHD_destroy_response(response);
-        return ret;
-    } else {
-        const char *error_text = "Incorrect URL";
-        struct MHD_Response *response = MHD_create_response_from_buffer(strlen(error_text),
-                                                                        (void *)error_text, 
-                                                                        MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+        handle_get_capt_settings(wsi); // write data to all active clients
     }
+}
+
+void send_led_strip_colors(struct led_position* led_positions) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "led_pixel_data");
+
+    cJSON *data_array = cJSON_CreateArray();
+
+    for(int i = 0; i < led_settings.count; i++) {
+        cJSON *item = cJSON_CreateObject();
+        char color_hex[8];
+        if(!led_positions[i].valid) {
+            continue;
+        }
+        color_to_hex(led_positions[i].color, color_hex);
+        cJSON_AddStringToObject(item, "color", color_hex);
+
+        cJSON_AddItemToArray(data_array, item);
+    }
+
+    cJSON_AddItemToObject(root, "data", data_array);
+    char* json_str = cJSON_PrintUnformatted(root);
+
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+
+        size_t len = strlen(json_str);
+        unsigned char *buf = malloc(LWS_PRE + len);
+        if(buf) {
+            memcpy(buf + LWS_PRE, json_str, len);
+            lws_write(wsi, buf + LWS_PRE, len, LWS_WRITE_TEXT);
+            free(buf);
+        }
+    }
+
+    cJSON_Delete(root);
+    free(json_str);
+}
+
+// void handle_set_color(struct lws *wsi, cJSON *data) {
+//     if (!cJSON_IsObject(data)) return;
+
+//     cJSON *val = cJSON_GetObjectItem(data, "value");
+//     if (cJSON_IsString(val)) {
+//         unsigned int color;
+//         if (sscanf(val->valuestring, "#%06X", &color) == 1) {
+//             led_settings.color = color;
+//             printf("Color set to #%06X\n", led_settings.color);
+//             handle_get_settings(wsi); // echo updated settings
+//         }
+//     }
+// }
+
+
+// HTTP callback function for serving static files
+static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
+    void *user, void *in, size_t len)
+{
+    switch (reason) {
+        case LWS_CALLBACK_HTTP: {
+            printf("Received http request\n");
+            // Get the requested URI
+            const char *requested_uri = (const char *)in;
+
+            if (strstr(requested_uri, "..")) {
+                lws_return_http_status(wsi, HTTP_STATUS_FORBIDDEN, NULL);
+                return -1;
+            }
+
+            // If the requested file is not specified, serve index.html
+            if (strcmp(requested_uri, "/") == 0) {
+            requested_uri = "/index.html";
+            }
+
+
+            // Build the full file path
+            char file_path[512];
+            snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT, requested_uri);
+
+            // Check if the requested file exists
+            struct stat file_stat;
+            if (stat(file_path, &file_stat) == -1) {
+            // If file doesn't exist, return 404
+            lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
+            return -1;
+            }
+
+            // Serve the requested file
+            const char *content_type;
+            if (strstr(requested_uri, ".html")) {
+            content_type = "text/html";
+            } else if (strstr(requested_uri, ".css")) {
+            content_type = "text/css";
+            } else if (strstr(requested_uri, ".js")) {
+            content_type = "application/javascript";
+            } else if (strstr(requested_uri, ".jpg") || strstr(requested_uri, ".jpeg")) {
+            content_type = "image/jpeg";
+            } else if (strstr(requested_uri, ".png")) {
+            content_type = "image/png";
+            } else if (strstr(requested_uri, ".gif")) {
+            content_type = "image/gif";
+            } else {
+            content_type = "application/octet-stream";
+            }
+
+            // lws_return_http_status(wsi, HTTP_STATUS_OK, "Content-Type: text/html\r\n\r\n");
+            // const char *response = "<html><body><h1>Hello, world!</h1></body></html>";
+            // lws_write(wsi, (unsigned char *)response, strlen(response), LWS_WRITE_HTTP);
+
+            //Serve the file with NULL for mime_type and extra_headers
+
+            printf("Serving file: %s\n", file_path);
+            if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
+                return -1;
+            }
+        break;
+    }
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+// Define the WebSocket protocol
+static const struct lws_protocols protocols[] = {
+    {
+        "http",       // protocol name
+        http_callback,  // callback function
+        0,             // per session data size
+        1024,          // maximum frame size
+    }, {
+        .name = "websocket",
+        .callback = websocket_callback,
+        .per_session_data_size = sizeof(per_session_data_t),
+    },
+    { NULL, NULL, 0, 0 }  // end of protocols list
+};
+
+// Create the server context for `libwebsockets`
+static struct lws_context *create_server_context()
+{
+    struct lws_context_creation_info info;
+    memset(&info, 0, sizeof(info));
+    info.port = PORT;
+    info.protocols = protocols;
+    info.gid = -1;
+    info.uid = -1;
+    info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
+
+    // Create the server context
+    struct lws_context *context = lws_create_context(&info);
+    if (!context) {
+        fprintf(stderr, "Error creating server context\n");
+        return NULL;
+    }
+
+    return context;
+}
+
+
+void stop_server(int signo) {
+    printf("\nStopping server...\n");
+    lws_context_destroy(context);
+    exit(0);
+}
+
+int main(void)
+{
+    signal(SIGINT, stop_server);
+    signal(SIGTERM, stop_server);
+    per_session_data_t* clients[MAX_CLIENTS] = {0};
+    client_count = 0;
+
+    context = create_server_context();
+    if (!context) {
+        return -1;
+    }
+
+    if(initialize_led_settings()) {
+        printf("Error initializing Led settings!\n");
+        return 1;
+    }
+
+    if(initialize_sc_settings()) {
+        printf("Error initialized sc_settings!\n");
+        return 1;
+    }
+
+    printf("Server running on localhost:%d/\n", PORT);
+    printf("Press CTRL+C to stop the server.\n");
+
+    if(setup_strip(led_settings.count) != 0) {
+        printf("Problem setting up strip...\n");
+        return 1;
+    }
+
+    set_strip_32int_color(led_settings.color);
+    set_brightness(led_settings.brightness);
+    show_strip();
+
+    // Main event loop to process connections
+    while (1) {
+        lws_service(context, 100);
+    }
+
+    lws_context_destroy(context);
+    return 0;
 }
