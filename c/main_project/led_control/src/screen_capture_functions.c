@@ -108,39 +108,30 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
   unsigned char *ptr = rgb_buffer;
 
   for (size_t x = 0; x < frame_size; x += 4) {
-      int y0 = yuv_buffer[x + 0] - 16;
-      int u  = yuv_buffer[x + 1] - 128;
-      int y1 = yuv_buffer[x + 2] - 16;
-      int v  = yuv_buffer[x + 3] - 128;
+    float y0 = (float)(yuv_buffer[x + 0] - 16) * 255.0f / 219.0f;
+    float u  = (float)(yuv_buffer[x + 1] - 128);
+    float y1 = (float)(yuv_buffer[x + 2] - 16) * 255.0f / 219.0f;
+    float v  = (float)(yuv_buffer[x + 3] - 128);
 
-      // if(y0 != 0) {
-      //   size_t byte_index = ptr - rgb_buffer;
-      //   size_t pixel_index = byte_index / 3;
+    int r, g, b;
 
-      //   size_t x = pixel_index % WIDTH;
-      //   size_t y = pixel_index % HEIGHT;
-      //   printf("y0: %d x: %d y: %d\t", y0, x, y);
-      // } 
-      
-      int r, g, b;
+    // First pixel
+    float c = y0 < 0 ? 0 : y0;
+    r = (int)((298.082 * c + 408.583 * v) / 256.0);
+    g = (int)((298.082 * c - 100.291 * u - 208.120 * v) / 256.0);
+    b = (int)((298.082 * c + 516.412 * u) / 256.0);
+    *(ptr++) = CLAMP(r);
+    *(ptr++) = CLAMP(g);
+    *(ptr++) = CLAMP(b);
 
-      // First pixel
-      int c = y0 < 0 ? 0 : y0;
-      r = (298 * c + 409 * v + 128) >> 8;
-      g = (298 * c - 100 * u - 208 * v + 128) >> 8;
-      b = (298 * c + 516 * u + 128) >> 8;
-      *(ptr++) = CLAMP(r);
-      *(ptr++) = CLAMP(g);
-      *(ptr++) = CLAMP(b);
-
-      // Second pixel
-      c = y1 < 0 ? 0 : y1;
-      r = (298 * c + 409 * v + 128) >> 8;
-      g = (298 * c - 100 * u - 208 * v + 128) >> 8;
-      b = (298 * c + 516 * u + 128) >> 8;
-      *(ptr++) = CLAMP(r);
-      *(ptr++) = CLAMP(g);
-      *(ptr++) = CLAMP(b);
+    // Second pixel
+    c = y1 < 0 ? 0 : y1;
+    r = (int)((298.082 * c + 408.583 * v) / 256.0);
+    g = (int)((298.082 * c - 100.291 * u - 208.120 * v) / 256.0);
+    b = (int)((298.082 * c + 516.412 * u) / 256.0);
+    *(ptr++) = CLAMP(r);
+    *(ptr++) = CLAMP(g);
+    *(ptr++) = CLAMP(b);
   }
 
 }
