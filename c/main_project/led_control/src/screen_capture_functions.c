@@ -12,6 +12,7 @@
 #define DEVICE "/dev/video0"
 #define NUM_BUFFERS 4
 #define CLAMP(x) ((x) > 255 ? 255 : ((x) < 0 ? 0 : (x)))
+#define SCALE_Y(y) (((y) - 16) * 298 / 219) // integer scaling
 
 struct capture_device {
   int device_id; // the id of the **open** device
@@ -108,31 +109,31 @@ void yuyv_to_rgb(unsigned char *yuv_buffer,unsigned char *rgb_buffer, size_t fra
   unsigned char *ptr = rgb_buffer;
 
   for (size_t x = 0; x < frame_size; x += 4) {
-    float y0 = (float)(yuv_buffer[x + 0] - 16) * 255.0f / 219.0f;
-    float u  = (float)(yuv_buffer[x + 1] - 128);
-    float y1 = (float)(yuv_buffer[x + 2] - 16) * 255.0f / 219.0f;
-    float v  = (float)(yuv_buffer[x + 3] - 128);
+    int y0 = SCALE_Y(yuv_buffer[x + 0]);
+    int u  = yuv_buffer[x + 1] - 128;
+    int y1 = SCALE_Y(yuv_buffer[x + 2]);
+    int v  = yuv_buffer[x + 3] - 128;
 
     int r, g, b;
 
     // First pixel
-    float c = y0 < 0 ? 0 : y0;
-    r = (int)((298.082 * c + 408.583 * v) / 256.0);
-    g = (int)((298.082 * c - 100.291 * u - 208.120 * v) / 256.0);
-    b = (int)((298.082 * c + 516.412 * u) / 256.0);
+    int c = y0 < 0 ? 0 : y0;
+    r = (c + 409 * v + 128) >> 8;
+    g = (c - 100 * u - 208 * v + 128) >> 8;
+    b = (c + 516 * u + 128) >> 8;
     *(ptr++) = CLAMP(r);
     *(ptr++) = CLAMP(g);
     *(ptr++) = CLAMP(b);
 
     // Second pixel
     c = y1 < 0 ? 0 : y1;
-    r = (int)((298.082 * c + 408.583 * v) / 256.0);
-    g = (int)((298.082 * c - 100.291 * u - 208.120 * v) / 256.0);
-    b = (int)((298.082 * c + 516.412 * u) / 256.0);
+    r = (c + 409 * v + 128) >> 8;
+    g = (c - 100 * u - 208 * v + 128) >> 8;
+    b = (c + 516 * u + 128) >> 8;
     *(ptr++) = CLAMP(r);
     *(ptr++) = CLAMP(g);
     *(ptr++) = CLAMP(b);
-  }
+}
 
 }
 
