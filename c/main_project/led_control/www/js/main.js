@@ -367,6 +367,7 @@ function setServerLEDSettings() {
     }));
     message_pop_up(TYPE.OK, "Saved");
   } else {
+    message_pop_up(TYPE.ERROR, "No Connection");
     console.log("WebSocket is not open.");
   }
 }
@@ -379,6 +380,7 @@ function setServerCaptSettings() {
     }));
     message_pop_up(TYPE.OK, "Saved");
   } else {
+    message_pop_up(TYPE.ERROR, "No Connection");
     console.log("Websocket is not open");
   }
 }
@@ -388,6 +390,7 @@ function sendMessage() {
     socket.send('Hello from the browser!');
     console.log('Message sent.');
   } else {
+    message_pop_up(TYPE.ERROR, "No Connection");
     console.log('WebSocket is not open.');
   }
 }
@@ -558,11 +561,9 @@ document.addEventListener("DOMContentLoaded", async function() {
   const countDecrementIcons = document.querySelectorAll(".decrement-icon");
   countDecrementIcons.forEach(icon => {
     icon.addEventListener("click", () => {
-      // Find the nearest .setting-title-and-description or .blend-settings container
       const parentContainer = icon.closest(".led-counts-input");
       if (!parentContainer) return;
 
-      // Find the description inside that container
       const countInputField = parentContainer.querySelector('input[type="number"]');
       if (countInputField) {
         countInputField.value--;
@@ -592,11 +593,9 @@ document.addEventListener("DOMContentLoaded", async function() {
   const countIncrementIcons = document.querySelectorAll(".increment-icon");
   countIncrementIcons.forEach(icon => {
     icon.addEventListener("click", () => {
-      // Find the nearest .setting-title-and-description or .blend-settings container
       const parentContainer = icon.closest(".led-counts-input");
       if (!parentContainer) return;
-
-      // Find the description inside that container
+      
       const countInputField = parentContainer.querySelector('input[type="number"]');
       if (countInputField) {
         countInputField.value++;

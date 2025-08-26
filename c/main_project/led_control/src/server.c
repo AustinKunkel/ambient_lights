@@ -14,10 +14,19 @@
 static const struct lws_protocols protocols[];
 
 #define WEB_ROOT "./led_control/www"  // Path for static files
+
 #define LED_SETTINGS_FILENAME "led_control/data/led_settings.csv"
 #define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
+
 #define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
 #define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
+
+#define USER_COLORS_FILENAME "led_control/data/user_colors.csv"
+#define USER_COLORS_HEADER "color\n"
+#define MAX_USER_COLORS 20
+uint32_t user_colors[MAX_USER_COLORS];
+int user_color_count = 0;
+
 #define PORT 80
 #define MAX_CLIENTS 10
 
@@ -156,6 +165,8 @@ void handle_get_led_settings(struct lws *wsi);
 void handle_set_led_settings(struct lws *wsi, cJSON *data);
 void handle_get_capt_settings(struct lws *wsi);
 void handle_set_capt_settings(struct lws *wsi, cJSON *data);
+void handle_get_user_colors(struct lws *wsi);
+void handle_set_user_colors(struct lws *wsi, cJSON *json);
 // void handle_set_color(struct lws *wsi, cJSON *data);
 
 /**
@@ -170,6 +181,10 @@ void dispatch_action(struct lws *wsi, const char *action, cJSON *data) {
         handle_get_capt_settings(wsi);
     } else if (strcmp(action, "set_capt_settings") == 0) {
         handle_set_capt_settings(wsi, data);
+    } else if (strcmp(action, "get_user_colors") == 0) {
+        handle_get_user_colors(wsi);
+    } else if (strcmp(action, "set_user_colors") == 0) {
+        handle_set_user_colors(wsi, data);
     } else {
         printf("Unknown action: %s\n", action);
     }
@@ -187,6 +202,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         if(client_count < MAX_CLIENTS) {
             handle_get_led_settings(wsi);  // Send LED settings to the client
             handle_get_capt_settings(wsi);
+            handle_get_user_colors(wsi);
             clients[client_count++] = psd;
         }
         break;
@@ -416,6 +432,104 @@ void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
     for(int  i = 0; i < client_count; i++) {
         struct lws *wsi = clients[i]->wsi;
         handle_get_capt_settings(wsi); // write data to all active clients
+    }
+}
+
+void get_user_colors_from_file() {
+    int color_count = 0;
+    char data_line[1024];
+    printf("reading user_colors.csv...\n");
+    if(read_one_line(USER_COLORS_FILENAME, data_line, sizeof(data_line)) == 0) {
+        char *line_ptr = data_line;
+        char *token;
+        while((token = next_token(&line_ptr)) != NULL && color_count < MAX_USER_COLORS) {
+            if(token[0] == '#') {
+                token++; // skip the '#' character
+            }
+            user_colors[color_count] = (uint32_t)strtol(token, NULL, 16);
+            color_count++;
+        }
+        user_color_count = color_count;
+        printf("Loaded %d user colors\n", user_color_count);
+    } else {
+        perror("Unable to read from user_colors.csv!!\n");
+    }
+}
+
+void handle_get_user_colors(struct lws *wsi) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "action", "get_user_colors");
+    cJSON_AddStringToObject(root, "status", "ok");
+
+    cJSON *data_array = cJSON_CreateArray();
+
+    for(int i = 0; i < user_color_count; i++) {
+        cJSON *item = cJSON_CreateObject();
+        char color_hex[8];
+        color_to_hex(user_colors[i], color_hex);
+        cJSON_AddStringToObject(item, "color", color_hex);
+
+        cJSON_AddItemToArray(data_array, item);
+    }
+
+    cJSON_AddItemToObject(root, "data", data_array);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    unsigned char buffer[LWS_PRE + 2048];
+    size_t json_len = strlen(json_str);
+    memcpy(&buffer[LWS_PRE], json_str, json_len);
+    lws_write(wsi, &buffer[LWS_PRE], json_len, LWS_WRITE_TEXT);
+
+    free(json_str);
+    cJSON_Delete(root);
+}
+
+void handle_set_user_colors(struct lws *wsi, cJSON *json) {
+    if (!cJSON_IsObject(json)) return;
+
+    if(!json) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+
+    cJSON *colors = cJSON_GetObjectItemCaseSensitive(json, "colors");
+    if (!cJSON_IsArray(colors)) return;
+
+    int color_count = 0;
+    cJSON *color_item;
+    cJSON_ArrayForEach(color_item, colors) {
+        if (cJSON_IsString(color_item) && color_item->valuestring && color_count < MAX_USER_COLORS) {
+            const char *hex = color_item->valuestring;
+            if(hex[0] == '#') {
+                hex++; // skip the '#' character
+            }
+            user_colors[color_count] = (uint32_t)strtol(hex, NULL, 16);
+            color_count++;
+        }
+    }
+    user_color_count = color_count;
+
+    char user_colors_str[1024] = "";
+    for(int i = 0; i < user_color_count; i++) {
+        char color_hex[8];
+        color_to_hex(user_colors[i], color_hex);
+        strcat(user_colors_str, color_hex);
+        if(i < user_color_count - 1) {
+            strcat(user_colors_str, ",");
+        }
+    }
+
+    if(write_data(USER_COLORS_FILENAME, USER_COLORS_HEADER, user_colors_str)) {
+        printf("Failed to write user_colors\n");
+    } else {
+        printf("User colors updated successfully\n");
+    }
+
+    get_user_colors_from_file(); // load updated user colors from file
+
+    for(int  i = 0; i < client_count; i++) {
+        struct lws *wsi = clients[i]->wsi;
+        handle_get_user_colors(wsi); // write data to all active clients
     }
 }
 

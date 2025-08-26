@@ -385,7 +385,7 @@ label {
   max-width: 90%;
   height: fit-content;
   position: fixed;
-  top: 300px;
+  top: 4em;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 10;
@@ -683,7 +683,7 @@ label {
   border: 4px solid var(--accent);
 }
 
-.add-color {
+#add-user-color {
   background-color: transparent;
   color: var(--text-primary);
   background-color: var(--bg-primary);
@@ -692,6 +692,7 @@ label {
   align-items:center;
   justify-content: center;
   border: 2px dashed var(--text-primary);
+  cursor:pointer;
 }
 
 /***** Add color menu *****/
