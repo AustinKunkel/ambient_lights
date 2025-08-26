@@ -11,21 +11,6 @@ function handleColorButtonClick(color) {
   }
 }
 
-// Function to create and append a button with the given color
-function createColorButton(className=null, color) {
-    const button = document.createElement('button');
-    button.style.backgroundColor = color;  // Set the background color
-    if(className) {
-        button.className = className;
-        if(className == 'color-easy color')
-        button.addEventListener('click', (event) => {
-            handleColorButtonSelect(color);
-        })
-    }
-
-    return button;
-}
-
 function updateUserColors(data) {
   const colorContainer = document.getElementById("user-colors");
   colors = document.querySelectorAll('.color-circle');
@@ -35,9 +20,10 @@ function updateUserColors(data) {
   })
 
   if(data) {
-    removeButton = createColorButton("remove-user-color", "#cccccc");
+    removeButton = document.createElement('button');
     removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
-    removeButton.classList.add("color");
+    removeButton.classList.add("color-circle");
+    removeButton.id = "remove-user-color";
     removeButton.addEventListener('click', (event) => {
         toggleRemoveColor();
     })
@@ -45,9 +31,9 @@ function updateUserColors(data) {
 
     let index = 1;
     data.forEach((color) => {
-      const colorButton = createColorButton(`user-color-${index}`, color);
-      colorButton.classList.add("color-circle", "color");
-      colorButton.title = color;
+      const colorButton = document.createElement('button');
+      colorButton.classList.add("color-circle");
+      colorButton.style.backgroundColor = color;
       colorButton.addEventListener('click', (event) => {
           handleColorButtonClick(color);
       })
@@ -55,9 +41,10 @@ function updateUserColors(data) {
       index += 1;
     });
 
-    addButton = createColorButton("add-user-color", "#cccccc");
+    addButton = document.createElement('button');
+    addButton.id = "add-user-color";
     addButton.innerHTML = "<i class='fa-solid fa-plus'></i>";
-    addButton.classList.add("color");
+    addButton.classList.add("color-circle");
     addButton.addEventListener('click', (event) => {
         openAddColorMenu();
     });
