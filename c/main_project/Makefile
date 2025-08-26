@@ -5,7 +5,7 @@ INC_DIR = /usr/local/include
 LIB_DIR = /usr/local/lib
 
 # Submodule paths
-WS281X_DIR = c/rpi_ws281x
+WS281X_DIR = ../rpi_ws281x
 WS281X_BUILD = $(WS281X_DIR)/build
 WS281X_LIB = $(WS281X_BUILD)/libws2811.a
 
