@@ -9,15 +9,19 @@ WS281X_DIR = ../rpi_ws281x
 WS281X_BUILD = $(WS281X_DIR)/build
 WS281X_LIB = $(WS281X_BUILD)/libws2811.a
 
+LIBWEBSOCKETS_DIR = ../libwebsockets
+LIBWEBSOCKETS_BUILD = $(LIBWEBSOCKETS_DIR)/build
+
 # Compiler Flags
 CFLAGS = -I$(INC_DIR) \
          -I./cJSON \
-         -I./libwebsockets/include \
-         -I./libwebsockets/build/include \
+         -I$(LIBWEBSOCKETS_DIR)/include \
+         -I$(LIBWEBSOCKETS_BUILD)/include \
          -I$(WS281X_DIR)
 
 LDFLAGS = -L$(LIB_DIR) \
           -L$(WS281X_BUILD) \
+          -:$(LIBWEBSOCKETS_BUILD)/lib \
           -lwebsockets -lws2811 \
           -pthread -lrt -lgnutls -lmicrohttpd -lm -lssl -lcrypto
 
@@ -79,3 +83,4 @@ clean:
 	rm -f $(CAPTURE_OBJ) $(CAPTURE_TARGET)
 	rm -f $(MAIN_OBJ) $(MAIN_TARGET)
 	$(MAKE) -C $(WS281X_BUILD) clean || true
+	$(MAKE) -C $(LIBWEBSOCKETS_BUILD) clean || true
