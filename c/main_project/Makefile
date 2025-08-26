@@ -21,7 +21,7 @@ CFLAGS = -I$(INC_DIR) \
 
 LDFLAGS = -L$(LIB_DIR) \
           -L$(WS281X_BUILD) \
-          -:$(LIBWEBSOCKETS_BUILD)/lib \
+          -L$(LIBWEBSOCKETS_BUILD)/lib \
           -lwebsockets -lws2811 \
           -pthread -lrt -lgnutls -lmicrohttpd -lm -lssl -lcrypto
 
