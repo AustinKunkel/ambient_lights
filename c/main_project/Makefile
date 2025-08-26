@@ -53,24 +53,19 @@ CAPTURE_TARGET = test_screen_capture
 MAIN_TARGET = server
 
 # Default build
-all: $(WS281X_LIB) $(SRV_TEST_TARGET) $(MAIN_TARGET)
-
-# Build the rpi_ws281x submodule
-$(WS281X_LIB):
-	mkdir -p $(WS281X_BUILD)
-	cd $(WS281X_BUILD) && cmake .. && make
+all: $(SRV_TEST_TARGET) $(MAIN_TARGET)
 
 # Build targets
-$(SRV_TEST_TARGET): $(SRV_TEST_OBJ) $(WS281X_LIB)
+$(SRV_TEST_TARGET): $(SRV_TEST_OBJ)
 	$(CC) $(SRV_TEST_OBJ) -o $@ $(LDFLAGS)
 
-$(CSV_CTRL_TEST_TARGET): $(CSV_CTRL_TEST_OBJ) $(WS281X_LIB)
+$(CSV_CTRL_TEST_TARGET): $(CSV_CTRL_TEST_OBJ)
 	$(CC) $(CSV_CTRL_TEST_OBJ) -o $@ $(LDFLAGS)
 
-$(CAPTURE_TARGET): $(CAPTURE_OBJ) $(WS281X_LIB)
+$(CAPTURE_TARGET): $(CAPTURE_OBJ)
 	$(CC) $(CAPTURE_OBJ) -o $@ $(LDFLAGS)
 
-$(MAIN_TARGET): $(MAIN_OBJ) $(WS281X_LIB)
+$(MAIN_TARGET): $(MAIN_OBJ)
 	$(CC) $(MAIN_OBJ) -o $@ $(LDFLAGS)
 
 # Compile source files into objects
