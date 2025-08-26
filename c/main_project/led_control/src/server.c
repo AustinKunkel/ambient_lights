@@ -435,7 +435,7 @@ void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
     }
 }
 
-void get_user_colors_from_file() {
+void load_user_colors_from_file() {
     int color_count = 0;
     char data_line[1024];
     printf("reading user_colors.csv...\n");
@@ -525,7 +525,7 @@ void handle_set_user_colors(struct lws *wsi, cJSON *json) {
         printf("User colors updated successfully\n");
     }
 
-    get_user_colors_from_file(); // load updated user colors from file
+    load_user_colors_from_file(); // load updated user colors from file
 
     for(int  i = 0; i < client_count; i++) {
         struct lws *wsi = clients[i]->wsi;
@@ -716,6 +716,8 @@ int main(void)
         printf("Error initialized sc_settings!\n");
         return 1;
     }
+
+    load_user_colors_from_file();
 
     printf("Server running on localhost:%d/\n", PORT);
     printf("Press CTRL+C to stop the server.\n");
