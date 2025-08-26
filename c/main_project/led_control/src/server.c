@@ -504,23 +504,20 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
             return -1;
             }
 
+            printf("File size: %ld\n", file_stat.st_size);
+
+
             // Serve the requested file
             const char *content_type;
-            if (strstr(requested_uri, ".html")) {
-            content_type = "text/html";
-            } else if (strstr(requested_uri, ".css")) {
-            content_type = "text/css";
-            } else if (strstr(requested_uri, ".js")) {
-            content_type = "application/javascript";
-            } else if (strstr(requested_uri, ".jpg") || strstr(requested_uri, ".jpeg")) {
-            content_type = "image/jpeg";
-            } else if (strstr(requested_uri, ".png")) {
-            content_type = "image/png";
-            } else if (strstr(requested_uri, ".gif")) {
-            content_type = "image/gif";
-            } else {
-            content_type = "application/octet-stream";
-            }
+            const char *ext = strrchr(requested_uri, '.');
+            if (!ext) ext = "";
+            if (strcmp(ext, ".html") == 0) content_type = "text/html";
+            else if (strcmp(ext, ".css") == 0) content_type = "text/css";
+            else if (strcmp(ext, ".js") == 0) content_type = "application/javascript";
+            else if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0) content_type = "image/jpeg";
+            else if (strcmp(ext, ".png") == 0) content_type = "image/png";
+            else if (strcmp(ext, ".gif") == 0) content_type = "image/gif";
+            else content_type = "application/octet-stream";
 
             // lws_return_http_status(wsi, HTTP_STATUS_OK, "Content-Type: text/html\r\n\r\n");
             // const char *response = "<html><body><h1>Hello, world!</h1></body></html>";
@@ -529,7 +526,7 @@ static int http_callback(struct lws *wsi, enum lws_callback_reasons reason,
             //Serve the file with NULL for mime_type and extra_headers
 
             printf("Serving file: %s\n", file_path);
-            if (lws_serve_http_file(wsi, file_path, content_type, NULL, 0) < 0) {
+            if (lws_serve_http_file(wsi, file_path, content_type, NULL, file_stat.st_size) < 0) {
                 return -1;
             }
         break;
