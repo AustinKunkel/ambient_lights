@@ -288,6 +288,9 @@ function startWebSocket() {
       case "led_pixel_data":
         updateEdgePixels(data);
         break;
+      case "get_user_colors":
+        console.log("User Colors:", data);
+        break;
     }
   };
 
@@ -595,7 +598,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     icon.addEventListener("click", () => {
       const parentContainer = icon.closest(".led-counts-input");
       if (!parentContainer) return;
-      
+
       const countInputField = parentContainer.querySelector('input[type="number"]');
       if (countInputField) {
         countInputField.value++;
