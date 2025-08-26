@@ -18,7 +18,7 @@ CFLAGS = -I$(INC_DIR) \
 
 LDFLAGS = -L$(LIB_DIR) \
           -L$(WS281X_BUILD) \
-          -lwebsockets -lcjson -lws2811 \
+          -lwebsockets -lws2811 \
           -pthread -lrt -lgnutls -lmicrohttpd -lm -lssl -lcrypto
 
 # Source Files
