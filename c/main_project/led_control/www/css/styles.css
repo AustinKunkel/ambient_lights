@@ -655,7 +655,7 @@ label {
   margin: 50px auto 0;
 }
 
-.user-colors {
+#user-colors {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;

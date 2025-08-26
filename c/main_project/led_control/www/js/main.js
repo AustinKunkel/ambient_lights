@@ -290,6 +290,7 @@ function startWebSocket() {
         break;
       case "get_user_colors":
         console.log("User Colors:", data);
+        updateUserColors(data);
         break;
     }
   };

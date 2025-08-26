@@ -159,6 +159,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
     
 
+    const addUserColorButton = document.getElementById("add-user-color");
+    addUserColorButton.addEventListener("click", openAddColorMenu);
 
     // Function to create and append a button with the given color and ID
     function createColorButton(id, color, className = null) {
