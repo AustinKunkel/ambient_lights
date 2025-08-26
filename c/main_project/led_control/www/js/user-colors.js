@@ -1,6 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-
-  const
 });
 
 let isRemovingColor = false;
