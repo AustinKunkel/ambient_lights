@@ -436,24 +436,31 @@ void handle_set_capt_settings(struct lws *wsi, cJSON *json) {
 }
 
 void load_user_colors_from_file() {
-    int color_count = 0;
-    char data_line[1024];
-    printf("reading user_colors.csv...\n");
-    if(read_one_line(USER_COLORS_FILENAME, data_line, sizeof(data_line)) == 0) {
-        char *line_ptr = data_line;
-        char *token;
-        while((token = next_token(&line_ptr)) != NULL && color_count < MAX_USER_COLORS) {
-            if(token[0] == '#') {
-                token++; // skip the '#' character
-            }
-            user_colors[color_count] = (uint32_t)strtol(token, NULL, 16);
-            color_count++;
-        }
-        user_color_count = color_count;
-        printf("Loaded %d user colors\n", user_color_count);
-    } else {
+    FILE *fp = fopen(USER_COLORS_FILENAME, "r");
+    if (!fp) {
         perror("Unable to read from user_colors.csv!!\n");
+        return;
     }
+    char line[1024];
+    int color_count = 0;
+    int first_line = 1;
+    while (fgets(line, sizeof(line), fp) && color_count < MAX_USER_COLORS) {
+        // Skip header
+        if (first_line && strstr(line, "color")) {
+            first_line = 0;
+            continue;
+        }
+        first_line = 0;
+        char *token = strtok(line, ",\n");
+        while (token && color_count < MAX_USER_COLORS) {
+            if (token[0] == '#') token++;
+            user_colors[color_count++] = (uint32_t)strtol(token, NULL, 16);
+            token = strtok(NULL, ",\n");
+        }
+    }
+    user_color_count = color_count;
+    fclose(fp);
+    printf("Loaded %d user colors\n", user_color_count);
 }
 
 void handle_get_user_colors(struct lws *wsi) {
