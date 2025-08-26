@@ -9,19 +9,13 @@ WS281X_DIR = ../rpi_ws281x
 WS281X_BUILD = $(WS281X_DIR)/build
 WS281X_LIB = $(WS281X_BUILD)/libws2811.a
 
-LIBWEBSOCKETS_DIR = ./libwebsockets
-LIBWEBSOCKETS_BUILD = $(LIBWEBSOCKETS_DIR)/build
-
 # Compiler Flags
 CFLAGS = -I$(INC_DIR) \
          -I./cJSON \
-         -I$(LIBWEBSOCKETS_DIR)/include \
-         -I$(LIBWEBSOCKETS_BUILD)/include \
          -I$(WS281X_DIR)
 
 LDFLAGS = -L$(LIB_DIR) \
           -L$(WS281X_BUILD) \
-          -L$(LIBWEBSOCKETS_BUILD)/lib \
           -lwebsockets -lws2811 \
           -pthread -lrt -lgnutls -lmicrohttpd -lm -lssl -lcrypto
 
