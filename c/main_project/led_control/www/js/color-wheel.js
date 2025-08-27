@@ -121,8 +121,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             set_color_button.classList.add('disabled-button');
         }
     }
-
-
+    
     function handleColorButtonSelect(buttonId) {
         // updates the button selected
         if(activeColorButton) {

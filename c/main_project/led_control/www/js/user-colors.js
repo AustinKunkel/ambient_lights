@@ -10,6 +10,7 @@ function handleColorButtonClick(color) {
     removeColor(color);
   } else {
     updateColorPickerFromInput(color);
+    changeColor(color);
   }
 }
 
