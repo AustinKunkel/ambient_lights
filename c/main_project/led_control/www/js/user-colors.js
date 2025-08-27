@@ -13,6 +13,21 @@ function handleColorButtonClick(color) {
   }
 }
 
+function invertColor(hex) {
+  // Remove '#' if present
+  hex = hex.replace(/^#/, '');
+  // Parse r, g, b
+  let r = parseInt(hex.substr(0,2),16);
+  let g = parseInt(hex.substr(2,2),16);
+  let b = parseInt(hex.substr(4,2),16);
+  // Invert each channel
+  r = 255 - r;
+  g = 255 - g;
+  b = 255 - b;
+  // Return as hex string
+  return `rgb(${r},${g},${b})`;
+}
+
 function updateUserColors(data) {
   const colorContainer = document.getElementById("user-colors");
   colors = document.querySelectorAll('.color-circle');
@@ -36,6 +51,7 @@ function updateUserColors(data) {
       const colorButton = document.createElement('button');
       colorButton.classList.add("color-circle");
       colorButton.style.backgroundColor = color;
+      colorButton.style.color = invertColor(color);
       colorButton.addEventListener('click', (event) => {
           handleColorButtonClick(color);
       })
@@ -63,6 +79,7 @@ function toggleRemoveColor() {
     if (button !== removeButton && button !== addButton) {
       if (isRemovingColor) {
         button.classList.add("shake");
+        button.innerHTML = "<i class='fa-solid fa-trash'></i>";
       } else {
         button.classList.remove("shake");
       }
