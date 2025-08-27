@@ -13,21 +13,30 @@ function handleColorButtonClick(color) {
   }
 }
 
-function invertColor(hex) {
-  // Remove '#' if present
-  hex = hex.replace(/^#/, '');
-  // Parse r, g, b
-  let r = parseInt(hex.substr(0,2),16);
-  let g = parseInt(hex.substr(2,2),16);
-  let b = parseInt(hex.substr(4,2),16);
-  // Invert each channel
-  r = 255 - r;
-  g = 255 - g;
-  b = 255 - b;
-  // Return as hex string
-  return `rgb(${r},${g},${b})`;
-}
+const invertColor = (hexValue) => {
+  // Remove the # symbol if it exists
+  let hex = hexValue.startsWith('#') ? hexValue.slice(1) : hexValue;
 
+  // Handle 3-digit hex codes by expanding them
+  if (hex.length === 3) {
+    hex = hex.split('').map(char => char + char).join('');
+  }
+
+  // Validate the hex code length
+  if (hex.length !== 6) {
+    throw new Error(`Invalid HEX color: ${hexValue}`);
+  }
+
+  // Convert to integer, invert, and convert back to hex
+  const inverted = (0xFFFFFF ^ parseInt(hex, 16)).toString(16);
+
+  // Pad the result with leading zeros if necessary
+  return `#${inverted.padStart(6, '0')}`;
+};
+
+// Example usage:
+console.log(invertColor('#0099ff')); // Outputs: #ff6600
+console.log(invertColor('#0f0'));    // Outputs: #f0f
 function updateUserColors(data) {
   const colorContainer = document.getElementById("user-colors");
   colors = document.querySelectorAll('.color-circle');
