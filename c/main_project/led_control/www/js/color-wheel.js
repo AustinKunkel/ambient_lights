@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
     
 
-    function updateColorPickerFromInput(color, errorType = TYPE.ERROR, message = "Error updating color") {
+    window.updateColorPickerFromInput = (color, errorType = TYPE.ERROR, message = "Error updating color") => {
         try {
             isUpdatingFromInput = true;
             colorPicker.color.set(color);

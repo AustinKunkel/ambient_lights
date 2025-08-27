@@ -9,11 +9,11 @@ function handleColorButtonClick(color) {
   if (isRemovingColor) {
     removeColor(color);
   } else {
-    setColor(color);
+    updateColorPickerFromInput(color);
   }
 }
 
-const invertColor = (hexValue) => {
+function invertColor(hexValue) {
   // Remove the # symbol if it exists
   let hex = hexValue.startsWith('#') ? hexValue.slice(1) : hexValue;
 
