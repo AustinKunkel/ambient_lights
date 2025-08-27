@@ -30,11 +30,6 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     const set_color_button = document.getElementById("set-color-button");
 
-    getUserColors().then(data => {
-        userColors = data.colors || [];
-        updateUserColors();
-    });
-
 
     // Function to set the color picker and input field to the current color
     window.initializeColorPicker = () => {
