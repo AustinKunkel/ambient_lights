@@ -224,7 +224,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         clock_gettime(CLOCK_MONOTONIC, &now);
 
         if (last_request.tv_sec != 0) {
-            double gap = elapsed_ms(&now, &last_resort);
+            double gap = elapsed_ms(&now, &last_request);
 
             if (gap < MAX_REQUEST_GAP) break;
         }
