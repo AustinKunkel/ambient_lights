@@ -21,9 +21,9 @@ function updateUserColors(data) {
 
   if(data) {
     removeButton = document.createElement('button');
+    removeButton.id = "remove-user-color";
     removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
     removeButton.classList.add("color-circle");
-    removeButton.id = "remove-user-color";
     removeButton.addEventListener('click', (event) => {
         toggleRemoveColor();
     })

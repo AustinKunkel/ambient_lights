@@ -683,7 +683,7 @@ label {
   border: 4px solid var(--accent);
 }
 
-#add-user-color {
+#add-user-color, #remove_user-color {
   background-color: transparent;
   color: var(--text-primary);
   background-color: var(--bg-primary);
