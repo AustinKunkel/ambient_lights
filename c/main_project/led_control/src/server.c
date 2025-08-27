@@ -471,12 +471,9 @@ void handle_get_user_colors(struct lws *wsi) {
     cJSON *data_array = cJSON_CreateArray();
 
     for(int i = 0; i < user_color_count; i++) {
-        cJSON *item = cJSON_CreateObject();
         char color_hex[8];
         color_to_hex(user_colors[i], color_hex);
-        cJSON_AddStringToObject(item, "color", color_hex);
-
-        cJSON_AddItemToArray(data_array, item);
+        cJSON_AddItemToArray(data_array, cJSON_CreateString(color_hex));
     }
 
     cJSON_AddItemToObject(root, "data", data_array);
