@@ -497,7 +497,11 @@ void handle_set_user_colors(struct lws *wsi, cJSON *json) {
     }
 
     cJSON *colors = cJSON_GetObjectItemCaseSensitive(json, "colors");
-    if (!cJSON_IsArray(colors)) return;
+
+    if (!cJSON_IsArray(colors)) {
+        printf("Invalid colors array\n");
+        return;
+    }
 
     int color_count = 0;
     cJSON *color_item;
