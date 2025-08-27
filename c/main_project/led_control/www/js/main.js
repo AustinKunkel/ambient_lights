@@ -751,7 +751,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.getCapture = () => {
-    led_settings.capture_screen = !led_settings.capture_screen;
+    led_settings.capture_screen = led_settings.capture_screen > 0 ? 0 : 1; // invert
     console.log(led_settings.capture_screen > 0 ? "capture on" : "capture off")
     updateCaptureButton(led_settings.capture_screen > 0);
     setServerLEDSettings()
