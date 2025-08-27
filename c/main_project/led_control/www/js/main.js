@@ -369,7 +369,7 @@ function setServerLEDSettings() {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_led_settings",
-      colors: led_settings
+      data: led_settings
     }));
     message_pop_up(TYPE.OK, "Saved");
   } else {
@@ -382,7 +382,7 @@ function setServerUserColors(userColors) {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_user_colors",
-      data: userColors
+      colors: userColors
     }));
     message_pop_up(TYPE.OK, "Saved");
   }
