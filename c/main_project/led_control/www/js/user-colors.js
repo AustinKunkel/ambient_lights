@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let isRemovingColor = false;
 
+let userColors = [];
+
 function handleColorButtonClick(color) {
   if (isRemovingColor) {
     removeColor(color);
@@ -51,7 +53,30 @@ function updateUserColors(data) {
     colorContainer.appendChild(addButton);
   }
 }
-removeColor()
+function toggleRemoveColor() {
+  isRemovingColor = !isRemovingColor;
+  const removeButton = document.getElementById("remove-user-color");
+  const addButton = document.getElementById("add-user-color");
+  const colorButtons = document.querySelectorAll('.color-circle');
+
+  colorButtons.forEach((button) => {
+    if (button !== removeButton && button !== addButton) {
+      if (isRemovingColor) {
+        button.classList.add("shake");
+      } else {
+        button.classList.remove("shake");
+      }
+    }
+  });
+
+  if (isRemovingColor) {
+    removeButton.style.backgroundColor = "var(--error)";
+    removeButton.style.color = "var(--bg-primary)";
+  } else {
+    removeButton.style.backgroundColor = "transparent";
+    removeButton.style.color = "var(--text-primary)";
+  }
+}
 
 function openAddColorMenu() {
   const modal = document.getElementById('add-color-menu');
