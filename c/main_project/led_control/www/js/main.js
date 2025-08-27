@@ -382,9 +382,14 @@ function setServerUserColors(userColors) {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_user_colors",
-      colors: userColors
+      data: {
+        "colors": userColors
+      }
     }));
     message_pop_up(TYPE.OK, "Saved");
+  } else {
+    message_pop_up(TYPE.ERROR, "No Connection");
+    console.error("Could not send user's colors. Websocket is closed or invalid.")
   }
 }
 
