@@ -672,6 +672,7 @@ label {
   height: 85px;
   border-radius: 50%;
   background-color: #ff0000;
+  font-size: 50px;
   margin: 0;
   padding: 0;
   display: inline-block;
@@ -687,7 +688,6 @@ label {
   background-color: transparent;
   color: var(--text-primary);
   background-color: var(--bg-primary);
-  font-size: 50px;
   display: flex;
   align-items:center;
   justify-content: center;
