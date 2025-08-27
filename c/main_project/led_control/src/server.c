@@ -757,9 +757,10 @@ int main(void)
         return 1;
     }
 
-    set_strip_32int_color(led_settings.color);
-    set_brightness(led_settings.brightness);
-    show_strip();
+    // set_strip_32int_color(led_settings.color);
+    // set_brightness(led_settings.brightness);
+    // show_strip();
+    update_leds();
 
     // Main event loop to process connections
     while (1) {
