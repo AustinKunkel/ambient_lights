@@ -749,4 +749,12 @@ document.addEventListener("DOMContentLoaded", async function() {
   function setBlendMode(value) {
     blendModeActive.checked = value > 0;
   }
+
+  window.getCapture = () => {
+    led_settings.capture_screen = !led_settings.capture_screen;
+    updateCaptureButton(led_settings.capture_screen > 0);
+    setServerLEDSettings()
+
+    getLEDSettings()
+  }
 })
