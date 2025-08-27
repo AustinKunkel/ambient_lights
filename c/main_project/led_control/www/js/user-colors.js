@@ -8,6 +8,7 @@ let userColors = [];
 function handleColorButtonClick(color) {
   if (isRemovingColor) {
     userColors = userColors.filter(c => c !== color);
+    setServerUserColors(userColors)
   } else {
     updateColorPickerFromInput(color);
     changeColor(color);

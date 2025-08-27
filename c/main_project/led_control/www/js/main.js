@@ -378,7 +378,7 @@ function setServerLEDSettings() {
   }
 }
 
-function setServerUserColors() {
+function setServerUserColors(userColors) {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_user_colors",
