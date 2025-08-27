@@ -272,8 +272,9 @@ function startWebSocket() {
         led_settings = {...data};
         updateLedSettings();
         updateEntirePixelFrame();
+        break;
       case "get_capt_settings":
-        console.log('Capture Settings from server:', data);
+        // console.log('Capture Settings from server:', data);
         const settingsChanged = JSON.stringify(capt_settings) !== JSON.stringify({
           ...data, 
           transition_rate: parseFloat(data.transition_rate.toFixed(2))
