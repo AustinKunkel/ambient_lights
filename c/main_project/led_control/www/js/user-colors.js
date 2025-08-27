@@ -92,6 +92,7 @@ function toggleRemoveColor() {
         button.innerHTML = "<i class='fa-solid fa-trash'></i>";
       } else {
         button.classList.remove("shake");
+        button.innerHTML = "";
       }
     }
   });
