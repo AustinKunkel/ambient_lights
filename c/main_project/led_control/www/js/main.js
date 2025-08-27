@@ -378,6 +378,16 @@ function setServerLEDSettings() {
   }
 }
 
+function setServerUserColors() {
+  if(socket && socket.readyState == WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      action: "set_user_colors",
+      data: userColors
+    }));
+    message_pop_up(TYPE.OK, "Saved");
+  }
+}
+
 function setServerCaptSettings() {
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({

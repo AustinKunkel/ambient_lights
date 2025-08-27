@@ -7,7 +7,7 @@ let userColors = [];
 
 function handleColorButtonClick(color) {
   if (isRemovingColor) {
-    removeColor(color);
+    userColors = userColors.filter(c => c !== color);
   } else {
     updateColorPickerFromInput(color);
     changeColor(color);
@@ -45,6 +45,8 @@ function updateUserColors(data) {
   colors.forEach((element) => {
     element.remove();
   })
+
+  userColors = [...data];
 
   if(data) {
     removeButton = document.createElement('button');
