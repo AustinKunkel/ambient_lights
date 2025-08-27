@@ -24,6 +24,11 @@ let capt_settings = {
   'transition_rate': .3
 }
 
+
+// ensure the last request sent doesnt happen too fast
+let last_request_sent = -1
+let REQUEST_GAP = 100 // milliseconds
+
 function getEdgeIndices() {
   const indices = [];
 
@@ -366,11 +371,15 @@ function getCaptSettings() {
 }
 
 function setServerLEDSettings() {
+  time_elapsed = Date.now() - last_request_sent
+  if(time_elapsed < REQUEST_GAP) return
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_led_settings",
       data: led_settings
     }));
+    last_request_sent = Date.now()
     message_pop_up(TYPE.OK, "Saved");
   } else {
     message_pop_up(TYPE.ERROR, "No Connection");
@@ -379,6 +388,9 @@ function setServerLEDSettings() {
 }
 
 function setServerUserColors(userColors) {
+  time_elapsed = Date.now() - last_request_sent
+  if(time_elapsed < REQUEST_GAP) return
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_user_colors",
@@ -394,6 +406,9 @@ function setServerUserColors(userColors) {
 }
 
 function setServerCaptSettings() {
+  time_elapsed = Date.now() - last_request_sent
+  if(time_elapsed < REQUEST_GAP) return
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_capt_settings",
@@ -407,6 +422,9 @@ function setServerCaptSettings() {
 }
 
 function sendMessage() {
+  time_elapsed = Date.now() - last_request_sent
+  if(time_elapsed < REQUEST_GAP) return
+  
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send('Hello from the browser!');
     console.log('Message sent.');

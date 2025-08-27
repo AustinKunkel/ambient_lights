@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <time.h>
 #include "../../cJSON/cJSON.h"
 #include "led_functions.h"
 #include "main.h"
@@ -15,29 +16,39 @@ static const struct lws_protocols protocols[];
 
 #define WEB_ROOT "./led_control/www"  // Path for static files
 
-#define LED_SETTINGS_FILENAME "led_control/data/led_settings.csv"
-#define LED_SETTINGS_HEADER "brightness, color, capture screen, sount react, fx num, count, id\n"
+#define LED_SETTINGS_FILENAME   "led_control/data/led_settings.csv"
+#define LED_SETTINGS_HEADER     "brightness, color, capture screen, sount react, fx num, count, id\n"
 
-#define SC_SETTINGS_FILENAME "led_control/data/sc_settings.csv"
-#define SC_SETTINGS_HEADER "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
+#define SC_SETTINGS_FILENAME    "led_control/data/sc_settings.csv"
+#define SC_SETTINGS_HEADER      "V offset, H offset, avg color, left count, right count, top count, bottom count, res x, res y, blend depth, blend mode\n"
 
-#define USER_COLORS_FILENAME "led_control/data/user_colors.csv"
-#define USER_COLORS_HEADER "color\n"
-#define MAX_USER_COLORS 20
+#define USER_COLORS_FILENAME    "led_control/data/user_colors.csv"
+#define USER_COLORS_HEADER      "color\n"
+#define MAX_USER_COLORS         20
+
 uint32_t user_colors[MAX_USER_COLORS];
 int user_color_count = 0;
 
-#define PORT 80
-#define MAX_CLIENTS 10
+#define PORT            80
+#define MAX_CLIENTS     10
+#define MAX_REQUEST_GAP 100 // milliseconds
+static struct timespec last_request = {0};
 
 struct lws_context *context;
 
 typedef struct per_session_data {
-    struct  lws *wsi;
+    struct lws *wsi;
 } per_session_data_t;
 
 per_session_data_t* clients[MAX_CLIENTS];
 int client_count;
+
+
+
+static inline double elapsed_ms(const struct timespec *a, const struct timespec *b) {
+    return (a->tv_sec - b->tv_sec) * 1000.0 +
+           (a->tv_nsec - b->tv_nsec) / 1e6;
+}
 
 int parse_led_settings_data_to_string(char *str) {
     return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
@@ -199,6 +210,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
     case LWS_CALLBACK_ESTABLISHED:
         printf("WebSocket connection established\n");
         psd->wsi = wsi;
+
         if(client_count < MAX_CLIENTS) {
             handle_get_led_settings(wsi);  // Send LED settings to the client
             handle_get_capt_settings(wsi);
@@ -208,6 +220,15 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         break;
 
     case LWS_CALLBACK_RECEIVE: {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+
+        if (last_request.tv_sec != 0) {
+            double gap = elapsed_ms(&now, &last_resort);
+
+            if (gap < MAX_REQUEST_GAP) break;
+        }
+
         printf("Received message: %.*s\n", (int)len, (char *)in);
 
         cJSON *json = cJSON_Parse((char *)in);
@@ -223,6 +244,7 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
             dispatch_action(wsi, action->valuestring, data);
         }
 
+        last_request = now;
         cJSON_Delete(json);
         break;
     }
