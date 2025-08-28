@@ -565,7 +565,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   window.toggleSidebar = () => {
     sidebarOpen = !sidebarOpen;
     sidebar.style.left = sidebarOpen ? 0 : '-100%';
-
+    if(sidebarOpen) {
+      document.body.classList.add('no-scroll');
+    } else {
+      document.body.classList.remove('no-scroll');
+    }
   }
 
   window.updateLedSettings = () => {
