@@ -130,7 +130,7 @@ function addCustomColor() {
   userColors.push(colorInput.value)
   console.log(userColors)
 
-  updateUserColors();
+  updateUserColors(userColors);
   setServerUserColors(userColors);
   hideAddColorOverlay();
 }
