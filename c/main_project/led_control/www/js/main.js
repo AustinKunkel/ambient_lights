@@ -257,13 +257,11 @@ let socket;
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
   loadingSocket = true;
-  showLoadingIcon();
 
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
     if(loadingSocket) {
       loadingSocket = ! loadingSocket;
-      hideLoadingIcon();
     }
     reconnectAttempts = 0;
     hideReconnectOverlay();
@@ -286,7 +284,6 @@ function startWebSocket() {
        //console.log('Message from server:', event.data);
         led_settings = {...data};
         if(gettingLEDSettings) { 
-          hideLoadingIcon(); 
           gettingLEDSettings = ! gettingLEDSettings;
         }
         updateLedSettings();
@@ -300,7 +297,6 @@ function startWebSocket() {
         });
 
         if(gettingCaptSettings) { 
-          hideLoadingIcon(); 
           gettingCaptSettings = ! gettingCaptSettings;
         }
         
@@ -374,7 +370,7 @@ function cancelReconnect() {
 
 function getLEDSettings() {
   gettingLEDSettings = true;
-  showLoadingIcon();
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action : "get_led_settings"
@@ -385,7 +381,7 @@ function getLEDSettings() {
 
 function getCaptSettings() {
   gettingCaptSettings = true;
-  showLoadingIcon();
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action : "get_capt_settings"

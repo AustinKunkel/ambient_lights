@@ -16,19 +16,6 @@
     [TYPE.WARNING]: "#FFC107"
   }
 
-  function showLoadingIcon() {
-
-    const loadingIcon = document.getElementById("main-loading-icon");
-
-    loadingIcon.style.display = "flex";
-  }
-
-  function hideLoadingIcon() {
-    const loadingIcon = document.getElementById("main-loading-icon");
-
-    loadingIcon.style.display = "none";
-  }
-
   function message_pop_up(type,message) {
     if (!Object.values(TYPE).includes(type))  {
       console.error('Invalid type provided');
