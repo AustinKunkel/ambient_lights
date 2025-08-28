@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         if(currentColor) {
                 userColors.push(currentColor)
                 updateUserColors(userColors);
-                setServerUserColors();
+                setServerUserColors(userColors);
                 hideAddColorOverlay()
         }
     }

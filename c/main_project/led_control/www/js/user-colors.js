@@ -127,6 +127,6 @@ function addCustomColor() {
   userColors.push(colorInput.value)
 
   updateUserColors();
-  setServerUserColors();
+  setServerUserColors(userColors);
   hideAddColorOverlay();
 }
