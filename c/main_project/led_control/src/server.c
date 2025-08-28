@@ -213,12 +213,6 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
     case LWS_CALLBACK_RECEIVE: {
 
-        if (last_request.tv_sec != 0) {
-            double gap = elapsed_ms(&now, &last_request);
-
-            if (gap < MAX_REQUEST_GAP) break;
-        }
-
         printf("Received message: %.*s\n", (int)len, (char *)in);
 
         cJSON *json = cJSON_Parse((char *)in);
