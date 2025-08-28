@@ -7,6 +7,7 @@ function handleColorButtonClick(color) {
   if (isRemovingColor) {
     userColors = userColors.filter(c => c !== color);
     setServerUserColors(userColors)
+    toggleRemoveColor();
   } else {
     updateColorPickerFromInput(color);
     changeColor(color);
@@ -47,14 +48,16 @@ function updateUserColors(data) {
   userColors = [...data];
 
   if(data) {
-    removeButton = document.createElement('button');
-    removeButton.id = "remove-user-color";
-    removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
-    removeButton.classList.add("color-circle");
-    removeButton.addEventListener('click', (event) => {
-        toggleRemoveColor();
-    })
-    colorContainer.appendChild(removeButton);
+    if(data.length > 0) {
+      removeButton = document.createElement('button');
+      removeButton.id = "remove-user-color";
+      removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
+      removeButton.classList.add("color-circle");
+      removeButton.addEventListener('click', (event) => {
+          toggleRemoveColor();
+      })
+      colorContainer.appendChild(removeButton);
+    }
 
     let index = 1;
     data.forEach((color) => {
