@@ -290,7 +290,7 @@ function startWebSocket() {
           gettingLEDSettings = ! gettingLEDSettings;
         }
         updateLedSettings();
-        updateEntirePixelFrame();
+        //updateEntirePixelFrame();
         break;
       case "get_capt_settings":
         // console.log('Capture Settings from server:', data);
