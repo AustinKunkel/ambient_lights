@@ -228,7 +228,6 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
             dispatch_action(wsi, action->valuestring, data);
         }
 
-        last_request = now;
         cJSON_Delete(json);
         break;
     }
