@@ -128,4 +128,5 @@ function addCustomColor() {
 
   updateUserColors();
   setServerUserColors();
+  hideAddColorOverlay();
 }
