@@ -5,7 +5,6 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <time.h>
 #include "../../cJSON/cJSON.h"
 #include "led_functions.h"
 #include "main.h"
@@ -32,7 +31,6 @@ int user_color_count = 0;
 #define PORT            80
 #define MAX_CLIENTS     10
 #define MAX_REQUEST_GAP 100 // milliseconds
-static struct timespec last_request = {0};
 
 struct lws_context *context;
 
@@ -43,12 +41,6 @@ typedef struct per_session_data {
 per_session_data_t* clients[MAX_CLIENTS];
 int client_count;
 
-
-
-static inline double elapsed_ms(const struct timespec *a, const struct timespec *b) {
-    return (a->tv_sec - b->tv_sec) * 1000.0 +
-           (a->tv_nsec - b->tv_nsec) / 1e6;
-}
 
 int parse_led_settings_data_to_string(char *str) {
     return sprintf(str, "%d,#%06X,%d,%d,%d,%d,%d",
@@ -220,8 +212,6 @@ static int websocket_callback(struct lws *wsi, enum lws_callback_reasons reason,
         break;
 
     case LWS_CALLBACK_RECEIVE: {
-        struct timespec now;
-        clock_gettime(CLOCK_MONOTONIC, &now);
 
         if (last_request.tv_sec != 0) {
             double gap = elapsed_ms(&now, &last_request);

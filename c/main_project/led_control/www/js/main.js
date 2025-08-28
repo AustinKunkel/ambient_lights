@@ -394,9 +394,6 @@ function getCaptSettings() {
 }
 
 function setServerLEDSettings() {
-  time_elapsed = Date.now() - last_request_sent
-  if(time_elapsed < REQUEST_GAP) return
-
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_led_settings",
@@ -411,9 +408,6 @@ function setServerLEDSettings() {
 }
 
 function setServerUserColors(userColors) {
-  time_elapsed = Date.now() - last_request_sent
-  if(time_elapsed < REQUEST_GAP) return
-
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_user_colors",
@@ -429,9 +423,6 @@ function setServerUserColors(userColors) {
 }
 
 function setServerCaptSettings() {
-  time_elapsed = Date.now() - last_request_sent
-  if(time_elapsed < REQUEST_GAP) return
-
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action: "set_capt_settings",
@@ -445,9 +436,6 @@ function setServerCaptSettings() {
 }
 
 function sendMessage() {
-  time_elapsed = Date.now() - last_request_sent
-  if(time_elapsed < REQUEST_GAP) return
-
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send('Hello from the browser!');
     console.log('Message sent.');
