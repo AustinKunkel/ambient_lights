@@ -26,7 +26,7 @@
   function hideLoadingIcon() {
     const loadingIcon = document.getElementById("main-loading-icon");
 
-    loadingIcon.style.display = "hide";
+    loadingIcon.style.display = "none";
   }
 
   function message_pop_up(type,message) {
