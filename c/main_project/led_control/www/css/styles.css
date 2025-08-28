@@ -709,8 +709,109 @@ label {
 
 /***** Add color menu *****/
 #add-color-menu {
-  width: fit-content;
   margin: auto;
+  background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: .5em;
+
+  height: fit-content;
+  padding: .5em;
+  width: 15em;
+
+  position: absolute;
+  top: 10em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+
+  border: 4px solid var(--divider);
+  border-radius: 30px;
+}
+
+.close-button {
+  font-size: 70px;
+  width: 10%;
+  justify-self: left;
+  background-color: transparent;
+}
+
+.cancel-add-color-button {
+  height: 80px;
+  padding: 15px;
+  font-size: 40px;
+  font-weight: 600;
+  border-radius: 15px;
+  background-color: var(--bg-secondary);
+  border: 4px solid var(--text-secondary);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#add-current-color-button {
+  padding: 25px 15px;
+  margin: 0 10px;
+  font-size: 35px;
+  font-weight:600;
+  text-align: center;
+  background-color: var(--bg-secondary);
+  color: var(--accent);
+  border: 4px solid var(--accent);
+  border-radius: 15px;
+  width: 100%;
+  height: fit-content;
+  margin:auto;
+  transition: background-color .2s, border-color .2s;
+}
+
+.add-color-input-container {
+  margin: .5em auto;
+  display: flex;
+  flex-direction: column;
+
+}
+.add-color-input-container p {
+    text-align: center;
+    font-size: 50px;
+    line-height: .5;
+}
+
+.color-add-input-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: right;
+  width: 100%;
+}
+.color-add-input-group i {
+  width: 20%;
+  text-align:center;
+  font-size: 50px;
+  margin: none;
+}
+
+#add-user-color-input {
+  width: 40%;
+  font-size: 40px;
+  text-align: center;
+}
+
+#color-add-button {
+  white-space: nowrap;
+  width: 50%;
+  margin:.75em auto;
+}
+
+.add-color-menu-title {
+  display: flex;
+  justify-content: center;
+  align-items:center;
+  font-size: 60px;
+  white-space: nowrap;
+  line-height:.75;
 }
 
 /***** Modal style *****/

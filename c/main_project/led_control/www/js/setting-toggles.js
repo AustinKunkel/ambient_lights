@@ -49,6 +49,16 @@ function hideReconnectOverlay() {
   document.getElementById('failed-to-connect-dialog').style.display = "none";
 }
 
+function showAddColorOverlay() {
+  document.getElementById("add-color-overlay").classList.remove("hidden-container");
+  document.body.classList.add('no-scroll');
+}
+
+function hideAddColorOverlay() {
+  document.getElementById("add-color-overlay").classList.add("hidden-container");
+  document.body.classList.remove('no-scroll');
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
   const colorTransitionInput = document.getElementById("color-transition-input");

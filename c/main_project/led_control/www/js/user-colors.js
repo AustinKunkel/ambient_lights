@@ -1,5 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
-});
 
 let isRemovingColor = false;
 
@@ -36,10 +34,9 @@ function invertColor(hexValue) {
   return `#${inverted.padStart(6, '0')}`;
 };
 
-// Example usage:
-console.log(invertColor('#0099ff')); // Outputs: #ff6600
-console.log(invertColor('#0f0'));    // Outputs: #f0f
+
 function updateUserColors(data) {
+  console.log("Updating user colors: ", data);
   const colorContainer = document.getElementById("user-colors");
   colors = document.querySelectorAll('.color-circle');
 
@@ -77,11 +74,13 @@ function updateUserColors(data) {
     addButton.innerHTML = "<i class='fa-solid fa-plus'></i>";
     addButton.classList.add("color-circle");
     addButton.addEventListener('click', (event) => {
-        openAddColorMenu();
+        showAddColorOverlay();
     });
     colorContainer.appendChild(addButton);
   }
 }
+
+
 function toggleRemoveColor() {
   isRemovingColor = !isRemovingColor;
   const removeButton = document.getElementById("remove-user-color");
@@ -120,4 +119,13 @@ function openAddColorMenu() {
         addColor(color_input.value);
     }
 });
+}
+
+function addCustomColor() {
+  const colorInput = document.getElementById("add-user-color-input");
+
+  userColors.push(colorInput.value)
+
+  updateUserColors();
+  setServerUserColors();
 }

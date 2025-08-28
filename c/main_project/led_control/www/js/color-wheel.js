@@ -18,10 +18,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         wheelLightness: false
     });
 
-    const color_error_label = document.getElementById('color-input-error-label');
-
-    let userColors = [];
-
     let activeColorButton = null;
 
     let currentColor = null;
@@ -51,14 +47,12 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     colorPicker.on('input:end', function(color) {
         const hexColor = color.hexString;
-        color_error_label.style="display: none";
         changeColor(hexColor);
     });
 
     colorPicker.on('color:change', function(color) {
         let hexColor = color.hexString;
         colorCodeInput.value = hexColor;
-        color_error_label.style="display: none";
 
         if(activeColorButton != null) {
             activeColorButton.classList.remove("selected");
@@ -68,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         set_color_button.style.borderColor = hexColor;
         set_color_button.style.boxShadow = `0 0 10px ${hexColor}`;
         color_picker_element.style.boxShadow = `0 0 50px ${hexColor}`;
+        currentColor = hexColor
     });
 
     colorPicker.on('mount', function() {
@@ -121,129 +116,6 @@ document.addEventListener("DOMContentLoaded", async function() {
             set_color_button.classList.add('disabled-button');
         }
     }
-    
-    function handleColorButtonSelect(buttonId) {
-        // updates the button selected
-        if(activeColorButton) {
-            activeColorButton.classList.remove("selected");
-        }
-        const colorButton = document.getElementById(buttonId);
-    
-        if (!colorButton) {
-            console.error(`Button with ID ${buttonId} not found.`);
-            return;
-        }
-    
-        const color = colorButton.style.backgroundColor;
-    
-        if(isRemovingColor) {
-            requestRemoveUserColor(rgbToHex(color))
-            .then(data => {
-                const colorContainer = document.getElementById("color-easy-container");
-                const buttonToRemove = document.getElementById(buttonId); // Find the button by ID
-                isRemovingColor = false;
-                userColors = data.colors || [];
-                updateUserColors();
-            });
-        } else {
-            colorButton.classList.add("selected");
-            activeColorButton = colorButton;
-            updateColorPickerFromInput(color);
-        }
-    }
-    
-
-    const addUserColorButton = document.getElementById("add-user-color");
-    addUserColorButton.addEventListener("click", openAddColorMenu);
-
-    // Function to create and append a button with the given color and ID
-    function createColorButton(id, color, className = null) {
-        const button = document.createElement('button');
-        button.id = id;  // Set ID based on the provided value
-        button.style.backgroundColor = color;  // Set the background color
-        if(className) {
-            button.className = className;
-            if(className == 'color-easy color')
-            button.addEventListener('click', (event) => {
-                handleColorButtonSelect(id);
-            })
-        }
-
-        return button;
-    }
-
-    function updateUserColors() {
-        const colorContainer = document.getElementById("color-easy-container");
-
-        colors = document.querySelectorAll('.color');
-
-        colors.forEach((element) => {
-            element.remove();
-        })
-
-        if (userColors) {
-            // Add multiple color buttons
-
-            removeButton = createColorButton("remove-user-color", "#cccccc");
-            removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
-            removeButton.classList.add("color");
-            removeButton.addEventListener('click', (event) => {
-                toggleRemoveColor();
-            })
-            colorContainer.appendChild(removeButton)
-
-            let index = 1;
-            userColors.forEach((color) => {
-                const buttonId = `color${index++}`; // Use key or unique value for ID
-                const button = createColorButton(buttonId, color, 'color-easy color');
-                colorContainer.appendChild(button);
-            });
-        }
-        
-
-        addButton = createColorButton("add-user-color", "#cccccc");
-        addButton.innerHTML = "<i class='fa-solid fa-plus'></i>";
-        addButton.classList.add("color");
-        addButton.addEventListener('click', (event) => {
-            openAddColorMenu();
-        });
-        colorContainer.appendChild(addButton);
-    }
-
-    window.addUserColor = function(color = currentColor, event = null) {
-
-        if(event) {
-            event.preventDefault();
-        }
-        if(!color) {
-            message_pop_up(TYPE.ERROR, "no color selected!");
-            return 
-        }
-        requestAddUserColor(color).then(data => {
-            userColors = data.colors || [];
-            updateUserColors();
-        });
-
-        updateColorPickerFromInput(color, TYPE.ERROR,"Error updating color");
-    }
-
-    function toggleRemoveColor() {
-        isRemovingColor = !isRemovingColor;
-
-        colors = document.querySelectorAll('.color-easy');
-
-        if(isRemovingColor) {
-            colors.forEach((element) => {
-                element.innerHTML = "<i class='fa-solid fa-x'></i>"
-                element.classList.add("space-10")
-            })
-        } else {
-            colors.forEach((element) => {
-                element.innerHTML = ""
-                element.classList.remove("space-10")
-            })
-        } 
-    }
 
     function rgbToHex(rgb) {
         const rgbMatch = rgb.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
@@ -278,18 +150,20 @@ document.addEventListener("DOMContentLoaded", async function() {
      */
     window.checkUserColor = function() {
         const userColorInput = document.getElementById("add-user-color-input");
-        const saveButton = document.getElementById("save-user-color");
+        const saveButton = document.getElementById("color-add-button");
+        const warningIcon = document.getElementById("add-color-input-warning");
 
         if(userColorInput.value.length <= 0 || !isHex(userColorInput.value)) {
-            color_error_label.style.display = "flex";
             saveButton.classList.add("grayed-out");
             saveButton.disabled = true;
+            warningIcon.style.color = COLORS[TYPE.WARNING]
             return
         }
 
-        color_error_label.style.display = "none";
+
         saveButton.classList.remove("grayed-out");
         saveButton.disabled = false;
+        warningIcon.style.color = "transparent"
 
     }
 
@@ -297,6 +171,14 @@ document.addEventListener("DOMContentLoaded", async function() {
         // Regular expression for 3 or 6 digit hex color codes
         const hexRegex = /^#([0-9A-Fa-f]{3}){1,2}$/;
         return hexRegex.test(color);
+    }
+
+    window.addCurrentColor = () => {
+        if(currentColor) {
+                userColors.push(currentColor)
+                updateUserColors(userColors);
+                setServerUserColors();
+        }
     }
 
 });
