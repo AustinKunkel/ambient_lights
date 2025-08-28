@@ -128,6 +128,7 @@ function addCustomColor() {
   const colorInput = document.getElementById("add-user-color-input");
 
   userColors.push(colorInput.value)
+  console.log(userColors)
 
   updateUserColors();
   setServerUserColors(userColors);
