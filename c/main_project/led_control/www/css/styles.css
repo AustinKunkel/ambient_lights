@@ -366,6 +366,29 @@ label {
   font-size: 45px;
 }
 
+#main-loading-icon {
+  display: none; /* hidden by default */
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  left: 50%;
+  top: 20em;
+  font-size:60px;
+  color: var(--accent);
+  transform: translateX(-50%);
+}
+
+/* Spinning animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Keyframes for spinning */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 #message-icon {
   height: 60px;
   font-size: 50px;

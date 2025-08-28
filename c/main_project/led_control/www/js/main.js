@@ -24,6 +24,10 @@ let capt_settings = {
   'transition_rate': .3
 }
 
+let gettingLEDSettings = false;
+let gettingCaptSettings = false;
+let loadingSocket = false;
+
 
 // ensure the last request sent doesnt happen too fast
 let last_request_sent = -1
@@ -252,9 +256,15 @@ let isFirstConnection = true; // Track first connection
 let socket;
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
+  loadingSocket = true;
+  showLoadingIcon();
 
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
+    if(loadingSocket) {
+      loadingSocket = ! loadingSocket;
+      hideLoadingIcon();
+    }
     reconnectAttempts = 0;
     hideReconnectOverlay();
     message_pop_up(TYPE.OK, "Connected.");
@@ -275,6 +285,10 @@ function startWebSocket() {
       case "get_led_settings":
        //console.log('Message from server:', event.data);
         led_settings = {...data};
+        if(gettingLEDSettings) { 
+          hideLoadingIcon(); 
+          gettingLEDSettings = ! gettingLEDSettings;
+        }
         updateLedSettings();
         updateEntirePixelFrame();
         break;
@@ -284,6 +298,11 @@ function startWebSocket() {
           ...data, 
           transition_rate: parseFloat(data.transition_rate.toFixed(2))
         });
+
+        if(gettingCaptSettings) { 
+          hideLoadingIcon(); 
+          gettingCaptSettings = ! gettingCaptSettings;
+        }
         
         capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
@@ -354,6 +373,8 @@ function cancelReconnect() {
 }
 
 function getLEDSettings() {
+  gettingLEDSettings = true;
+  showLoadingIcon();
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action : "get_led_settings"
@@ -363,6 +384,8 @@ function getLEDSettings() {
 }
 
 function getCaptSettings() {
+  gettingCaptSettings = true;
+  showLoadingIcon();
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action : "get_capt_settings"
@@ -424,7 +447,7 @@ function setServerCaptSettings() {
 function sendMessage() {
   time_elapsed = Date.now() - last_request_sent
   if(time_elapsed < REQUEST_GAP) return
-  
+
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send('Hello from the browser!');
     console.log('Message sent.');
