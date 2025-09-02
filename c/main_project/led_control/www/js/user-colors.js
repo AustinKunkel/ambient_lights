@@ -1,5 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
-});
 
 let isRemovingColor = false;
 
@@ -9,6 +7,7 @@ function handleColorButtonClick(color) {
   if (isRemovingColor) {
     userColors = userColors.filter(c => c !== color);
     setServerUserColors(userColors)
+    toggleRemoveColor();
   } else {
     updateColorPickerFromInput(color);
     changeColor(color);
@@ -36,10 +35,9 @@ function invertColor(hexValue) {
   return `#${inverted.padStart(6, '0')}`;
 };
 
-// Example usage:
-console.log(invertColor('#0099ff')); // Outputs: #ff6600
-console.log(invertColor('#0f0'));    // Outputs: #f0f
+
 function updateUserColors(data) {
+  console.log("Updating user colors: ", data);
   const colorContainer = document.getElementById("user-colors");
   colors = document.querySelectorAll('.color-circle');
 
@@ -50,14 +48,16 @@ function updateUserColors(data) {
   userColors = [...data];
 
   if(data) {
-    removeButton = document.createElement('button');
-    removeButton.id = "remove-user-color";
-    removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
-    removeButton.classList.add("color-circle");
-    removeButton.addEventListener('click', (event) => {
-        toggleRemoveColor();
-    })
-    colorContainer.appendChild(removeButton);
+    if(data.length > 0) {
+      removeButton = document.createElement('button');
+      removeButton.id = "remove-user-color";
+      removeButton.innerHTML= "<i class='fa-solid fa-minus'></i>";
+      removeButton.classList.add("color-circle");
+      removeButton.addEventListener('click', (event) => {
+          toggleRemoveColor();
+      })
+      colorContainer.appendChild(removeButton);
+    }
 
     let index = 1;
     data.forEach((color) => {
@@ -77,11 +77,13 @@ function updateUserColors(data) {
     addButton.innerHTML = "<i class='fa-solid fa-plus'></i>";
     addButton.classList.add("color-circle");
     addButton.addEventListener('click', (event) => {
-        openAddColorMenu();
+        showAddColorOverlay();
     });
     colorContainer.appendChild(addButton);
   }
 }
+
+
 function toggleRemoveColor() {
   isRemovingColor = !isRemovingColor;
   const removeButton = document.getElementById("remove-user-color");
@@ -120,4 +122,15 @@ function openAddColorMenu() {
         addColor(color_input.value);
     }
 });
+}
+
+function addCustomColor() {
+  const colorInput = document.getElementById("add-user-color-input");
+
+  userColors.push(colorInput.value)
+  console.log(userColors)
+
+  updateUserColors(userColors);
+  setServerUserColors(userColors);
+  hideAddColorOverlay();
 }

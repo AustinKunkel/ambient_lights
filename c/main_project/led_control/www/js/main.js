@@ -24,6 +24,15 @@ let capt_settings = {
   'transition_rate': .3
 }
 
+let gettingLEDSettings = false;
+let gettingCaptSettings = false;
+let loadingSocket = false;
+
+
+// ensure the last request sent doesnt happen too fast
+let last_request_sent = -1
+let REQUEST_GAP = 100 // milliseconds
+
 function getEdgeIndices() {
   const indices = [];
 
@@ -247,9 +256,13 @@ let isFirstConnection = true; // Track first connection
 let socket;
 function startWebSocket() {
   socket = new WebSocket('ws://' + window.location.hostname + ':80', 'websocket');
+  loadingSocket = true;
 
   socket.onopen = function(event) {
     console.log('WebSocket connection opened.');
+    if(loadingSocket) {
+      loadingSocket = ! loadingSocket;
+    }
     reconnectAttempts = 0;
     hideReconnectOverlay();
     message_pop_up(TYPE.OK, "Connected.");
@@ -270,8 +283,11 @@ function startWebSocket() {
       case "get_led_settings":
        //console.log('Message from server:', event.data);
         led_settings = {...data};
+        if(gettingLEDSettings) { 
+          gettingLEDSettings = ! gettingLEDSettings;
+        }
         updateLedSettings();
-        updateEntirePixelFrame();
+        //updateEntirePixelFrame();
         break;
       case "get_capt_settings":
         // console.log('Capture Settings from server:', data);
@@ -279,6 +295,10 @@ function startWebSocket() {
           ...data, 
           transition_rate: parseFloat(data.transition_rate.toFixed(2))
         });
+
+        if(gettingCaptSettings) { 
+          gettingCaptSettings = ! gettingCaptSettings;
+        }
         
         capt_settings = { ...data, transition_rate: parseFloat(data.transition_rate.toFixed(2)) };
         updateCaptSettings();
@@ -349,6 +369,8 @@ function cancelReconnect() {
 }
 
 function getLEDSettings() {
+  gettingLEDSettings = true;
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action : "get_led_settings"
@@ -358,6 +380,8 @@ function getLEDSettings() {
 }
 
 function getCaptSettings() {
+  gettingCaptSettings = true;
+
   if(socket && socket.readyState == WebSocket.OPEN) {
     socket.send(JSON.stringify({
       action : "get_capt_settings"
@@ -371,6 +395,7 @@ function setServerLEDSettings() {
       action: "set_led_settings",
       data: led_settings
     }));
+    last_request_sent = Date.now()
     message_pop_up(TYPE.OK, "Saved");
   } else {
     message_pop_up(TYPE.ERROR, "No Connection");
@@ -524,7 +549,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   window.toggleSidebar = () => {
     sidebarOpen = !sidebarOpen;
     sidebar.style.left = sidebarOpen ? 0 : '-100%';
-
+    if(sidebarOpen) {
+      document.body.classList.add('no-scroll');
+    } else {
+      document.body.classList.remove('no-scroll');
+    }
   }
 
   window.updateLedSettings = () => {
@@ -748,5 +777,12 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   function setBlendMode(value) {
     blendModeActive.checked = value > 0;
+  }
+
+  window.getCapture = () => {
+    led_settings.capture_screen = led_settings.capture_screen > 0 ? 0 : 1; // invert
+    console.log(led_settings.capture_screen > 0 ? "capture on" : "capture off")
+    updateCaptureButton(led_settings.capture_screen > 0);
+    setServerLEDSettings()
   }
 })
