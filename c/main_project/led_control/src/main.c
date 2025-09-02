@@ -51,6 +51,7 @@ char *update_leds() {
         //     printf("Error creating Sound Effect thread!\n");
         //     return"{\"Error\": \"Error creating Sound Effect thread!\"}";
         // }
+        // sound_effect_task.task_status = 1;
     } else if(led_settings.fx_num > 0) {
            printf("Creating task: Effect...\n");
         // TODO: Effect functions
