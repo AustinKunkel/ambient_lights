@@ -254,6 +254,12 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   while (!stop_sound_capture) {
     capture_audio_frame(buffer, FRAME_SIZE);
 
+    printf("Captured %d samples:\n", FRAME_SIZE);
+    for (int i = 0; i < 20; i++) {  // print first 20 samples for brevity
+      printf("%6d ", buffer[i]);
+    }
+    printf("\n");
+
     float sum_squares = 0.0f;
     for (int i = 0; i < FRAME_SIZE; i++) {
       float s = buffer[i] / 32768.0f;    // normalize to [-1, 1]
@@ -264,6 +270,9 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
     }
 
     float rms = sqrtf(sum_squares / FRAME_SIZE);
+    if (isnan(rms) || isinf(rms)) {
+      rms = 0.0f;
+    }
 
     float rms_db = 20.0f * log10f(rms + 1e-12f);
     if (rms_db < -50.0f) { // below -50 dBFS, treat as silence
