@@ -10,7 +10,7 @@ void setup_audio_capture(unsigned int sample_rate, unsigned int channels) {
     int err;
 
     // open default capture device
-    if ((err = snd_pcm_open(&capture_handle, "default", SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+    if ((err = snd_pcm_open(&capture_handle, DEVICE, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
         fprintf(stderr, "cannot open audio device (%s)\n", snd_strerror(err));
         return;
     }
