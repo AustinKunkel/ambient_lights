@@ -180,6 +180,11 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     return 1;
   }
 
+  if(effect_index < 0 || effect_index >= sound_effect_count) {
+    printf("Invalid effect index %d, defaulting to 0\n", effect_index);
+    effect_index = 0;
+  }
+
   int led_count = led_settings.count;
   printf("Mallocing led positions for %d LEDs...\n", led_count);
   led_colors = malloc(sizeof(struct led_position) * led_count);
@@ -263,6 +268,8 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
     int brightness = (int)(volume * 255);
     if (brightness > 255) brightness = 255;
     if (brightness < 0) brightness = 0;
+
+    printf("Volume: %.4f, Brightness: %d\n", volume, brightness);
 
     // Set LED colors based on brightness
     for (int i = effect->led_start; i <= effect->led_end; i++) {
