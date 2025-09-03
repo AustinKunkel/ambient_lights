@@ -239,7 +239,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   ts.tv_nsec = 11000000L; // ~11ms for ~90fps
   printf("Setting up audio capture...\n");
   
-  setup_audio_capture(effect->max_freq, 2); // mono
+  setup_audio_capture(48000, 2);
 
   int16_t buffer[FRAME_SIZE]; // stack allocation is fine for 256
 
@@ -251,16 +251,13 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   while (!stop_sound_capture) {
     capture_audio_frame(buffer, FRAME_SIZE);
 
-    // Apply raise cosine (Hann) window and calculate RMS volume
     float sum_squares = 0.0f;
     for (int i = 0; i < FRAME_SIZE; i++) {
-      float sample = buffer[i] * window[i];
+      float sample = (buffer[i] / 32768.0f) * window[i]; // normalize to [-1,1]
       sum_squares += sample * sample;
     }
     float rms = sqrtf(sum_squares / FRAME_SIZE);
     float volume = rms * effect->sensitivity;
-
-    // Clamp volume to [0, 1]
     if (volume > 1.0f) volume = 1.0f;
     if (volume < 0.0f) volume = 0.0f;
 
