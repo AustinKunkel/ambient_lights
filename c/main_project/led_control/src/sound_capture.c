@@ -193,7 +193,7 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     free(led_colors);
     return 1;
   }
-  arg->effect = &effect;
+  arg->effect = &sound_effects[effect_index];
   arg->strip = strip;
 
   printf("Creating capture loop thread...\n");
