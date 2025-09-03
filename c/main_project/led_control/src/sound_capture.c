@@ -223,7 +223,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   }
 
   while (!stop_sound_capture) {
-    capture_frame(buffer, FRAME_SIZE);
+    capture_audio_frame(buffer, FRAME_SIZE);
 
     // Apply raise cosine (Hann) window and calculate RMS volume
     float sum_squares = 0.0f;
