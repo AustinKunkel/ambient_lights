@@ -241,7 +241,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   
   setup_audio_capture(effect->max_freq, 1); // mono
 
-  float buffer[FRAME_SIZE]; // stack allocation is fine for 256
+  int16_t buffer[FRAME_SIZE]; // stack allocation is fine for 256
 
   float window[FRAME_SIZE];
   for (int i = 0; i < FRAME_SIZE; i++) {
