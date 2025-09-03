@@ -401,7 +401,7 @@ void *capture_loop(void *strip_ptr) {
   //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
   bool blend_mode_active = sc_settings.blend_mode > 0;
   int i = 0;
-  float alpha = sc_settings.transition_rate; // higher provides faster transitions than lower
+  float alpha = sc_settings.transition_rate + 0.001f; // higher provides faster transitions than lower
   while(!stop_capture) {
     // printf("Capturing frame...\n");
     capture_frame(rgb_buffer);
