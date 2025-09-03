@@ -44,7 +44,6 @@ int sound_effect_count = 0;
 void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip);
 
 void assign_effect_function(sound_effect *effect) {
-  printf("Assigning effect function for effect_num: %d\n", effect->effect_num);
   switch(effect->effect_num) {
     case 1:
       effect->apply_effect = brightness_on_volume_effect;
@@ -170,6 +169,11 @@ void *sound_effect_thread_func(void *arg) {
   ws2811_t *strip = effect_arg->strip;
 
   printf("Applying effect: %s\n", effect->name);
+  if (effect->apply_effect == NULL) {
+    fprintf(stderr, "Error: effect->apply_effect is NULL for effect '%s'\n", effect->name);
+    free(arg);
+    return NULL;
+  }
   effect->apply_effect(effect, strip);
   free(arg);
 }
