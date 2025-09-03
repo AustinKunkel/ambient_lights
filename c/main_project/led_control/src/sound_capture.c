@@ -251,6 +251,12 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   while (!stop_sound_capture) {
     capture_audio_frame(buffer, FRAME_SIZE);
 
+    printf("Audio frame samples:\n");
+    for (int i = 0; i < 20; i++) { // print first 20 samples
+        printf("%d ", buffer[i]);
+    }
+    printf("\n");
+
     float sum_squares = 0.0f;
     for (int i = 0; i < FRAME_SIZE; i++) {
       float sample = (buffer[i] / 32768.0f) * window[i]; // normalize to [-1,1]
