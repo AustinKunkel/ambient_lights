@@ -239,7 +239,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   ts.tv_nsec = 11000000L; // ~11ms for ~90fps
   printf("Setting up audio capture...\n");
   
-  setup_audio_capture(48000, 2);
+  setup_audio_capture(48000, 1);
 
   int16_t buffer[FRAME_SIZE]; // stack allocation is fine for 256
 
