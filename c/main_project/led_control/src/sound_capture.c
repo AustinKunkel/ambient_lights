@@ -169,11 +169,6 @@ void *sound_effect_thread_func(void *arg) {
   ws2811_t *strip = effect_arg->strip;
 
   printf("Applying effect: %s\n", effect->name);
-  if (effect->apply_effect == NULL) {
-    fprintf(stderr, "Error: effect->apply_effect is NULL for effect '%s'\n", effect->name);
-    free(arg);
-    return NULL;
-  }
   effect->apply_effect(effect, strip);
   free(arg);
 }
@@ -212,7 +207,7 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
 
   printf("Creating capture loop thread...\n");
   stop_sound_capture = false;
-  if(pthread_create(&sound_capture_thread, NULL, sound_effect_thread_func, (void *)&arg) != 0) {
+  if(pthread_create(&sound_capture_thread, NULL, sound_effect_thread_func, (void *)arg) != 0) {
     free(sound_effects);
     free(arg);
     printf("Failed to create sound capture thread!\n"); 
