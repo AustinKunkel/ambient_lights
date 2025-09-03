@@ -120,6 +120,15 @@ bool initialize_sound_effects() {
 
     assign_effect_function(&sound_effects[idx]);
     idx++;
+
+    // Print each token for debugging
+    printf("  name: %s\n", sound_effects[idx-1].name);
+    printf("  sensitivity: %f\n", sound_effects[idx-1].sensitivity);
+    printf("  min_freq: %d\n", sound_effects[idx-1].min_freq);
+    printf("  max_freq: %d\n", sound_effects[idx-1].max_freq);
+    printf("  led_start: %d\n", sound_effects[idx-1].led_start);
+    printf("  led_end: %d\n", sound_effects[idx-1].led_end);
+    printf("  effect_num: %d\n", sound_effects[idx-1].effect_num);
   }
 
   fclose(fp);
