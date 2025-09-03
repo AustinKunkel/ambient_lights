@@ -17,10 +17,9 @@
 #endif
 
 volatile bool stop_sound_capture = false;
-int LED_COUNT = 206;  // Number of LEDs
 
 pthread_t sound_capture_thread;
-pthread_t send_positions_thread;
+pthread_t send_led_colors_thread;
 
 typedef struct sound_effect sound_effect;
 
@@ -39,7 +38,7 @@ struct sound_effect {
 };
 
 sound_effect *sound_effects;
-struct led_position *led_positions; // server.h
+struct led_position *led_colors; // server.h
 int sound_effect_count = 0;
 
 void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip);
@@ -128,17 +127,17 @@ bool initialize_sound_effects() {
 }
 
 /**
- * Loop that takes the current led_positions and
+ * Loop that takes the current led_colors and
  * sends them to the server to give to the client
  */
-void *send_led_positions_loop(void *) {
+void *send_led_colors_loop(void *) {
   struct timespec ts;
 
   ts.tv_sec = 0;
   ts.tv_nsec = 33333333L;  // 33 milliseconds = 33,000,000 nanoseconds, 30fps
 
   while(!stop_sound_capture) {
-    send_led_strip_colors(led_positions);
+    send_led_strip_colors(led_colors);
     nanosleep(&ts, NULL);
   }
 
@@ -169,18 +168,18 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     return 1;
   }
 
-  LED_COUNT = led_settings.count;
-  printf("Mallocing led positions for %d LEDs...\n", LED_COUNT);
-  led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
-  if (led_positions == NULL) {
+  int led_count = led_settings.count;
+  printf("Mallocing led positions for %d LEDs...\n", led_count);
+  led_colors = malloc(sizeof(struct led_position) * led_count);
+  if (led_colors == NULL) {
     printf("Memory allocation failed!\n");
     free(sound_effects);
     return 1;
   }
 
   sound_effect effect = sound_effects[effect_index];
-  if(effect.led_end >= get_led_count()) {
-    effect.led_end = get_led_count() - 1;
+  if(effect.led_end >= led_count) {
+    effect.led_end = led_count - 1;
   }
   printf("Effect: %s, LEDs: %d to %d\n", effect.name, effect.led_start, effect.led_end);
 
@@ -196,7 +195,7 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     return 1;
   }
   
-  if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
+  if(pthread_create(&send_led_colors_thread, NULL, send_led_colors_loop, NULL) != 0) {
     stop_sound_capturing();
     printf("Failed to create send positions thread!");
     return 1;
@@ -247,8 +246,8 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
     // Set LED colors based on brightness
     for (int i = effect->led_start; i <= effect->led_end; i++) {
       set_led_color(i, brightness, brightness, brightness); // white scaled by brightness
-      led_positions[i].color = (brightness << 16) | (brightness << 8) | brightness;
-      led_positions[i].valid = 1;
+      led_colors[i].color = (brightness << 16) | (brightness << 8) | brightness;
+      led_colors[i].valid = 1;
     }
 
     ws2811_render(strip);
@@ -263,9 +262,9 @@ int stop_sound_capturing() {
     stop_sound_capture = true;
 
     pthread_join(sound_capture_thread, NULL);
-    pthread_join(send_positions_thread, NULL);
+    pthread_join(send_led_colors_thread, NULL);
     cleanup_audio();
     free(sound_effects);
-    free(led_positions);
+    free(led_colors);
     return 0;
 }
