@@ -696,9 +696,14 @@ document.addEventListener("DOMContentLoaded", async function() {
     setServerCaptSettings();
   }
 
-  let isReactingToSound = false;
   window.reactToSound = () => {
-    isReactingToSound = !isReactingToSound;
+    led_settings.sound_react = led_settings.sound_react > 0 ? 0 : 1; // invert
+    console.log(led_settings.sound_react > 0 ? "sound capture on" : "sound capture off")
+    updateSoundCaptureButton(led_settings.sound_react > 0);
+    setServerLEDSettings()
+  }
+
+  window.updateSoundCaptureButton = function(isReacting) {
     const soundReactButton = document.getElementById('sound-react-button');
     if(isReactingToSound) {
       soundReactButton.innerHTML = 'Stop Reacting to Sound';
@@ -707,10 +712,6 @@ document.addEventListener("DOMContentLoaded", async function() {
       soundReactButton.innerHTML = 'React to Sound';
       soundReactButton.classList.remove('stop-option');
     }
-  }
-
-  function updateSoundCaptureButton() {
-
   }
 
   window.updateCaptureButton = function(isCapturing) {

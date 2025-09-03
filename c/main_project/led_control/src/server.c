@@ -546,7 +546,14 @@ void handle_set_user_colors(struct lws *wsi, cJSON *json) {
     }
 }
 
+int currently_sending_colors = 0;
+
 void send_led_strip_colors(struct led_position* led_positions) {
+
+    if(currently_sending_colors) {
+        return; // prevent overlapping sends
+    }
+    currently_sending_colors = 1;
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "action", "led_pixel_data");
 
@@ -581,6 +588,7 @@ void send_led_strip_colors(struct led_position* led_positions) {
 
     cJSON_Delete(root);
     free(json_str);
+    currently_sending_colors = 0;
 }
 
 // void handle_set_color(struct lws *wsi, cJSON *data) {

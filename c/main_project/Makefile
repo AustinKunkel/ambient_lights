@@ -17,7 +17,7 @@ CFLAGS = -I$(INC_DIR) \
 LDFLAGS = -L$(LIB_DIR) \
           -L$(WS281X_BUILD) \
           -lwebsockets -lws2811 \
-          -pthread -lrt -lgnutls -lmicrohttpd -lm -lssl -lcrypto
+          -pthread -lrt -lgnutls -lmicrohttpd -lm -lssl -lcrypto -lasound
 
 # Source Files
 SRV_TST_SRC = led_control/test/server_test.c \
@@ -33,6 +33,8 @@ MAIN_SRC = led_control/src/server.c \
            led_control/src/screen_capture.c \
            led_control/src/screen_capture_functions.c \
            led_control/src/csv_control.c \
+           led_control/src/sound_capture.c \
+           led_control/src/sound_capture_functions.c \
            cJSON/cJSON.c
 
 CAPTURE_SRC = led_control/test/capture_test.c \

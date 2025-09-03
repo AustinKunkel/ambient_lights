@@ -1,0 +1,267 @@
+#include "led_function.h"
+#include "sound_capture.h"
+#include "sound_capture_functions.h"
+#include "csv_control.h"
+#include "server.h"
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <math.h>
+
+#define SOUND_EFFECTS_FILENAME  "led_control/data/sound_effects.csv"
+#define FRAME_SIZE              256
+
+volatile bool stop_sound_capture = false;
+
+p_thread_t sound_capture_thread;
+p_thread_t send_positions_thread;
+
+typedef struct sound_effect sound_effect;
+
+typedef void (*effect_fn)(struct sound_effect *effect, ws2811_t *strip);
+
+struct sound_effect {
+  char name[50];
+  float sensitivity; // multiplier for volume
+  int min_freq; // minimum frequency to react to
+  int max_freq; // maximum frequency to react to
+  int led_start; // starting led index
+  int led_end; // ending led index
+  int effect_num; // The number for the effect
+
+  effect_fn apply_effect; // function pointer to effect function
+};
+
+sound_effect *sound_effects;
+struct led_position *led_positions; // server.h
+int sound_effect_count = 0;
+
+void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip);
+
+void assign_effect_function(sound_effect *effect) {
+  switch(effect->effect_num) {
+    case 1:
+      effect->apply_effect = brightness_on_volume_effect;
+      break;
+    default:
+      effect->apply_effect = brightness_on_volume_effect;
+  }
+}
+
+bool initialize_sound_effects() {
+  FILE *fp = fopen(filename, "r");
+  if (!fp) {
+    perror("Unable to open sound_effects.csv");
+    return false;
+  }
+
+  char line[512];
+  sound_effect_count = 0;
+
+  // Skip header
+  if (!fgets(line, sizeof(line), fp)) {
+    fclose(fp);
+    return false;
+  }
+
+  // First, count the number of effects
+  while (fgets(line, sizeof(line), fp)) {
+    if (line[0] != '\n' && line[0] != '\0') sound_effect_count++;
+  }
+
+  if (sound_effect_count == 0) {
+    fclose(fp);
+    return false;
+  }
+
+  // Allocate array
+  sound_effects = (sound_effect *)malloc(sizeof(sound_effect) * sound_effect_count);
+  if (!sound_effects) {
+    perror("Failed to allocate memory for sound effects");
+    fclose(fp);
+    return false;
+  }
+
+  // Rewind and skip header again
+  rewind(fp);
+  fgets(line, sizeof(line), fp);
+
+  int idx = 0;
+  while (fgets(line, sizeof(line), fp) && idx < sound_effect_count) {
+    char *line_ptr = line;
+    char *token;
+
+    token = next_token(&line_ptr);
+    snprintf(sound_effects[idx].name, sizeof(sound_effects[idx].name), "%s", token ? token : "");
+
+    token = next_token(&line_ptr);
+    sound_effects[idx].sensitivity = token ? atof(token) : 1.0;
+
+    token = next_token(&line_ptr);
+    sound_effects[idx].min_freq = token ? atoi(token) : 20;
+
+    token = next_token(&line_ptr);
+    sound_effects[idx].max_freq = token ? atoi(token) : 20000;
+
+    token = next_token(&line_ptr);
+    sound_effects[idx].led_start = token ? atoi(token) : 0;
+
+    token = next_token(&line_ptr);
+    sound_effects[idx].led_end = token ? atoi(token) : 0;
+
+    token = next_token(&line_ptr);
+    sound_effects[idx].effect_num = token ? atoi(token) : 1;
+
+    assign_effect_function(&sound_effects[idx]);
+    idx++;
+  }
+
+  fclose(fp);
+  printf("Loaded %d sound effects.\n", sound_effect_count);
+  return true;
+}
+
+/**
+ * Loop that takes the current led_positions and
+ * sends them to the server to give to the client
+ */
+void *send_led_positions_loop(void *) {
+  struct timespec ts;
+
+  ts.tv_sec = 0;
+  ts.tv_nsec = 33333333L;  // 33 milliseconds = 33,000,000 nanoseconds, 30fps
+
+  while(!stop_sound_capture) {
+    send_led_strip_colors(led_positions);
+    nanosleep(&ts, NULL);
+  }
+
+  return NULL;
+}
+
+struct sound_effect_arg {
+  sound_effect *effect;
+  ws2811_t *strip;
+};
+
+/**
+ * Function to call the effect's function pointer
+ */
+void *sound_effect_thread_func(void *arg) {
+  struct sound_effect_arg *effect_arg = (struct sound_effect_arg *)arg;
+
+  struct sound_effect *effect = effect_arg->effect;
+  ws2811_t *strip = effect_arg->strip;
+
+  effect->apply_effect(effect, strip);
+}
+
+int start_sound_capture(ws2811_t *strip, int effect_index) {
+
+  if(!initialize_sound_effects()) {
+    printf("Failed to initialize sound effects!\n");
+    return 1;
+  }
+
+  LED_COUNT = led_settings.count;
+  printf("Mallocing led positions for %d LEDs...\n", LED_COUNT);
+  led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
+  if (led_positions == NULL) {
+    printf("Memory allocation failed!\n");
+    free(sound_effects);
+    return 1;
+  }
+
+  sound_effect effect = sound_effects[effect_index];
+  if(effect.led_end >= get_led_count()) {
+    effect.led_end = get_led_count() - 1;
+  }
+  printf("Effect: %s, LEDs: %d to %d\n", effect.name, effect.led_start, effect.led_end);
+
+  struct sound_effect_arg arg;
+  arg.effect = &effect;
+  arg.strip = strip;
+
+  printf("Creating capture loop thread...\n");
+  stop_sound_capture = false;
+  if(pthread_create(&sound_capture_thread, NULL, sound_effect_thread_func, (void *)&arg) != 0) {
+    free(sound_effects);
+    printf("Failed to create sound capture thread!\n"); 
+    return 1;
+  }
+  
+  if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
+    stop_sound_capturing();
+    printf("Failed to create send positions thread!");
+    return 1;
+  }
+
+}
+
+void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
+  // setup audio capture
+  // get volume level
+  // set brightness based on volume level
+  // apply to leds from led_start to led_end
+
+  struct timespec ts;
+  ts.tv_sec = 0;
+  ts.tv_nsec = 11000000L; // ~11ms for ~90fps
+  
+  setup_audio_capture(effect->max_freq, 1); // mono
+
+  float buffer[FRAME_SIZE]; // stack allocation is fine for 256
+
+  float window[FRAME_SIZE];
+  for (int i = 0; i < FRAME_SIZE; i++) {
+      window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
+  }
+
+  while (!stop_sound_capture) {
+    capture_frame(buffer, FRAME_SIZE);
+
+    // Apply raise cosine (Hann) window and calculate RMS volume
+    float sum_squares = 0.0f;
+    for (int i = 0; i < FRAME_SIZE; i++) {
+      float sample = buffer[i] * window[i];
+      sum_squares += sample * sample;
+    }
+    float rms = sqrtf(sum_squares / FRAME_SIZE);
+    float volume = rms * effect->sensitivity;
+
+    // Clamp volume to [0, 1]
+    if (volume > 1.0f) volume = 1.0f;
+    if (volume < 0.0f) volume = 0.0f;
+
+    // Map volume to brightness (0-255)
+    int brightness = (int)(volume * 255);
+    if (brightness > 255) brightness = 255;
+    if (brightness < 0) brightness = 0;
+
+    // Set LED colors based on brightness
+    for (int i = effect->led_start; i <= effect->led_end; i++) {
+      set_led_color(i, brightness, brightness, brightness); // white scaled by brightness
+      led_positions[i].color = (brightness << 16) | (brightness << 8) | brightness;
+      led_positions[i].valid = 1;
+    }
+
+    ws2811_render(strip);
+
+    nanosleep(&ts, NULL); // Sleep for a short time
+  }
+
+}
+
+
+int stop_sound_capturing() {
+    stop_sound_capture = true;
+
+    pthread_join(sound_capture_thread, NULL);
+    pthread_join(send_positions_thread, NULL);
+    cleanup_audio();
+    free(sound_effects);
+    free(led_positions);
+    return 0;
+}

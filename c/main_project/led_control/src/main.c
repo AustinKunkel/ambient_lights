@@ -4,6 +4,7 @@
 #include "main.h"
 #include "led_functions.h"
 #include "screen_capture.h"
+#include "sound_capture.h"
 #include "ws2811.h"
 #include "csv_control.h"
 
@@ -45,13 +46,14 @@ char *update_leds() {
             return"{\"Error\": \"Error starting screen capture!\"}";
         }
         screen_capture_task.task_status = 1;
-    } else if(led_settings.sound_react) { // TODO: Sound Effect functions
+    }
+    if(led_settings.sound_react) { // TODO: Sound Effect functions
         printf("Creating task: Sound Capture...\n");
-        // if(pthread_create(&sound_effect_task.thread_id, NULL, NULL, NULL)) {
-        //     printf("Error creating Sound Effect thread!\n");
-        //     return"{\"Error\": \"Error creating Sound Effect thread!\"}";
-        // }
-        // sound_effect_task.task_status = 1;
+        if(start_sound_capture(get_ledstring()), 1) {
+            printf("Error starting sound capture!\n");
+            return"{\"Error\": \"Error starting sound capture!\"}";
+        }
+        sound_effect_task.task_status = 1;
     } else if(led_settings.fx_num > 0) {
            printf("Creating task: Effect...\n");
         // TODO: Effect functions
@@ -79,7 +81,7 @@ void stop_current_task() {
         screen_capture_task.task_status = 0;
     }
     if(sound_effect_task.task_status == 1) {
-        pthread_join(sound_effect_task.thread_id, NULL);
+        stop_sound_capturing();
         sound_effect_task.task_status = 0;
         printf("Joined sound effect task");
     }
