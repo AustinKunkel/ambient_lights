@@ -38,7 +38,7 @@ void capture_audio_frame(int16_t *buffer, int frame_size, int *should_skip_loop)
     ts.tv_nsec = 11000000L; // ~11ms
 
     snd_pcm_sframes_t avail = snd_pcm_avail_update(capture_handle);
-    if (avail < FRAME_SIZE) {
+    if (avail < frame_size) {
         // not enough frames yet, skip this loop
         nanosleep(&ts, NULL);
         *should_skip_loop = 1;
