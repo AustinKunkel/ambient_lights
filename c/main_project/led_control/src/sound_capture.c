@@ -160,6 +160,7 @@ void *sound_effect_thread_func(void *arg) {
   ws2811_t *strip = effect_arg->strip;
 
   effect->apply_effect(effect, strip);
+  free(arg);
 }
 
 int start_sound_capture(ws2811_t *strip, int effect_index) {
@@ -184,20 +185,28 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
   }
   printf("Effect: %s, LEDs: %d to %d\n", effect.name, effect.led_start, effect.led_end);
 
-  struct sound_effect_arg arg;
-  arg.effect = &effect;
-  arg.strip = strip;
+  struct sound_effect_arg *arg = malloc(sizeof(struct sound_effect_arg));
+  if(!arg) {
+    printf("Failed to allocate memory for sound effect argument!\n");
+    free(sound_effects);
+    free(led_colors);
+    return 1;
+  }
+  arg->effect = &effect;
+  arg->strip = strip;
 
   printf("Creating capture loop thread...\n");
   stop_sound_capture = false;
   if(pthread_create(&sound_capture_thread, NULL, sound_effect_thread_func, (void *)&arg) != 0) {
     free(sound_effects);
+    free(arg);
     printf("Failed to create sound capture thread!\n"); 
     return 1;
   }
   
   if(pthread_create(&send_led_colors_thread, NULL, send_led_colors_loop, NULL) != 0) {
     stop_sound_capturing();
+    free(arg);
     printf("Failed to create send positions thread!");
     return 1;
   }
