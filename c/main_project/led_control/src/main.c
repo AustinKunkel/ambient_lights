@@ -49,6 +49,7 @@ char *update_leds() {
     }
     if(led_settings.sound_react) { // TODO: Sound Effect functions
         printf("Creating task: Sound Capture...\n");
+        set_strip_32int_color(led_settings.color);
         if(start_sound_capture(get_ledstring(), 0)) {
             printf("Error starting sound capture!\n");
             return"{\"Error\": \"Error starting sound capture!\"}";

@@ -248,21 +248,28 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
       window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
   }
 
+  static float dc = 0.0f;          // running estimate of DC offset
+  const float dc_beta = 0.001f;    // smoothing factor (tune 1e-4 .. 1e-2)
+
   while (!stop_sound_capture) {
     capture_audio_frame(buffer, FRAME_SIZE);
 
-    printf("Audio frame samples:\n");
-    for (int i = 0; i < 20; i++) { // print first 20 samples
-        printf("%d ", buffer[i]);
-    }
-    printf("\n");
-
     float sum_squares = 0.0f;
     for (int i = 0; i < FRAME_SIZE; i++) {
-      float sample = (buffer[i] / 32768.0f) * window[i]; // normalize to [-1,1]
-      sum_squares += sample * sample;
+      float s = buffer[i] / 32768.0f;    // normalize to [-1, 1]
+      dc += dc_beta * (s - dc);          // update DC offset
+      float s_ac = s - dc;               // DC-removed sample
+      float x = s_ac * window[i];        // apply Hann window
+      sum_squares += x * x;
     }
+
     float rms = sqrtf(sum_squares / FRAME_SIZE);
+
+    float rms_db = 20.0f * log10f(rms + 1e-12f);
+    if (rms_db < -50.0f) { // below -50 dBFS, treat as silence
+        rms = 0.0f;
+    }
+
     float volume = rms * effect->sensitivity;
     if (volume > 1.0f) volume = 1.0f;
     if (volume < 0.0f) volume = 0.0f;
@@ -272,13 +279,23 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
     if (brightness > 255) brightness = 255;
     if (brightness < 0) brightness = 0;
 
-    printf("Volume: %.4f, Brightness: %d\n", volume, brightness);
+    printf("RMS: %.6f  Volume: %.4f  Brightness: %d\n", rms, volume, brightness);
 
     // Set LED colors based on brightness
     for (int i = effect->led_start; i <= effect->led_end; i++) {
-      set_led_color(i, brightness, brightness, brightness); // white scaled by brightness
-      led_colors[i].color = (brightness << 16) | (brightness << 8) | brightness;
-      led_colors[i].valid = 1;
+      uint32_t color = led_colors[i].color;
+      uint8_t r = (color >> 16) & 0xFF;
+      uint8_t g = (color >> 8) & 0xFF;
+      uint8_t b = color & 0xFF;
+
+      float scale = brightness / 255.0f;
+      r = (uint8_t)(r * scale);
+      g = (uint8_t)(g * scale);
+      b = (uint8_t)(b * scale);
+
+      set_led_color(i, r, g, b);
+      led_colors[i].color = (r << 16) | (g << 8) | b;
+      led_colors[i].valid = true;
     }
 
     ws2811_render(strip);
