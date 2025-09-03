@@ -37,6 +37,8 @@ void capture_audio_frame(int16_t *buffer, int frame_size) {
     if ((err = snd_pcm_readi(capture_handle, buffer, frame_size)) != frame_size) {
         fprintf(stderr, "read from audio interface failed (%s)\n", snd_strerror(err));
         snd_pcm_prepare(capture_handle); // recover from overrun
+    } else {
+        print(f"Captured %d samples\n", err);
     }
 }
 
