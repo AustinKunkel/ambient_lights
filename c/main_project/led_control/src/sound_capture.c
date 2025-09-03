@@ -93,6 +93,7 @@ bool initialize_sound_effects() {
 
   int idx = 0;
   while (fgets(line, sizeof(line), fp) && idx < sound_effect_count) {
+    printf("Parsing line: %s", line);
     char *line_ptr = line;
     char *token;
 
