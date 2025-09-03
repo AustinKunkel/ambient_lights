@@ -159,6 +159,7 @@ void *sound_effect_thread_func(void *arg) {
   struct sound_effect *effect = effect_arg->effect;
   ws2811_t *strip = effect_arg->strip;
 
+  printf("Applying effect: %s\n", effect->name);
   effect->apply_effect(effect, strip);
   free(arg);
 }
@@ -222,6 +223,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   struct timespec ts;
   ts.tv_sec = 0;
   ts.tv_nsec = 11000000L; // ~11ms for ~90fps
+  printf("Setting up audio capture...\n");
   
   setup_audio_capture(effect->max_freq, 1); // mono
 
