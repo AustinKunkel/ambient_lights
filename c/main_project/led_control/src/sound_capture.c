@@ -256,6 +256,10 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   while (!stop_sound_capture) {
     capture_audio_frame(buffer, FRAME_SIZE, &should_skip_loop);
 
+    if(should_skip_loop) {
+      continue;
+    }
+
     printf("Captured %d samples:\n", FRAME_SIZE);
     for (int i = 0; i < 20; i++) {  // print first 20 samples for brevity
       printf("%6d ", buffer[i]);
