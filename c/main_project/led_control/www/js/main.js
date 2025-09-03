@@ -705,7 +705,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   window.updateSoundCaptureButton = function(isReacting) {
     const soundReactButton = document.getElementById('sound-react-button');
-    if(isReactingToSound) {
+    if(isReacting) {
       soundReactButton.innerHTML = 'Stop Reacting to Sound';
       soundReactButton.classList.add('stop-option');
     } else {
