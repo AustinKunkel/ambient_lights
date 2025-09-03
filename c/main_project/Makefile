@@ -10,7 +10,7 @@ WS281X_BUILD = $(WS281X_DIR)/build
 WS281X_LIB = $(WS281X_BUILD)/libws2811.a
 
 # Compiler Flags
-CFLAGS = -I$(INC_DIR) \
+CFLAGS = -g -I$(INC_DIR) \
          -I./cJSON \
          -I$(WS281X_DIR)
 
