@@ -33,27 +33,33 @@ void setup_audio_capture(unsigned int sample_rate, unsigned int channels) {
  * @param frame_size size of the frame (ex: 256 for 512 samples)
  */
 void capture_audio_frame(int16_t *buffer, int frame_size, int *should_skip_loop) {
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 11000000L; // ~11ms
-
-    snd_pcm_sframes_t avail = snd_pcm_avail_update(capture_handle);
-    if (avail < frame_size) {
-        // not enough frames yet, skip this loop
-        nanosleep(&ts, NULL);
-        *should_skip_loop = 1;
-        return;
-    }
     int err;
-    if ((err = snd_pcm_readi(capture_handle, buffer, frame_size)) != frame_size) {
-        fprintf(stderr, "read from audio interface failed (%s)\n", snd_strerror(err));
+
+    // Read exactly frame_size frames; will block until available
+    err = snd_pcm_readi(capture_handle, buffer, frame_size);
+
+    if (err == -EPIPE) {
+        // Buffer overrun
+        fprintf(stderr, "Buffer overrun occurred\n");
         snd_pcm_prepare(capture_handle); // recover from overrun
         *should_skip_loop = 1;
         return;
-    } else {
-        *should_skip_loop = 0;
-        printf("Captured %d samples\n", err);
+    } else if (err < 0) {
+        // Other read error
+        fprintf(stderr, "Read from audio interface failed (%s)\n", snd_strerror(err));
+        snd_pcm_prepare(capture_handle);
+        *should_skip_loop = 1;
+        return;
+    } else if (err != frame_size) {
+        // Partial read (rare in blocking mode)
+        fprintf(stderr, "Short read: expected %d frames, got %d\n", frame_size, err);
+        *should_skip_loop = 1;
+        return;
     }
+
+    // Success
+    *should_skip_loop = 0;
+    printf("Captured %d frames\n", err);
 }
 
 void cleanup_audio() {
