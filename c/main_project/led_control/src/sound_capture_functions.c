@@ -32,12 +32,26 @@ void setup_audio_capture(unsigned int sample_rate, unsigned int channels) {
  * @param buffer Pre-allocated buffer to hold audio samples
  * @param frame_size size of the frame (ex: 256 for 512 samples)
  */
-void capture_audio_frame(int16_t *buffer, int frame_size) {
+void capture_audio_frame(int16_t *buffer, int frame_size, int *should_skip_loop) {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 11000000L; // ~11ms
+
+    snd_pcm_sframes_t avail = snd_pcm_avail_update(capture_handle);
+    if (avail < FRAME_SIZE) {
+        // not enough frames yet, skip this loop
+        nanosleep(&ts, NULL);
+        *should_skip_loop = 1;
+        return;
+    }
     int err;
     if ((err = snd_pcm_readi(capture_handle, buffer, frame_size)) != frame_size) {
         fprintf(stderr, "read from audio interface failed (%s)\n", snd_strerror(err));
         snd_pcm_prepare(capture_handle); // recover from overrun
+        *should_skip_loop = 1;
+        return;
     } else {
+        *should_skip_loop = 0;
         printf("Captured %d samples\n", err);
     }
 }

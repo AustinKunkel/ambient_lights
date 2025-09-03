@@ -251,8 +251,10 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   static float dc = 0.0f;          // running estimate of DC offset
   const float dc_beta = 0.001f;    // smoothing factor (tune 1e-4 .. 1e-2)
 
+  int should_skip_loop = 0;
+
   while (!stop_sound_capture) {
-    capture_audio_frame(buffer, FRAME_SIZE);
+    capture_audio_frame(buffer, FRAME_SIZE, &should_skip_loop);
 
     printf("Captured %d samples:\n", FRAME_SIZE);
     for (int i = 0; i < 20; i++) {  // print first 20 samples for brevity
