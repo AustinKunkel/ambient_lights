@@ -12,11 +12,15 @@
 
 #define SOUND_EFFECTS_FILENAME  "led_control/data/sound_effects.csv"
 #define FRAME_SIZE              256
+#ifndef M_PI
+#define M_PI                    3.14159265358979323846
+#endif
 
 volatile bool stop_sound_capture = false;
+int LED_COUNT = 206;  // Number of LEDs
 
-p_thread_t sound_capture_thread;
-p_thread_t send_positions_thread;
+pthread_t sound_capture_thread;
+pthread_t send_positions_thread;
 
 typedef struct sound_effect sound_effect;
 
@@ -51,7 +55,7 @@ void assign_effect_function(sound_effect *effect) {
 }
 
 bool initialize_sound_effects() {
-  FILE *fp = fopen(filename, "r");
+  FILE *fp = fopen(SOUND_EFFECTS_FILENAME, "r");
   if (!fp) {
     perror("Unable to open sound_effects.csv");
     return false;
