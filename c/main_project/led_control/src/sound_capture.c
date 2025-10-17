@@ -107,7 +107,7 @@ void assign_effect_function(sound_effect *effect) {
       break;
     default:
       // fallback to melbank
-      effect->apply_effect = brightness_on_volume_effect;
+      effect->apply_effect = NULL;
       effect->process_frame = process_melbank_frame;
   }
 }

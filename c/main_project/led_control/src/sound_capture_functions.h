@@ -25,3 +25,6 @@ float *create_mel_filterbank(int n_filters, int n_bins, int fft_size, float samp
 
 // Free mel filterbank
 void free_mel_filterbank(float *filters);
+
+// Compute mel band energies given magnitude bins and a flattened filterbank
+void compute_mel_energies(const float *mag_bins, int n_bins, const float *filters, int n_filters, float *out_energies);
