@@ -270,8 +270,8 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   setup_audio_capture(48000, 1);
 
   // Raised cosine coefficients
-  float filter_coeffs[FILTER_TAPS];
-  raised_cosine_filter(filter_coeffs, FILTER_TAPS);
+  // float filter_coeffs[FILTER_TAPS];
+  // raised_cosine_filter(filter_coeffs, FILTER_TAPS);
 
   // Hann window for RMS calculation
   float window[FRAME_SIZE];
@@ -280,11 +280,12 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   }
 
   int16_t buffer[FRAME_SIZE];
-  float filtered[FRAME_SIZE];
+  // float filtered[FRAME_SIZE];
   float dc = 0.0f;
   float brightness_smooth = 0.0f;
 
-  struct timespec ts = {0, 11 * 1000 * 1000}; // 11 ms delay
+  int start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
 
   while (!stop_sound_capture) {
     int skip = 0;
@@ -298,14 +299,13 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
     }
 
     // Step 2: Apply raised cosine filter (low-pass)
-    apply_filter(samples, filtered, FRAME_SIZE, filter_coeffs, FILTER_TAPS);
+    // apply_filter(samples, filtered, FRAME_SIZE, filter_coeffs, FILTER_TAPS);
 
     // Step 3: Compute RMS with DC Offset removal & windowing
     float rms = compute_rms(buffer, FRAME_SIZE, &dc, window);
 
-    // Step 4: Convert RMS -> brightness ratio
-    float brightness = rms * effect->sensitivity;
-    if (brightness > 1.0f) brightness = 1.0f; // max brightness at 1
+    // Step 4: Convert RMS -> brightness ratio and max at 1.0
+    float brightness = fminf(rms * effect->sensitivity, 1.0f);
 
     // Step 5: Smooth brightness over frames
     brightness_smooth = smooth_brightness_decay(brightness_smooth, brightness, 0.3f, 0.05f);
@@ -319,7 +319,13 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
 
     ws2811_render(strip);
 
-    nanosleep(&ts, NULL); // Sleep for a short time
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long elapsed_ns = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+    long remaining_ns = 11e6 - elapsed_ns; // 11 ms ~90fps
+    if (remaining_ns > 0) {
+        struct timespec ts = {0, remaining_ns};
+        nanosleep(&ts, NULL);
+    }
   }
 }
 
