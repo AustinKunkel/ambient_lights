@@ -284,10 +284,11 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   float dc = 0.0f;
   float brightness_smooth = 0.0f;
 
-  int start, end;
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  struct timespec start, end;
 
   while (!stop_sound_capture) {
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    
     int skip = 0;
     capture_audio_frame(buffer, FRAME_SIZE, &skip);
     if (skip) continue;
