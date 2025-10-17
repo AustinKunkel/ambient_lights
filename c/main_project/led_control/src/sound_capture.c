@@ -20,8 +20,34 @@ volatile bool stop_sound_capture = false;
 
 pthread_t sound_capture_thread;
 pthread_t send_led_colors_thread;
+pthread_t audio_capture_thread;
+pthread_t audio_processing_thread;
+pthread_t renderer_thread;
+
+// Simple blocking ring buffer for audio frames (producer: capture, consumer: processing)
+static int16_t *rb_data = NULL; // contiguous storage: capacity * FRAME_SIZE
+static int rb_capacity = 0; // number of frames
+static int rb_frame_size = 0;
+static int rb_head = 0;
+static int rb_tail = 0;
+static int rb_count = 0;
+static pthread_mutex_t rb_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t rb_not_empty = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t rb_not_full = PTHREAD_COND_INITIALIZER;
+
+// Strip lock to protect writes/reads to ws2811_t led buffer
+static pthread_mutex_t strip_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static ws2811_t *g_strip_ptr = NULL;
+static sound_effect *g_effect_ptr = NULL;
+
+static float window[FRAME_SIZE];
+for (int i = 0; i < FRAME_SIZE; i++) {
+    window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
+}
 
 typedef struct sound_effect sound_effect;
+typedef void (*effect_frame_fn)(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc);
 
 typedef void (*effect_fn)(struct sound_effect *effect, ws2811_t *strip);
 
@@ -33,8 +59,8 @@ struct sound_effect {
   int led_start; // starting led index
   int led_end; // ending led index
   int effect_num; // The number for the effect
-
-  effect_fn apply_effect; // function pointer to effect function
+  effect_fn apply_effect; // legacy function pointer (not used by frame-based pipeline)
+  effect_frame_fn process_frame; // called per audio frame by processing thread
 };
 
 sound_effect *sound_effects;
@@ -47,9 +73,12 @@ void assign_effect_function(sound_effect *effect) {
   switch(effect->effect_num) {
     case 1:
       effect->apply_effect = brightness_on_volume_effect;
+      // assign per-frame processor
+      effect->process_frame = process_brightness_on_volume_frame;
       break;
     default:
       effect->apply_effect = brightness_on_volume_effect;
+      effect->process_frame = NULL;
   }
 }
 
@@ -165,6 +194,9 @@ struct sound_effect_arg {
 void *sound_effect_thread_func(void *arg) {
   struct sound_effect_arg *effect_arg = (struct sound_effect_arg *)arg;
 
+  /* per-effect runtime state */
+  float dc; // DC estimate for this effect
+  float brightness_smooth; // smoothed brightness state
   struct sound_effect *effect = effect_arg->effect;
   ws2811_t *strip = effect_arg->strip;
 
@@ -219,20 +251,175 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
 
   printf("Creating capture loop thread...\n");
   stop_sound_capture = false;
-  if(pthread_create(&sound_capture_thread, NULL, sound_effect_thread_func, (void *)arg) != 0) {
+  // free the temporary arg; we'll use global pointers for threads
+  free(arg);
+
+  // Set globals for processing threads
+  g_strip_ptr = strip;
+  g_effect_ptr = &sound_effects[effect_index];
+
+  // initialize ring buffer: capacity 16 frames (tunable)
+  if (rb_init(16, FRAME_SIZE) != 0) {
+    printf("Failed to init audio ring buffer\n");
     free(sound_effects);
-    free(arg);
-    printf("Failed to create sound capture thread!\n"); 
-    return 1;
-  }
-  
-  if(pthread_create(&send_led_colors_thread, NULL, send_led_colors_loop, NULL) != 0) {
-    stop_sound_capturing();
-    free(arg);
-    printf("Failed to create send positions thread!");
+    free(led_colors);
     return 1;
   }
 
+  // start threads: capture, processing, renderer, and send_led_colors
+  if (pthread_create(&audio_capture_thread, NULL, audio_capture_thread_fn, NULL) != 0) {
+    printf("Failed to create audio capture thread\n");
+    rb_free();
+    free(sound_effects);
+    free(led_colors);
+    return 1;
+  }
+
+  if (pthread_create(&audio_processing_thread, NULL, audio_processing_thread_fn, (void *)strip) != 0) {
+    printf("Failed to create audio processing thread\n");
+    stop_sound_capturing();
+    return 1;
+  }
+
+  if (pthread_create(&renderer_thread, NULL, renderer_thread_fn, (void *)strip) != 0) {
+    printf("Failed to create renderer thread\n");
+    stop_sound_capturing();
+    return 1;
+  }
+
+  if(pthread_create(&send_led_colors_thread, NULL, send_led_colors_loop, NULL) != 0) {
+    stop_sound_capturing();
+    printf("Failed to create send positions thread!\n");
+    return 1;
+  }
+
+  return 0;
+  // Keep going: brightness_on_volume_effect will create the needed audio threads
+
+}
+
+// ---- Ring buffer helpers ----
+static int rb_init(int capacity, int frame_size) {
+  rb_capacity = capacity;
+  rb_frame_size = frame_size;
+  rb_head = rb_tail = rb_count = 0;
+  rb_data = malloc(sizeof(int16_t) * capacity * frame_size);
+  if (!rb_data) return -1;
+  return 0;
+}
+
+static void rb_free() {
+  if (rb_data) free(rb_data);
+  rb_data = NULL;
+  rb_capacity = rb_frame_size = rb_head = rb_tail = rb_count = 0;
+}
+
+// push blocks if full
+static void rb_push(const int16_t *frame) {
+  pthread_mutex_lock(&rb_mutex);
+  while (rb_count == rb_capacity && !stop_sound_capture) {
+    pthread_cond_wait(&rb_not_full, &rb_mutex);
+  }
+  if (stop_sound_capture) {
+    pthread_mutex_unlock(&rb_mutex);
+    return;
+  }
+  int base = rb_tail * rb_frame_size;
+  memcpy(&rb_data[base], frame, sizeof(int16_t) * rb_frame_size);
+  rb_tail = (rb_tail + 1) % rb_capacity;
+  rb_count++;
+  pthread_cond_signal(&rb_not_empty);
+  pthread_mutex_unlock(&rb_mutex);
+}
+
+// pop blocks if empty; returns 0 on success, -1 if stopping
+static int rb_pop(int16_t *out_frame) {
+  pthread_mutex_lock(&rb_mutex);
+  while (rb_count == 0 && !stop_sound_capture) {
+    pthread_cond_wait(&rb_not_empty, &rb_mutex);
+  }
+  if (rb_count == 0 && stop_sound_capture) {
+    pthread_mutex_unlock(&rb_mutex);
+    return -1;
+  }
+  int base = rb_head * rb_frame_size;
+  memcpy(out_frame, &rb_data[base], sizeof(int16_t) * rb_frame_size);
+  rb_head = (rb_head + 1) % rb_capacity;
+  rb_count--;
+  pthread_cond_signal(&rb_not_full);
+  pthread_mutex_unlock(&rb_mutex);
+  return 0;
+}
+
+// ---- Audio capture thread ----
+static void *audio_capture_thread_fn(void *arg) {
+  (void)arg;
+  // Setup audio here so capture happens inside this thread
+  setup_audio_capture(48000, 1);
+
+  int16_t local_frame[FRAME_SIZE];
+  int skip = 0;
+  while (!stop_sound_capture) {
+    capture_audio_frame(local_frame, FRAME_SIZE, &skip);
+    if (skip) continue;
+    rb_push(local_frame);
+  }
+
+  return NULL;
+}
+
+// ---- Audio processing thread ----
+static void *audio_processing_thread_fn(void *arg) {
+  ws2811_t *strip_local = (ws2811_t *)arg;
+  int16_t local_frame[FRAME_SIZE];
+  // use per-effect state (dc, brightness_smooth) stored in g_effect_ptr
+  if (g_effect_ptr) {
+    g_effect_ptr->dc = 0.0f;
+    g_effect_ptr->brightness_smooth = 0.0f;
+  }
+
+  // Precompute Hann window once
+  float window[FRAME_SIZE];
+  for (int i = 0; i < FRAME_SIZE; i++) {
+    window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
+  }
+
+  while (!stop_sound_capture) {
+    if (rb_pop(local_frame) != 0) break; // stopping
+
+    // If effect provides a per-frame processor, call it.
+    if (g_effect_ptr && g_effect_ptr->process_frame) {
+      g_effect_ptr->process_frame(g_effect_ptr, strip_local, local_frame, window, &g_effect_ptr->dc);
+    } else {
+      // Fallback: basic brightness-on-volume processing
+      float rms = compute_rms(local_frame, FRAME_SIZE, &g_effect_ptr->dc, window);
+      float brightness = fminf(rms * g_effect_ptr->sensitivity, 1.0f);
+      if (brightness < 0.0f) brightness = 0.0f;
+      g_effect_ptr->brightness_smooth = smooth_brightness_decay(g_effect_ptr->brightness_smooth, brightness, 0.3f, 0.05f);
+      pthread_mutex_lock(&strip_mutex);
+      apply_brightness_ratios_to_leds(strip_local, g_effect_ptr->led_start, g_effect_ptr->led_end, g_effect_ptr->brightness_smooth);
+      pthread_mutex_unlock(&strip_mutex);
+    }
+  }
+
+  return NULL;
+}
+
+// ---- Renderer thread: calls ws2811_render at fixed FPS ----
+static void *renderer_thread_fn(void *arg) {
+  ws2811_t *strip_local = (ws2811_t *)arg;
+  const long frame_ns = 16666667L; // ~60Hz
+  struct timespec ts;
+  ts.tv_sec = 0;
+  ts.tv_nsec = frame_ns;
+
+  while (!stop_sound_capture) {
+    pthread_mutex_lock(&strip_mutex);
+    ws2811_render(strip_local);
+    pthread_mutex_unlock(&strip_mutex);
+    nanosleep(&ts, NULL);
+  }
+  return NULL;
 }
 
 /**
@@ -274,10 +461,6 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   // raised_cosine_filter(filter_coeffs, FILTER_TAPS);
 
   // Hann window for RMS calculation
-  float window[FRAME_SIZE];
-  for (int i = 0; i < FRAME_SIZE; i++) {
-      window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
-  }
 
   int16_t buffer[FRAME_SIZE];
   // float filtered[FRAME_SIZE];
@@ -288,7 +471,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
 
   while (!stop_sound_capture) {
     clock_gettime(CLOCK_MONOTONIC, &start);
-    
+
     int skip = 0;
     capture_audio_frame(buffer, FRAME_SIZE, &skip);
     if (skip) continue;
@@ -334,10 +517,41 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
 int stop_sound_capturing() {
     stop_sound_capture = true;
 
-    pthread_join(sound_capture_thread, NULL);
-    pthread_join(send_led_colors_thread, NULL);
-    cleanup_audio();
-    free(sound_effects);
-    free(led_colors);
-    return 0;
+  // Wake any waiting threads on ring buffer
+  pthread_mutex_lock(&rb_mutex);
+  pthread_cond_broadcast(&rb_not_empty);
+  pthread_cond_broadcast(&rb_not_full);
+  pthread_mutex_unlock(&rb_mutex);
+
+  // Join threads if they were created
+  pthread_join(audio_capture_thread, NULL);
+  pthread_join(audio_processing_thread, NULL);
+  pthread_join(renderer_thread, NULL);
+  pthread_join(send_led_colors_thread, NULL);
+
+  cleanup_audio();
+
+  rb_free();
+
+  free(sound_effects);
+  free(led_colors);
+  return 0;
+}
+
+/**
+ * Per-frame processor for brightness-on-volume effect.
+ * This is called from the audio processing thread for each popped frame.
+ */
+void process_brightness_on_volume_frame(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc) {
+  // Compute RMS
+  float rms = compute_rms(frame, FRAME_SIZE, dc, window);
+  float brightness = fminf(rms * effect->sensitivity, 1.0f);
+  if (brightness < 0.0f) brightness = 0.0f;
+
+  effect->brightness_smooth = smooth_brightness_decay(effect->brightness_smooth, brightness, 0.3f, 0.05f);
+
+  // Apply to LEDs
+  pthread_mutex_lock(&strip_mutex);
+  apply_brightness_ratios_to_leds(strip, effect->led_start, effect->led_end, effect->brightness_smooth);
+  pthread_mutex_unlock(&strip_mutex);
 }
