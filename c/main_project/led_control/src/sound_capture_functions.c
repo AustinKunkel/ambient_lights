@@ -1,10 +1,13 @@
 #include "sound_capture_functions.h"
 #include <alsa/asoundlib.h>
+#include <math.h>
+#include <stdlib.h>
 
 snd_pcm_t *capture_handle;
 snd_pcm_hw_params_t *hw_params;
 
-#define DEVICE "plughw:CARD=Video,DEV=0"  // Default capture device
+#define DEVICE          "plughw:CARD=Video,DEV=0"  // Default capture device
+
 
 void setup_audio_capture(unsigned int sample_rate, unsigned int channels) {
     int err;
@@ -31,6 +34,7 @@ void setup_audio_capture(unsigned int sample_rate, unsigned int channels) {
  * 
  * @param buffer Pre-allocated buffer to hold audio samples
  * @param frame_size size of the frame (ex: 256 for 512 samples)
+ * @param should_skip_loop set to true if read error or incorrect frame
  */
 void capture_audio_frame(int16_t *buffer, int frame_size, int *should_skip_loop) {
     int err;
@@ -66,3 +70,66 @@ void cleanup_audio() {
     snd_pcm_close(capture_handle);
     snd_pcm_hw_params_free(hw_params);
 }
+
+
+/***** Sound Processing Related Functions *****/
+
+/**
+ * Handles Normalization, DC Offset filtering, Hann window, and RMS computation
+*/
+float compute_rms(const int16_t *buffer, int frame_size, float *dc, const float *window) {
+    const float dc_beta = 0.001f;
+    float sum_squares = 0.0f;
+
+    for (int i = 0; i < frame_size; i++) {
+        float s = buffer[i] / 32768.0f;
+        *dc += dc_beta * (s - *dc);
+        float s_ac = s - *dc;
+        float x = s_ac * window[i];
+        sum_squares += x * x;
+    }
+
+    float rms = sqrtf(sum_squares / frame_size);
+    if (isnan(rms) || isinf(rms)) rms = 0.0f;
+    return rms;
+}
+
+/**
+ * Simple low pass filter
+ */
+void smooth_audio_frame(float *samples, int frame_size, float alpha) {
+    // alpha: 0.05 - 0.3 (smaller = more smoothing)
+    for (int i = 1; i < frame_size; i++) {
+        samples[i] = alpha * samples[i] + (1.0f - alpha) * samples[i - 1];
+    }
+}
+
+/**
+ * A raised cosine filter
+ */
+void raised_cosine_filter(float *coeffs, int N) {
+    for (int n = 0; n < N; n++) {
+        coeffs[n] = 0.5f * (1.0f - cosf((2.0f * M_PI * n) / (N - 1)));
+    }
+
+    // Normalize coefficients so sum = 1
+    float sum = 0.0f;
+    for (int n = 0; n < N; n++) sum += coeffs[n];
+    for (int n = 0; n < N; n++) coeffs[n] /= sum;
+}
+
+/**
+ * Apply the filter to the samples (simple convolution)
+ */
+void apply_filter(const float *input, float *output, int frame_size, const float *coeffs, int N) {
+    for (int i = 0; i < frame_size; i++) {
+        float acc = 0.0f;
+        for (int k = 0; k < N; k++) {
+            int j = i - k;
+            if (j >= 0) acc += coeffs[k] * input[j];
+        }
+        output[i] = acc;
+    }
+}
+
+

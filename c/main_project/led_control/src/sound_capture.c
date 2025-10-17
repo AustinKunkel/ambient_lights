@@ -235,96 +235,90 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
 
 }
 
+/**
+ * Applys different smoothing for rising or falling brightness levels
+ */
+float smooth_brightness_decay(float current_brightness, float target_brightness, float rise_alpha, float fall_alpha) {
+    if (target_brightness > current_brightness) {
+        // Rising quickly
+        return rise_alpha * target_brightness + (1.0f - rise_alpha) * current_brightness;
+    } else {
+        // Falling slowly
+        return fall_alpha * target_brightness + (1.0f - fall_alpha) * current_brightness;
+    }
+}
+
+void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float brightness) {
+    int value = (int)(brightness * 255.0f);
+    for (int i = start; i <= end; i++) {
+        uint32_t base = led_colors[i].base_color;
+        uint8_t r = ((base >> 16) & 0xFF) * brightness;
+        uint8_t g = ((base >> 8) & 0xFF) * brightness;
+        uint8_t b = (base & 0xFF) * brightness;
+        set_led_color(i, r, g, b);
+        led_colors[i].color = (r << 16) | (g << 8) | b;
+        led_colors[i].valid = true;
+    }
+}
+
 void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
   // setup audio capture
   // get volume level
   // set brightness based on volume level
   // apply to leds from led_start to led_end
-
-  struct timespec ts;
-  ts.tv_sec = 0;
-  ts.tv_nsec = 11000000L; // ~11ms for ~90fps
   printf("Setting up audio capture...\n");
-  
   setup_audio_capture(48000, 1);
 
-  int16_t buffer[FRAME_SIZE]; // stack allocation is fine for 256
+  // Raised cosine coefficients
+  float filter_coeffs[FILTER_TAPS];
+  raised_cosine_filter(filter_coeffs, FILTER_TAPS);
 
+  // Hann window for RMS calculation
   float window[FRAME_SIZE];
   for (int i = 0; i < FRAME_SIZE; i++) {
       window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
   }
 
-  static float dc = 0.0f;          // running estimate of DC offset
-  const float dc_beta = 0.001f;    // smoothing factor (tune 1e-4 .. 1e-2)
+  int16_t buffer[FRAME_SIZE];
+  float filtered[FRAME_SIZE];
+  float dc = 0.0f;
+  float brightness_smooth = 0.0f;
 
-  int should_skip_loop = 0;
+  struct timespec ts = {0, 11 * 1000 * 1000}; // 11 ms delay
 
   while (!stop_sound_capture) {
-    capture_audio_frame(buffer, FRAME_SIZE, &should_skip_loop);
+    int skip = 0;
+    capture_audio_frame(buffer, FRAME_SIZE, &skip);
+    if (skip) continue;
 
-    if(should_skip_loop) {
-      continue;
+    // Step 1: Normalize and convert buffer to float
+    float samples[FRAME_SIZE];
+    for(int i = 0; i < FRAME_SIZE; i++) {
+      samples[i] = buffer[i] / 32768.0f;
     }
 
-    printf("Captured %d samples:\n", FRAME_SIZE);
-    for (int i = 0; i < 20; i++) {  // print first 20 samples for brevity
-      printf("%6d ", buffer[i]);
-    }
-    printf("\n");
+    // Step 2: Apply raised cosine filter (low-pass)
+    apply_filter(samples, filtered, FRAME_SIZE, filter_coeffs, FILTER_TAPS);
 
-    float sum_squares = 0.0f;
-    for (int i = 0; i < FRAME_SIZE; i++) {
-      float s = buffer[i] / 32768.0f;    // normalize to [-1, 1]
-      dc += dc_beta * (s - dc);          // update DC offset
-      float s_ac = s - dc;               // DC-removed sample
-      float x = s_ac * window[i];        // apply Hann window
-      sum_squares += x * x;
-    }
+    // Step 3: Compute RMS with DC Offset removal & windowing
+    float rms = compute_rms(buffer, FRAME_SIZE, &dc, window);
 
-    float rms = sqrtf(sum_squares / FRAME_SIZE);
-    if (isnan(rms) || isinf(rms)) {
-      rms = 0.0f;
-    }
+    // Step 4: Convert RMS -> brightness ratio
+    float brightness = rms * effect->sensitivity;
+    if (brightness > 1.0f) brightness = 1.0f; // max brightness at 1
 
-    float rms_db = 20.0f * log10f(rms + 1e-12f);
-    if (rms_db < -50.0f) { // below -50 dBFS, treat as silence
-        rms = 0.0f;
-    }
+    // Step 5: Smooth brightness over frames
+    brightness_smooth = smooth_brightness_decay(brightness_smooth, brightness, 0.3f, 0.05f);
 
+    // Step 6: Apply brightness to LEDs
     float volume = rms * effect->sensitivity;
     if (volume > 1.0f) volume = 1.0f;
     if (volume < 0.0f) volume = 0.0f;
-
-    // Map volume to brightness (0-255)
-    int brightness = (int)(volume * 255);
-    if (brightness > 255) brightness = 255;
-    if (brightness < 0) brightness = 0;
-
-    printf("RMS: %.6f  Volume: %.4f  Brightness: %d\n", rms, volume, brightness);
-
-    // Set LED colors based on brightness
-    for (int i = effect->led_start; i <= effect->led_end; i++) {
-      uint32_t color = led_colors[i].base_color;
-      uint8_t r = (color >> 16) & 0xFF;
-      uint8_t g = (color >> 8) & 0xFF;
-      uint8_t b = color & 0xFF;
-
-      float scale = brightness / 255.0f;
-      r = (uint8_t)(r * scale);
-      g = (uint8_t)(g * scale);
-      b = (uint8_t)(b * scale);
-
-      set_led_color(i, r, g, b);
-      led_colors[i].color = (r << 16) | (g << 8) | b;
-      led_colors[i].valid = true;
-    }
 
     ws2811_render(strip);
 
     nanosleep(&ts, NULL); // Sleep for a short time
   }
-
 }
 
 
