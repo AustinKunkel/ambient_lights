@@ -83,6 +83,9 @@ struct sound_effect {
   float *mel_filters; // n_mel_filters * n_bins
   int n_mel_filters;
   float *mel_energies; // n_mel_filters
+  // runtime noise-floor and smoothed bands for mel processing
+  float *mel_floor; // slow estimate of background energy per band
+  float *mel_smooth; // attack/release smoothed band energies
 };
 
 sound_effect *sound_effects;
@@ -324,9 +327,13 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
   sound_effects[effect_index].mel_filters = create_mel_filterbank(n_mel, n_bins, FRAME_SIZE, 48000.0f);
   if (sound_effects[effect_index].mel_filters) {
     sound_effects[effect_index].mel_energies = calloc(n_mel, sizeof(float));
+    sound_effects[effect_index].mel_floor = calloc(n_mel, sizeof(float));
+    sound_effects[effect_index].mel_smooth = calloc(n_mel, sizeof(float));
   } else {
     sound_effects[effect_index].n_mel_filters = 0;
     sound_effects[effect_index].mel_energies = NULL;
+    sound_effects[effect_index].mel_floor = NULL;
+    sound_effects[effect_index].mel_smooth = NULL;
   }
 
   // initialize ring buffer: capacity 16 frames (tunable)
@@ -587,6 +594,8 @@ int stop_sound_capturing() {
   for (int i = 0; i < sound_effect_count; i++) {
     if (sound_effects[i].mel_filters) free_mel_filterbank(sound_effects[i].mel_filters);
     if (sound_effects[i].mel_energies) free(sound_effects[i].mel_energies);
+    if (sound_effects[i].mel_floor) free(sound_effects[i].mel_floor);
+    if (sound_effects[i].mel_smooth) free(sound_effects[i].mel_smooth);
   }
 
     // Free LED double buffers
@@ -698,6 +707,25 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
         printf("[melbank] led %d filter=%d energy=%.6g db=%.2f brightness=%.3f rgbf=(%.3f,%.3f,%.3f)\n",
                led_start + i, filter_index, energy, db, brightness, rf, gf, bf);
       }
+    }
+  }
+
+  // Reduce baseline via a slow noise-floor estimate and apply attack/release smoothing per band
+  float floor_alpha = 0.005f; // very slow floor update (lower = slower)
+  float attack_alpha = 0.25f;
+  float release_alpha = 0.05f;
+  for (int f = 0; f < effect->n_mel_filters; f++) {
+    float cur = effect->mel_energies[f];
+    // update slow floor
+    effect->mel_floor[f] = floor_alpha * cur + (1.0f - floor_alpha) * effect->mel_floor[f];
+    // subtract floor, clamp
+    float val = cur - effect->mel_floor[f];
+    if (val < 0.0f) val = 0.0f;
+    // attack/release smoothing into mel_smooth
+    if (val > effect->mel_smooth[f]) {
+      effect->mel_smooth[f] = attack_alpha * val + (1.0f - attack_alpha) * effect->mel_smooth[f];
+    } else {
+      effect->mel_smooth[f] = release_alpha * val + (1.0f - release_alpha) * effect->mel_smooth[f];
     }
   }
 
