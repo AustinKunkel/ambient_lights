@@ -160,6 +160,22 @@ bool initialize_sound_effects() {
     sound_effects[idx].effect_num = token ? atoi(token) : 1;
 
     assign_effect_function(&sound_effects[idx]);
+
+    // compute dt = frame_duration:
+    float sample_rate = 48000.0f;        // must match the rate in setup_audio_capture()
+    float dt = (float)FRAME_SIZE / sample_rate; // frame duration in seconds
+    float tau = 0.05f;                   // desired time constant (50 ms). Tweak 0.03 - 0.1
+    float alpha = 1.0f - expf(-dt / tau);
+
+    // clamp alpha just in case
+    if (alpha < 0.0f) alpha = 0.0f;
+    if (alpha > 1.0f) alpha = 1.0f;
+
+    sound_effects[idx].rms_alpha = alpha;
+    sound_effects[idx].smoothed_rms_sq = 0.0f;
+    sound_effects[idx].dc = 0.0f;
+    sound_effects[idx].brightness_smooth = 0.0f;
+
     idx++;
 
     // Print each token for debugging
@@ -282,13 +298,6 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     free(led_colors);
     return 1;
   }
-
-  // compute dt = frame_duration:
-  float sample_rate = 48000.0f;
-  float dt = (float)FRAME_SIZE / sample_rate;
-  float tau = 0.05f; // 50 ms time constant (tweak 0.03 - 0.1)
-  sound_effects[i].rms_alpha = 1.0f - expf(-dt / tau);
-  sound_effects[i].smoothed_rms_sq = 0.0f;
 
   // start threads: capture, processing, renderer, and send_led_colors
   if (pthread_create(&audio_capture_thread, NULL, audio_capture_thread_fn, NULL) != 0) {
