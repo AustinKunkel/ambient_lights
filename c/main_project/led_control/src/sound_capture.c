@@ -71,6 +71,8 @@ struct sound_effect {
   /* per-effect runtime state */
   float dc; // DC estimate for this effect
   float brightness_smooth; // smoothed brightness state
+  float smoothed_rms_sq;
+  float rms_alpha; // smoothing weight computed from tau
 };
 
 sound_effect *sound_effects;
@@ -280,6 +282,13 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     free(led_colors);
     return 1;
   }
+
+  // compute dt = frame_duration:
+  float sample_rate = 48000.0f;
+  float dt = (float)FRAME_SIZE / sample_rate;
+  float tau = 0.05f; // 50 ms time constant (tweak 0.03 - 0.1)
+  sound_effects[i].rms_alpha = 1.0f - expf(-dt / tau);
+  sound_effects[i].smoothed_rms_sq = 0.0f;
 
   // start threads: capture, processing, renderer, and send_led_colors
   if (pthread_create(&audio_capture_thread, NULL, audio_capture_thread_fn, NULL) != 0) {
@@ -558,12 +567,23 @@ int stop_sound_capturing() {
  * This is called from the audio processing thread for each popped frame.
  */
 void process_brightness_on_volume_frame(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc) {
-  // Compute RMS
-  float rms = compute_rms(frame, FRAME_SIZE, dc, window);
-  float brightness = fminf(rms * effect->sensitivity, 1.0f);
-  if (brightness < 0.0f) brightness = 0.0f;
+  float rms = compute_rms(frame, FRAME_SIZE, &effect->dc, window);
+  // square the RMS to get power
+  float rms_sq = rms * rms;
 
-  effect->brightness_smooth = smooth_brightness_decay(effect->brightness_smooth, brightness, 0.3f, 0.05f);
+  // EMA on power
+  effect->smoothed_rms_sq = effect->rms_alpha * rms_sq + (1.0f - effect->rms_alpha) * effect->smoothed_rms_sq;
+
+  // brightness = sqrt(smoothed_power) * sensitivity
+  float brightness = sqrtf(effect->smoothed_rms_sq) * effect->sensitivity;
+  if (brightness > 1.0f) brightness = 1.0f;
+
+  // optional: small-deadzone to avoid noise floor flicker
+  const float noise_floor = 0.001f; // tune
+  if (brightness < noise_floor) brightness = 0.0f;
+
+  // apply attack/release smoothing as you already do
+  effect->brightness_smooth = smooth_brightness_decay(effect->brightness_smooth, brightness, .15, .05);
 
   // Apply to LEDs
   pthread_mutex_lock(&strip_mutex);
