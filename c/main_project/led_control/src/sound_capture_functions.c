@@ -63,7 +63,7 @@ void capture_audio_frame(int16_t *buffer, int frame_size, int *should_skip_loop)
 
     // Success
     *should_skip_loop = 0;
-    printf("Captured %d frames\n", err);
+    //printf("Captured %d frames\n", err);
 }
 
 void cleanup_audio() {

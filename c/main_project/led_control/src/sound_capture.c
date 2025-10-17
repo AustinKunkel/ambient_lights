@@ -315,6 +315,8 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
     if (volume > 1.0f) volume = 1.0f;
     if (volume < 0.0f) volume = 0.0f;
 
+    apply_brightness_ratios_to_leds(strip, effect->led_start, effect->led_end, brightness_smooth);
+
     ws2811_render(strip);
 
     nanosleep(&ts, NULL); // Sleep for a short time
