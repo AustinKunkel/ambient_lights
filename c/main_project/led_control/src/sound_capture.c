@@ -660,6 +660,42 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     effect->mel_energies[f] = effect->rms_alpha * e + (1.0f - effect->rms_alpha) * effect->mel_energies[f];
   }
 
+  // Debug: periodically print a small sample of mel energies and the mapped LED values
+  {
+    static int dbg_frames = 0;
+    dbg_frames++;
+    if ((dbg_frames & 0xF) == 0) { // every 16 frames
+      int to_print = effect->n_mel_filters < 8 ? effect->n_mel_filters : 8;
+      printf("[melbank] effect=%s n_filters=%d led_range=%d\n", effect->name, effect->n_mel_filters, led_count);
+      printf("[melbank] energies:");
+      for (int f = 0; f < to_print; f++) printf(" %.6f", effect->mel_energies[f]);
+      if (effect->n_mel_filters > to_print) printf(" ...");
+      printf("\n");
+
+      // Print a few mapped LED float RGB values from back buffer (written earlier)
+      int sample_leds = led_count < 6 ? led_count : 6;
+      for (int i = 0; i < sample_leds; i++) {
+        int filter_index = (int)roundf(((float)i / (float)(led_count - 1)) * (effect->n_mel_filters - 1));
+        if (filter_index < 0) filter_index = 0;
+        if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
+        float energy = effect->mel_energies[filter_index];
+        float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
+        float db_min = -80.0f;
+        float db_max = 0.0f;
+        float norm = (db - db_min) / (db_max - db_min);
+        if (norm < 0.0f) norm = 0.0f;
+        if (norm > 1.0f) norm = 1.0f;
+        float brightness = fminf(norm * effect->sensitivity, 1.0f);
+        int off = (led_start + i) * 3;
+        float rf = led_buf_back[off + 0];
+        float gf = led_buf_back[off + 1];
+        float bf = led_buf_back[off + 2];
+        printf("[melbank] led %d filter=%d energy=%.6g db=%.2f brightness=%.3f rgbf=(%.3f,%.3f,%.3f)\n",
+               led_start + i, filter_index, energy, db, brightness, rf, gf, bf);
+      }
+    }
+  }
+
   // Map mel filters evenly across LEDs (low->high)
   // Write into back buffer
   for (int i = 0; i < led_count; i++) {
