@@ -50,6 +50,7 @@ static void *audio_capture_thread_fn(void *arg);
 static void *audio_processing_thread_fn(void *arg);
 static void *renderer_thread_fn(void *arg);
 void process_brightness_on_volume_frame(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc);
+void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc);
 float smooth_brightness_decay(float current_brightness, float target_brightness, float rise_alpha, float fall_alpha);
 void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float brightness);
 
@@ -73,6 +74,10 @@ struct sound_effect {
   float brightness_smooth; // smoothed brightness state
   float smoothed_rms_sq;
   float rms_alpha; // smoothing weight computed from tau
+  // mel filter data (optional)
+  float *mel_filters; // n_mel_filters * n_bins
+  int n_mel_filters;
+  float *mel_energies; // n_mel_filters
 };
 
 sound_effect *sound_effects;
@@ -84,13 +89,13 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip);
 void assign_effect_function(sound_effect *effect) {
   switch(effect->effect_num) {
     case 1:
-      effect->apply_effect = brightness_on_volume_effect;
-      // assign per-frame processor
-      effect->process_frame = process_brightness_on_volume_frame;
+      // melbank effect (default)
+      effect->apply_effect = brightness_on_volume_effect; // legacy no-op
+      effect->process_frame = process_melbank_frame;
       break;
     default:
       effect->apply_effect = brightness_on_volume_effect;
-      effect->process_frame = NULL;
+      effect->process_frame = process_melbank_frame;
   }
 }
 
@@ -291,6 +296,21 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
   }
 
+  // If the selected effect wants per-LED frequency mapping, create mel filters
+  int led_range = sound_effects[effect_index].led_end - sound_effects[effect_index].led_start + 1;
+  int n_mel = led_range;
+  if (n_mel < 4) n_mel = 4;
+  if (n_mel > 64) n_mel = 64; // cap for performance
+  sound_effects[effect_index].n_mel_filters = n_mel;
+  int n_bins = FRAME_SIZE / 2 + 1;
+  sound_effects[effect_index].mel_filters = create_mel_filterbank(n_mel, n_bins, FRAME_SIZE, 48000.0f);
+  if (sound_effects[effect_index].mel_filters) {
+    sound_effects[effect_index].mel_energies = calloc(n_mel, sizeof(float));
+  } else {
+    sound_effects[effect_index].n_mel_filters = 0;
+    sound_effects[effect_index].mel_energies = NULL;
+  }
+
   // initialize ring buffer: capacity 16 frames (tunable)
   if (rb_init(16, FRAME_SIZE) != 0) {
     printf("Failed to init audio ring buffer\n");
@@ -413,9 +433,7 @@ static void *audio_processing_thread_fn(void *arg) {
 
   // Precompute Hann window once
   float window[FRAME_SIZE];
-  for (int i = 0; i < FRAME_SIZE; i++) {
-    window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
-  }
+  for (int i = 0; i < FRAME_SIZE; i++) window[i] = window[i]; // use global precomputed window
 
   while (!stop_sound_capture) {
     if (rb_pop(local_frame) != 0) break; // stopping
@@ -423,6 +441,41 @@ static void *audio_processing_thread_fn(void *arg) {
     // If effect provides a per-frame processor, call it.
     if (g_effect_ptr && g_effect_ptr->process_frame) {
       g_effect_ptr->process_frame(g_effect_ptr, strip_local, local_frame, window, &g_effect_ptr->dc);
+    } else if (g_effect_ptr && g_effect_ptr->n_mel_filters > 0 && g_effect_ptr->mel_filters) {
+      // Compute FFT magnitude bins
+      int n = FRAME_SIZE;
+      int n_bins = n / 2 + 1;
+      float real[n];
+      float imag[n];
+      for (int i = 0; i < n; i++) {
+        real[i] = local_frame[i] / 32768.0f * window[i];
+        imag[i] = 0.0f;
+      }
+      fft_inplace(real, imag, n);
+      // magnitude bins (only 0..n/2)
+      float mag[n_bins];
+      for (int k = 0; k < n_bins; k++) mag[k] = sqrtf(real[k]*real[k] + imag[k]*imag[k]);
+
+      // compute mel energies
+      compute_mel_energies(mag, n_bins, g_effect_ptr->mel_filters, g_effect_ptr->n_mel_filters, g_effect_ptr->mel_energies);
+
+      // smooth mel energies and map to LEDs
+      for (int f = 0; f < g_effect_ptr->n_mel_filters; f++) {
+        float e = g_effect_ptr->mel_energies[f];
+        // simple EMA smoothing per band (reuse rms_alpha)
+        g_effect_ptr->mel_energies[f] = g_effect_ptr->rms_alpha * e + (1.0f - g_effect_ptr->rms_alpha) * g_effect_ptr->mel_energies[f];
+        // map to LED index
+        int led_idx = g_effect_ptr->led_start + f * (g_effect_ptr->led_end - g_effect_ptr->led_start) / (g_effect_ptr->n_mel_filters - 1);
+        if (led_idx < g_effect_ptr->led_start) led_idx = g_effect_ptr->led_start;
+        if (led_idx > g_effect_ptr->led_end) led_idx = g_effect_ptr->led_end;
+        float norm = g_effect_ptr->mel_energies[f];
+        // normalize loosely (user tweakable) and clamp
+        float brightness = fminf(norm * g_effect_ptr->sensitivity * 10.0f, 1.0f);
+        pthread_mutex_lock(&strip_mutex);
+        apply_brightness_ratios_to_leds(strip_local, led_idx, led_idx, brightness);
+        pthread_mutex_unlock(&strip_mutex);
+      }
+
     } else {
       // Fallback: basic brightness-on-volume processing
       float rms = compute_rms(local_frame, FRAME_SIZE, &g_effect_ptr->dc, window);
@@ -481,71 +534,6 @@ void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float 
     }
 }
 
-void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
-  // setup audio capture
-  // get volume level
-  // set brightness based on volume level
-  // apply to leds from led_start to led_end
-  printf("Setting up audio capture...\n");
-  setup_audio_capture(48000, 1);
-
-  // Raised cosine coefficients
-  // float filter_coeffs[FILTER_TAPS];
-  // raised_cosine_filter(filter_coeffs, FILTER_TAPS);
-
-  // Hann window for RMS calculation
-
-  int16_t buffer[FRAME_SIZE];
-  // float filtered[FRAME_SIZE];
-  float dc = 0.0f;
-  float brightness_smooth = 0.0f;
-
-  struct timespec start, end;
-
-  while (!stop_sound_capture) {
-    clock_gettime(CLOCK_MONOTONIC, &start);
-
-    int skip = 0;
-    capture_audio_frame(buffer, FRAME_SIZE, &skip);
-    if (skip) continue;
-
-    // Step 1: Normalize and convert buffer to float
-    float samples[FRAME_SIZE];
-    for(int i = 0; i < FRAME_SIZE; i++) {
-      samples[i] = buffer[i] / 32768.0f;
-    }
-
-    // Step 2: Apply raised cosine filter (low-pass)
-    // apply_filter(samples, filtered, FRAME_SIZE, filter_coeffs, FILTER_TAPS);
-
-    // Step 3: Compute RMS with DC Offset removal & windowing
-    float rms = compute_rms(buffer, FRAME_SIZE, &dc, window);
-
-    // Step 4: Convert RMS -> brightness ratio and max at 1.0
-    float brightness = fminf(rms * effect->sensitivity, 1.0f);
-
-    // Step 5: Smooth brightness over frames
-    brightness_smooth = smooth_brightness_decay(brightness_smooth, brightness, 0.3f, 0.05f);
-
-    // Step 6: Apply brightness to LEDs
-    float volume = rms * effect->sensitivity;
-    if (volume > 1.0f) volume = 1.0f;
-    if (volume < 0.0f) volume = 0.0f;
-
-    apply_brightness_ratios_to_leds(strip, effect->led_start, effect->led_end, brightness_smooth);
-
-    ws2811_render(strip);
-
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    long elapsed_ns = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-    long remaining_ns = 11e6 - elapsed_ns; // 11 ms ~90fps
-    if (remaining_ns > 0) {
-        struct timespec ts = {0, remaining_ns};
-        nanosleep(&ts, NULL);
-    }
-  }
-}
-
 
 int stop_sound_capturing() {
     stop_sound_capture = true;
@@ -565,6 +553,11 @@ int stop_sound_capturing() {
   cleanup_audio();
 
   rb_free();
+  // Free mel filter resources for all effects
+  for (int i = 0; i < sound_effect_count; i++) {
+    if (sound_effects[i].mel_filters) free_mel_filterbank(sound_effects[i].mel_filters);
+    if (sound_effects[i].mel_energies) free(sound_effects[i].mel_energies);
+  }
 
   free(sound_effects);
   free(led_colors);
@@ -598,4 +591,51 @@ void process_brightness_on_volume_frame(struct sound_effect *effect, ws2811_t *s
   pthread_mutex_lock(&strip_mutex);
   apply_brightness_ratios_to_leds(strip, effect->led_start, effect->led_end, effect->brightness_smooth);
   pthread_mutex_unlock(&strip_mutex);
+}
+
+void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc) {
+  if (!effect->mel_filters || effect->n_mel_filters == 0) return;
+
+  int n = FRAME_SIZE;
+  int n_bins = n / 2 + 1;
+  // prepare real/imag arrays
+  float real[n];
+  float imag[n];
+  for (int i = 0; i < n; i++) {
+    real[i] = (frame[i] / 32768.0f) * window[i];
+    imag[i] = 0.0f;
+  }
+  fft_inplace(real, imag, n);
+
+  // magnitudes
+  float mag[n_bins];
+  for (int k = 0; k < n_bins; k++) mag[k] = sqrtf(real[k]*real[k] + imag[k]*imag[k]);
+
+  // compute mel energies
+  compute_mel_energies(mag, n_bins, effect->mel_filters, effect->n_mel_filters, effect->mel_energies);
+
+  // smooth energies and map to LEDs low->high
+  int led_start = effect->led_start;
+  int led_end = effect->led_end;
+  int led_count = led_end - led_start + 1;
+
+  for (int f = 0; f < effect->n_mel_filters; f++) {
+    float e = effect->mel_energies[f];
+    // EMA smoothing per band
+    effect->mel_energies[f] = effect->rms_alpha * e + (1.0f - effect->rms_alpha) * effect->mel_energies[f];
+  }
+
+  // Map mel filters evenly across LEDs (low->high)
+  for (int i = 0; i < led_count; i++) {
+    // corresponding filter index (linear mapping)
+    float pos = (float)i / (float)(led_count - 1);
+    int filter_index = (int)roundf(pos * (effect->n_mel_filters - 1));
+    if (filter_index < 0) filter_index = 0;
+    if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
+    float norm = effect->mel_energies[filter_index];
+    float brightness = fminf(norm * effect->sensitivity * 10.0f, 1.0f);
+    pthread_mutex_lock(&strip_mutex);
+    apply_brightness_ratios_to_leds(strip, led_start + i, led_start + i, brightness);
+    pthread_mutex_unlock(&strip_mutex);
+  }
 }
