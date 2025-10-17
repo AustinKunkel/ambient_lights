@@ -461,9 +461,8 @@ static void *audio_processing_thread_fn(void *arg) {
     g_effect_ptr->brightness_smooth = 0.0f;
   }
 
-  // Precompute Hann window once
-  float window[FRAME_SIZE];
-  for (int i = 0; i < FRAME_SIZE; i++) window[i] = window[i]; // use global precomputed window
+  // Use the global precomputed Hann window defined at file scope.
+  // (Do not shadow it with a local array — use 'window' global directly.)
 
   while (!stop_sound_capture) {
     if (rb_pop(local_frame) != 0) break; // stopping
