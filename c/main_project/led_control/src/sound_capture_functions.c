@@ -237,7 +237,10 @@ void compute_mel_energies(const float *mag_bins, int n_bins, const float *filter
     for (int f = 0; f < n_filters; f++) {
         float sum = 0.0f;
         const float *fil = &filters[f * n_bins];
-        for (int k = 0; k < n_bins; k++) sum += fil[k] * mag_bins[k];
+        for (int k = 0; k < n_bins; k++) {
+            float m = mag_bins[k];
+            sum += fil[k] * (m * m); // use power (mag^2)
+        }
         out_energies[f] = sum;
     }
 }

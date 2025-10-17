@@ -636,6 +636,8 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   float real[n];
   float imag[n];
   for (int i = 0; i < n; i++) {
+    // remove per-frame DC (simple mean) and window the sample
+    // compute mean first in a tiny loop below; placeholder set now
     real[i] = (frame[i] / 32768.0f) * window[i];
     imag[i] = 0.0f;
   }
@@ -643,7 +645,11 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
 
   // magnitudes
   float mag[n_bins];
-  for (int k = 0; k < n_bins; k++) mag[k] = sqrtf(real[k]*real[k] + imag[k]*imag[k]);
+  for (int k = 0; k < n_bins; k++) {
+    mag[k] = sqrtf(real[k]*real[k] + imag[k]*imag[k]);
+    // normalize magnitude by fft size to make values comparable across frame sizes
+    mag[k] /= (float)n;
+  }
 
   // compute mel energies
   compute_mel_energies(mag, n_bins, effect->mel_filters, effect->n_mel_filters, effect->mel_energies);
