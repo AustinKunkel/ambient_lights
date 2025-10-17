@@ -194,6 +194,13 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     return 1;
   }
 
+  // Initialize the led_colors to the colors already in the strip at that position:
+  for (int i = 0; i < led_count; i++) {
+    led_colors[i].base_color = strip->channel[0].leds[i];
+    led_colors[i].color = led_colors[i].base_color;
+    led_colors[i].valid = true;
+  }
+
   sound_effect effect = sound_effects[effect_index];
   if(effect.led_end >= led_count) {
     effect.led_end = led_count - 1;
@@ -298,7 +305,7 @@ void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
 
     // Set LED colors based on brightness
     for (int i = effect->led_start; i <= effect->led_end; i++) {
-      uint32_t color = led_colors[i].color;
+      uint32_t color = led_colors[i].base_color;
       uint8_t r = (color >> 16) & 0xFF;
       uint8_t g = (color >> 8) & 0xFF;
       uint8_t b = color & 0xFF;
