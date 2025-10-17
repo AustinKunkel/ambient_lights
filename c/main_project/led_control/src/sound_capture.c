@@ -410,7 +410,7 @@ static void *audio_processing_thread_fn(void *arg) {
       float rms = compute_rms(local_frame, FRAME_SIZE, &g_effect_ptr->dc, window);
       float brightness = fminf(rms * g_effect_ptr->sensitivity, 1.0f);
       if (brightness < 0.0f) brightness = 0.0f;
-      g_effect_ptr->brightness_smooth = smooth_brightness_decay(g_effect_ptr->brightness_smooth, brightness, 0.2f, 0.02f);
+      g_effect_ptr->brightness_smooth = smooth_brightness_decay(g_effect_ptr->brightness_smooth, brightness, 0.1f, 0.04f);
       pthread_mutex_lock(&strip_mutex);
       apply_brightness_ratios_to_leds(strip_local, g_effect_ptr->led_start, g_effect_ptr->led_end, g_effect_ptr->brightness_smooth);
       pthread_mutex_unlock(&strip_mutex);
