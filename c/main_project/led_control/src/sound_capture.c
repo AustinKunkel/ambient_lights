@@ -89,6 +89,7 @@ struct sound_effect {
   // mapping/tuning
   int mel_shift; // positive -> map LEDs to higher-frequency bands
   int mel_low_ignore; // number of lowest bands to ignore (per-effect)
+  int mel_high_ignore; // number of highest bands to ignore (per-effect)
 };
 
 sound_effect *sound_effects;
@@ -202,6 +203,7 @@ bool initialize_sound_effects() {
   // default mapping tweaks
   sound_effects[idx].mel_shift = 7;
   sound_effects[idx].mel_low_ignore = 0;
+  sound_effects[idx].mel_high_ignore = 10;
 
     idx++;
 
@@ -756,6 +758,9 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
 
   int n_filters = effect->n_mel_filters;
   int ignore_low_bands = n_filters > 6 ? 2 : 0;
+  int high_ignore = effect->mel_high_ignore;
+  int effective_filters = n_filters - high_ignore - (ignore_low_bands + effect->mel_low_ignore);
+  if (effective_filters < 1) effective_filters = 1; // guard
   float db_min = -70.0f;
   float db_max = -20.0f;
   float blend_prev = 0.25f;
@@ -767,13 +772,14 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   // Map full mel-range low->high across the right half (forward from bottom_center)
   for (int j = 0; j < right_leds; j++) {
     float pos = (right_leds == 1) ? 0.0f : ((float)j / (float)(right_leds - 1));
-    int filter_index = (int)roundf(pos * (n_filters - 1));
-    // apply per-effect shift
-    filter_index += effect->mel_shift;
-    if (filter_index < 0) filter_index = 0;
-    if (filter_index >= n_filters) filter_index = n_filters - 1;
-    int low_ignore = ignore_low_bands + effect->mel_low_ignore;
-    float energy = (filter_index < low_ignore) ? 0.0f : effect->mel_smooth[filter_index];
+  // Map pos into the reduced (effective) filter range, then offset by low_ignore
+  int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+  int filter_index = low_ignore + (int)roundf(pos * (effective_filters - 1));
+  // apply per-effect shift
+  filter_index += effect->mel_shift;
+  if (filter_index < 0) filter_index = 0;
+  if (filter_index >= n_filters - high_ignore) filter_index = n_filters - high_ignore - 1;
+  float energy = (filter_index < low_ignore || filter_index >= n_filters - high_ignore) ? 0.0f : effect->mel_smooth[filter_index];
 
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
     float norm = (db - db_min) / (db_max - db_min);
@@ -802,12 +808,12 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   // Map full mel-range low->high across the left half (backward from bottom_center)
   for (int j = 0; j < left_leds; j++) {
     float pos = (left_leds == 1) ? 0.0f : ((float)j / (float)(left_leds - 1));
-    int filter_index = (int)roundf(pos * (n_filters - 1));
-    filter_index += effect->mel_shift;
-    if (filter_index < 0) filter_index = 0;
-    if (filter_index >= n_filters) filter_index = n_filters - 1;
-    int low_ignore = ignore_low_bands + effect->mel_low_ignore;
-    float energy = (filter_index < low_ignore) ? 0.0f : effect->mel_smooth[filter_index];
+  int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+  int filter_index = low_ignore + (int)roundf(pos * (effective_filters - 1));
+  filter_index += effect->mel_shift;
+  if (filter_index < 0) filter_index = 0;
+  if (filter_index >= n_filters - high_ignore) filter_index = n_filters - high_ignore - 1;
+  float energy = (filter_index < low_ignore || filter_index >= n_filters - high_ignore) ? 0.0f : effect->mel_smooth[filter_index];
 
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
     float norm = (db - db_min) / (db_max - db_min);
