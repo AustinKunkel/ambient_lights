@@ -39,12 +39,19 @@ static pthread_cond_t rb_not_full = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t strip_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static ws2811_t *g_strip_ptr = NULL;
-static sound_effect *g_effect_ptr = NULL;
+static struct sound_effect *g_effect_ptr = NULL;
 
 static float window[FRAME_SIZE];
-for (int i = 0; i < FRAME_SIZE; i++) {
-    window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
-}
+
+// Forward declarations for functions defined later (avoid implicit declarations)
+static int rb_init(int capacity, int frame_size);
+static void rb_free(void);
+static void *audio_capture_thread_fn(void *arg);
+static void *audio_processing_thread_fn(void *arg);
+static void *renderer_thread_fn(void *arg);
+void process_brightness_on_volume_frame(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc);
+float smooth_brightness_decay(float current_brightness, float target_brightness, float rise_alpha, float fall_alpha);
+void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float brightness);
 
 typedef struct sound_effect sound_effect;
 typedef void (*effect_frame_fn)(struct sound_effect *effect, ws2811_t *strip, const int16_t *frame, const float *window, float *dc);
@@ -61,6 +68,9 @@ struct sound_effect {
   int effect_num; // The number for the effect
   effect_fn apply_effect; // legacy function pointer (not used by frame-based pipeline)
   effect_frame_fn process_frame; // called per audio frame by processing thread
+  /* per-effect runtime state */
+  float dc; // DC estimate for this effect
+  float brightness_smooth; // smoothed brightness state
 };
 
 sound_effect *sound_effects;
@@ -257,6 +267,11 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
   // Set globals for processing threads
   g_strip_ptr = strip;
   g_effect_ptr = &sound_effects[effect_index];
+
+  // Precompute global Hann window once
+  for (int i = 0; i < FRAME_SIZE; i++) {
+    window[i] = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (FRAME_SIZE - 1)));
+  }
 
   // initialize ring buffer: capacity 16 frames (tunable)
   if (rb_init(16, FRAME_SIZE) != 0) {
