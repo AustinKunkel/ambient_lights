@@ -216,6 +216,12 @@ float *create_mel_filterbank(int n_filters, int n_bins, int fft_size, float samp
             }
             filters[f * n_bins + k] = weight;
         }
+        // normalize filter so sum = 1 to make energies comparable between bands
+        float sum = 0.0f;
+        for (int k = 0; k < n_bins; k++) sum += filters[f * n_bins + k];
+        if (sum > 0.0f) {
+            for (int k = 0; k < n_bins; k++) filters[f * n_bins + k] /= sum;
+        }
     }
 
     free(mel_points);

@@ -43,6 +43,11 @@ static struct sound_effect *g_effect_ptr = NULL;
 
 static float window[FRAME_SIZE];
 
+// Double-buffer for LED colors (RGB floats per LED)
+static float *led_buf_front = NULL; // size: led_count * 3
+static float *led_buf_back = NULL;
+static int led_buf_count = 0;
+
 // Forward declarations for functions defined later (avoid implicit declarations)
 static int rb_init(int capacity, int frame_size);
 static void rb_free(void);
@@ -319,6 +324,18 @@ int start_sound_capture(ws2811_t *strip, int effect_index) {
     return 1;
   }
 
+  // allocate LED double-buffers
+  led_buf_count = led_count;
+  led_buf_front = calloc(led_buf_count * 3, sizeof(float));
+  led_buf_back = calloc(led_buf_count * 3, sizeof(float));
+  if (!led_buf_front || !led_buf_back) {
+    printf("Failed to allocate LED buffers\n");
+    rb_free();
+    free(sound_effects);
+    free(led_colors);
+    return 1;
+  }
+
   // start threads: capture, processing, renderer, and send_led_colors
   if (pthread_create(&audio_capture_thread, NULL, audio_capture_thread_fn, NULL) != 0) {
     printf("Failed to create audio capture thread\n");
@@ -501,6 +518,7 @@ static void *renderer_thread_fn(void *arg) {
 
   while (!stop_sound_capture) {
     pthread_mutex_lock(&strip_mutex);
+    // strip data (led_colors) already updated by processing thread under strip_mutex
     ws2811_render(strip_local);
     pthread_mutex_unlock(&strip_mutex);
     nanosleep(&ts, NULL);
@@ -558,6 +576,10 @@ int stop_sound_capturing() {
     if (sound_effects[i].mel_filters) free_mel_filterbank(sound_effects[i].mel_filters);
     if (sound_effects[i].mel_energies) free(sound_effects[i].mel_energies);
   }
+
+    // Free LED double buffers
+    if (led_buf_front) free(led_buf_front);
+    if (led_buf_back) free(led_buf_back);
 
   free(sound_effects);
   free(led_colors);
@@ -626,16 +648,48 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   }
 
   // Map mel filters evenly across LEDs (low->high)
+  // Write into back buffer
   for (int i = 0; i < led_count; i++) {
-    // corresponding filter index (linear mapping)
     float pos = (float)i / (float)(led_count - 1);
     int filter_index = (int)roundf(pos * (effect->n_mel_filters - 1));
     if (filter_index < 0) filter_index = 0;
     if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
-    float norm = effect->mel_energies[filter_index];
-    float brightness = fminf(norm * effect->sensitivity * 10.0f, 1.0f);
-    pthread_mutex_lock(&strip_mutex);
-    apply_brightness_ratios_to_leds(strip, led_start + i, led_start + i, brightness);
-    pthread_mutex_unlock(&strip_mutex);
+    float energy = effect->mel_energies[filter_index];
+    // convert to dB-like: avoid log(0)
+    float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
+    // map db range [-80..0] to [0..1]
+    float db_min = -80.0f;
+    float db_max = 0.0f;
+    float norm = (db - db_min) / (db_max - db_min);
+    if (norm < 0.0f) norm = 0.0f;
+    if (norm > 1.0f) norm = 1.0f;
+    // apply sensitivity/gain
+    float brightness = fminf(norm * effect->sensitivity, 1.0f);
+    // write RGB float into back buffer (scale base color)
+    uint32_t base = led_colors[led_start + i].base_color;
+    float r = ((base >> 16) & 0xFF) / 255.0f * brightness;
+    float g = ((base >> 8) & 0xFF) / 255.0f * brightness;
+    float b = (base & 0xFF) / 255.0f * brightness;
+    int off = (led_start + i) * 3;
+    led_buf_back[off + 0] = r;
+    led_buf_back[off + 1] = g;
+    led_buf_back[off + 2] = b;
   }
+
+  // Swap back -> front under lock
+  pthread_mutex_lock(&strip_mutex);
+  float *tmp = led_buf_front;
+  led_buf_front = led_buf_back;
+  led_buf_back = tmp;
+  // copy front float buffer into actual LED strip storage (uint8/uint32) for rendering
+  for (int i = 0; i < led_count; i++) {
+    int off = i * 3;
+    uint8_t rr = (uint8_t)fminf(led_buf_front[off + 0] * 255.0f, 255.0f);
+    uint8_t gg = (uint8_t)fminf(led_buf_front[off + 1] * 255.0f, 255.0f);
+    uint8_t bb = (uint8_t)fminf(led_buf_front[off + 2] * 255.0f, 255.0f);
+    set_led_color(led_start + i, rr, gg, bb);
+    led_colors[led_start + i].color = (rr << 16) | (gg << 8) | bb;
+    led_colors[led_start + i].valid = true;
+  }
+  pthread_mutex_unlock(&strip_mutex);
 }
