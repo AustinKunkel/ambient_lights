@@ -696,7 +696,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   led_buf_back = tmp;
   // copy front float buffer into actual LED strip storage (uint8/uint32) for rendering
   for (int i = 0; i < led_count; i++) {
-    int off = i * 3;
+    int off = (led_start + i) * 3;
     uint8_t rr = (uint8_t)fminf(led_buf_front[off + 0] * 255.0f, 255.0f);
     uint8_t gg = (uint8_t)fminf(led_buf_front[off + 1] * 255.0f, 255.0f);
     uint8_t bb = (uint8_t)fminf(led_buf_front[off + 2] * 255.0f, 255.0f);
