@@ -86,6 +86,9 @@ struct sound_effect {
   // runtime noise-floor and smoothed bands for mel processing
   float *mel_floor; // slow estimate of background energy per band
   float *mel_smooth; // attack/release smoothed band energies
+  // mapping/tuning
+  int mel_shift; // positive -> map LEDs to higher-frequency bands
+  int mel_low_ignore; // number of lowest bands to ignore (per-effect)
 };
 
 sound_effect *sound_effects;
@@ -196,6 +199,9 @@ bool initialize_sound_effects() {
     sound_effects[idx].smoothed_rms_sq = 0.0f;
     sound_effects[idx].dc = 0.0f;
     sound_effects[idx].brightness_smooth = 0.0f;
+  // default mapping tweaks
+  sound_effects[idx].mel_shift = 7;
+  sound_effects[idx].mel_low_ignore = 0;
 
     idx++;
 
@@ -740,13 +746,15 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
 
   for (int i = 0; i < led_count; i++) {
     float pos = (float)i / (float)(led_count - 1);
-    int filter_index = (int)roundf(pos * (effect->n_mel_filters - 1));
+  int filter_index = (int)roundf(pos * (effect->n_mel_filters - 1));
+  // apply per-effect shift
+  filter_index += effect->mel_shift;
     if (filter_index < 0) filter_index = 0;
     if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
-
-    float energy = effect->mel_smooth[filter_index];
-    // ignore lowest bands
-    if (filter_index < ignore_low_bands) energy = 0.0f;
+  float energy = effect->mel_smooth[filter_index];
+  // ignore lowest bands (global or per-effect)
+  int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+  if (filter_index < low_ignore) energy = 0.0f;
 
     // convert to dB-like (power -> dB)
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
