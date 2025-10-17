@@ -4,7 +4,7 @@
 snd_pcm_t *capture_handle;
 snd_pcm_hw_params_t *hw_params;
 
-#define DEVICE "hw:0,0"  // Default capture device
+#define DEVICE "hw:1,0"  // Default capture device
 
 void setup_audio_capture(unsigned int sample_rate, unsigned int channels) {
     int err;
