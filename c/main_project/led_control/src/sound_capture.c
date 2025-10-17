@@ -89,16 +89,24 @@ sound_effect *sound_effects;
 struct led_position *led_colors; // server.h
 int sound_effect_count = 0;
 
-void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip);
-
 void assign_effect_function(sound_effect *effect) {
+  // Map effect numbers to processors. apply_effect remains a lightweight
+  // initializer (non-blocking) for legacy compatibility. The per-frame
+  // processing function is stored in process_frame and will be called by
+  // the audio processing thread for each captured frame.
   switch(effect->effect_num) {
     case 1:
       // melbank effect (default)
-      effect->apply_effect = brightness_on_volume_effect; // legacy no-op
+      effect->apply_effect = NULL; // legacy initializer removed
       effect->process_frame = process_melbank_frame;
       break;
+    case 2:
+      // classic brightness-on-volume per-frame processor
+      effect->apply_effect = NULL;
+      effect->process_frame = process_brightness_on_volume_frame;
+      break;
     default:
+      // fallback to melbank
       effect->apply_effect = brightness_on_volume_effect;
       effect->process_frame = process_melbank_frame;
   }
@@ -233,14 +241,19 @@ void *sound_effect_thread_func(void *arg) {
   struct sound_effect_arg *effect_arg = (struct sound_effect_arg *)arg;
 
   /* per-effect runtime state */
-  float dc; // DC estimate for this effect
-  float brightness_smooth; // smoothed brightness state
   struct sound_effect *effect = effect_arg->effect;
   ws2811_t *strip = effect_arg->strip;
 
-  printf("Applying effect: %s\n", effect->name);
-  effect->apply_effect(effect, strip);
+  // Non-blocking initializer for effects. Previously this called a
+  // legacy `apply_effect` function which could block; that behavior has
+  // been removed. Do lightweight runtime state initialization here.
+  printf("Applying effect (initializer): %s\n", effect->name);
+  effect->dc = 0.0f;
+  effect->brightness_smooth = 0.0f;
+  effect->smoothed_rms_sq = 0.0f;
+
   free(arg);
+  return NULL;
 }
 
 int start_sound_capture(ws2811_t *strip, int effect_index) {
@@ -692,4 +705,19 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     led_colors[led_start + i].valid = true;
   }
   pthread_mutex_unlock(&strip_mutex);
+}
+
+// Legacy initializer used when starting effects via apply_effect. This is
+// intentionally non-blocking: it performs any lightweight setup required by
+// the effect and returns immediately. The actual per-frame work is handled
+// via the function pointer stored in effect->process_frame which is invoked
+// by the audio processing thread.
+void brightness_on_volume_effect(sound_effect *effect, ws2811_t *strip) {
+  // Currently no heavy initialization required for brightness-on-volume.
+  // Ensure runtime state is zeroed and ready for per-frame processing.
+  printf("brightness_on_volume_effect (initializer) for effect %s\n", effect->name);
+  effect->dc = 0.0f;
+  effect->brightness_smooth = 0.0f;
+  effect->smoothed_rms_sq = 0.0f;
+  // No blocking loop — return immediately so startup is non-blocking.
 }
