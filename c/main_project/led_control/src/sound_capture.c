@@ -11,7 +11,7 @@
 #include <math.h>
 
 #define SOUND_EFFECTS_FILENAME  "led_control/data/sound_effects.csv"
-#define FRAME_SIZE              256
+#define FRAME_SIZE              512
 #ifndef M_PI
 #define M_PI                    3.14159265358979323846
 #endif
