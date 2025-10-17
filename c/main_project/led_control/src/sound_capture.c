@@ -680,41 +680,41 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     effect->mel_energies[f] = effect->rms_alpha * e + (1.0f - effect->rms_alpha) * effect->mel_energies[f];
   }
 
-  // Debug: periodically print a small sample of mel energies and the mapped LED values
-  {
-    static int dbg_frames = 0;
-    dbg_frames++;
-    if ((dbg_frames & 0xF) == 0) { // every 16 frames
-      int to_print = effect->n_mel_filters < 8 ? effect->n_mel_filters : 8;
-      printf("[melbank] effect=%s n_filters=%d led_range=%d\n", effect->name, effect->n_mel_filters, led_count);
-      printf("[melbank] energies:");
-      for (int f = 0; f < to_print; f++) printf(" %.6f", effect->mel_energies[f]);
-      if (effect->n_mel_filters > to_print) printf(" ...");
-      printf("\n");
+  // // Debug: periodically print a small sample of mel energies and the mapped LED values
+  // {
+  //   static int dbg_frames = 0;
+  //   dbg_frames++;
+  //   if ((dbg_frames & 0xF) == 0) { // every 16 frames
+  //     int to_print = effect->n_mel_filters < 8 ? effect->n_mel_filters : 8;
+  //     printf("[melbank] effect=%s n_filters=%d led_range=%d\n", effect->name, effect->n_mel_filters, led_count);
+  //     printf("[melbank] energies:");
+  //     for (int f = 0; f < to_print; f++) printf(" %.6f", effect->mel_energies[f]);
+  //     if (effect->n_mel_filters > to_print) printf(" ...");
+  //     printf("\n");
 
-      // Print a few mapped LED float RGB values from back buffer (written earlier)
-      int sample_leds = led_count < 6 ? led_count : 6;
-      for (int i = 0; i < sample_leds; i++) {
-        int filter_index = (int)roundf(((float)i / (float)(led_count - 1)) * (effect->n_mel_filters - 1));
-        if (filter_index < 0) filter_index = 0;
-        if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
-        float energy = effect->mel_energies[filter_index];
-        float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
-        float db_min = -80.0f;
-        float db_max = 0.0f;
-        float norm = (db - db_min) / (db_max - db_min);
-        if (norm < 0.0f) norm = 0.0f;
-        if (norm > 1.0f) norm = 1.0f;
-        float brightness = fminf(norm * effect->sensitivity, 1.0f);
-        int off = (led_start + i) * 3;
-        float rf = led_buf_back[off + 0];
-        float gf = led_buf_back[off + 1];
-        float bf = led_buf_back[off + 2];
-        printf("[melbank] led %d filter=%d energy=%.6g db=%.2f brightness=%.3f rgbf=(%.3f,%.3f,%.3f)\n",
-               led_start + i, filter_index, energy, db, brightness, rf, gf, bf);
-      }
-    }
-  }
+  //     // Print a few mapped LED float RGB values from back buffer (written earlier)
+  //     int sample_leds = led_count < 6 ? led_count : 6;
+  //     for (int i = 0; i < sample_leds; i++) {
+  //       int filter_index = (int)roundf(((float)i / (float)(led_count - 1)) * (effect->n_mel_filters - 1));
+  //       if (filter_index < 0) filter_index = 0;
+  //       if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
+  //       float energy = effect->mel_energies[filter_index];
+  //       float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
+  //       float db_min = -80.0f;
+  //       float db_max = 0.0f;
+  //       float norm = (db - db_min) / (db_max - db_min);
+  //       if (norm < 0.0f) norm = 0.0f;
+  //       if (norm > 1.0f) norm = 1.0f;
+  //       float brightness = fminf(norm * effect->sensitivity, 1.0f);
+  //       int off = (led_start + i) * 3;
+  //       float rf = led_buf_back[off + 0];
+  //       float gf = led_buf_back[off + 1];
+  //       float bf = led_buf_back[off + 2];
+  //       printf("[melbank] led %d filter=%d energy=%.6g db=%.2f brightness=%.3f rgbf=(%.3f,%.3f,%.3f)\n",
+  //              led_start + i, filter_index, energy, db, brightness, rf, gf, bf);
+  //     }
+  //   }
+  // }
 
   // Reduce baseline via a slow noise-floor estimate and apply attack/release smoothing per band
   float floor_alpha = 0.005f; // very slow floor update (lower = slower)
@@ -735,42 +735,62 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     }
   }
 
-  // Map mel filters evenly across LEDs (low->high)
-  // Write into back buffer. Use mel_smooth (floor-subtracted & smoothed) and
-  // blend with previous front buffer to reduce flicker. Optionally ignore a
-  // couple of the lowest bands which often contain hum/room noise.
-  int ignore_low_bands = effect->n_mel_filters > 6 ? 2 : 0;
+  // Symmetric mapping: split the full mapping into two halves anchored at the
+  // bottom center and finishing at the top. Each half displays the full
+  // mel-range low->high so both sides look identical and mirrored.
+  int total_leds = led_buf_count; // full strip
+  int bottom_offset = sc_settings.right_count + sc_settings.top_count + sc_settings.left_count;
+  int bottom_center = bottom_offset + (sc_settings.bottom_count / 2);
+  int top_offset = sc_settings.right_count;
+  int top_center = top_offset + (sc_settings.top_count / 2);
+
+  // distances along the ring from bottom_center to top_center going forward
+  // (this will traverse bottom->right->top) and backward (bottom->left->top)
+  int forward_dist = (top_center - bottom_center + total_leds) % total_leds;
+  if (forward_dist == 0) forward_dist = total_leds;
+  int backward_dist = (bottom_center - top_center + total_leds) % total_leds;
+  if (backward_dist == 0) backward_dist = total_leds;
+
+  int right_leds = led_count / 2; // number of LEDs we allocate to the right-side half
+  int left_leds = led_count - right_leds; // remainder goes to left
+
+  int n_filters = effect->n_mel_filters;
+  int ignore_low_bands = n_filters > 6 ? 2 : 0;
   float db_min = -70.0f;
   float db_max = -20.0f;
-  float blend_prev = 0.25f; // blend previous front into new back (0..1)
+  float blend_prev = 0.25f;
 
-  for (int i = 0; i < led_count; i++) {
-    float pos = (float)i / (float)(led_count - 1);
-  int filter_index = (int)roundf(pos * (effect->n_mel_filters - 1));
-  // apply per-effect shift
-  filter_index += effect->mel_shift;
+  // Clear back buffer for safety for indices we may touch
+  // (only the mapped indices will be overwritten below, but clearing avoids stale values)
+  for (int i = 0; i < total_leds * 3; i++) led_buf_back[i] = 0.0f;
+
+  // Map full mel-range low->high across the right half (forward from bottom_center)
+  for (int j = 0; j < right_leds; j++) {
+    float pos = (right_leds == 1) ? 0.0f : ((float)j / (float)(right_leds - 1));
+    int filter_index = (int)roundf(pos * (n_filters - 1));
+    // apply per-effect shift
+    filter_index += effect->mel_shift;
     if (filter_index < 0) filter_index = 0;
-    if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
-  float energy = effect->mel_smooth[filter_index];
-  // ignore lowest bands (global or per-effect)
-  int low_ignore = ignore_low_bands + effect->mel_low_ignore;
-  if (filter_index < low_ignore) energy = 0.0f;
+    if (filter_index >= n_filters) filter_index = n_filters - 1;
+    int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+    float energy = (filter_index < low_ignore) ? 0.0f : effect->mel_smooth[filter_index];
 
-    // convert to dB-like (power -> dB)
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
     float norm = (db - db_min) / (db_max - db_min);
     if (norm < 0.0f) norm = 0.0f;
     if (norm > 1.0f) norm = 1.0f;
     float brightness = fminf(norm * effect->sensitivity, 1.0f);
 
-    // compute new RGB float
-    uint32_t base = led_colors[led_start + i].base_color;
+    // compute LED index along forward path and wrap
+    int step = (forward_dist == 1) ? 0 : (int)roundf(pos * (forward_dist - 1));
+    int led_index = (bottom_center + step) % total_leds;
+
+    uint32_t base = led_colors[led_index].base_color;
     float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
     float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
     float nb = (base & 0xFF) / 255.0f * brightness;
 
-    int off = (led_start + i) * 3;
-    // blend with previous front buffer to reduce abrupt flicker
+    int off = led_index * 3;
     float prev_r = led_buf_front[off + 0];
     float prev_g = led_buf_front[off + 1];
     float prev_b = led_buf_front[off + 2];
@@ -779,20 +799,52 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     led_buf_back[off + 2] = blend_prev * prev_b + (1.0f - blend_prev) * nb;
   }
 
-  // Swap back -> front under lock
+  // Map full mel-range low->high across the left half (backward from bottom_center)
+  for (int j = 0; j < left_leds; j++) {
+    float pos = (left_leds == 1) ? 0.0f : ((float)j / (float)(left_leds - 1));
+    int filter_index = (int)roundf(pos * (n_filters - 1));
+    filter_index += effect->mel_shift;
+    if (filter_index < 0) filter_index = 0;
+    if (filter_index >= n_filters) filter_index = n_filters - 1;
+    int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+    float energy = (filter_index < low_ignore) ? 0.0f : effect->mel_smooth[filter_index];
+
+    float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
+    float norm = (db - db_min) / (db_max - db_min);
+    if (norm < 0.0f) norm = 0.0f;
+    if (norm > 1.0f) norm = 1.0f;
+    float brightness = fminf(norm * effect->sensitivity, 1.0f);
+
+    int step = (backward_dist == 1) ? 0 : (int)roundf(pos * (backward_dist - 1));
+    int led_index = (bottom_center - step + total_leds) % total_leds;
+
+    uint32_t base = led_colors[led_index].base_color;
+    float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
+    float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
+    float nb = (base & 0xFF) / 255.0f * brightness;
+
+    int off = led_index * 3;
+    float prev_r = led_buf_front[off + 0];
+    float prev_g = led_buf_front[off + 1];
+    float prev_b = led_buf_front[off + 2];
+    led_buf_back[off + 0] = blend_prev * prev_r + (1.0f - blend_prev) * nr;
+    led_buf_back[off + 1] = blend_prev * prev_g + (1.0f - blend_prev) * ng;
+    led_buf_back[off + 2] = blend_prev * prev_b + (1.0f - blend_prev) * nb;
+  }
+
+  // Swap buffers and copy entire front buffer into the actual LED strip storage
   pthread_mutex_lock(&strip_mutex);
   float *tmp = led_buf_front;
   led_buf_front = led_buf_back;
   led_buf_back = tmp;
-  // copy front float buffer into actual LED strip storage (uint8/uint32) for rendering
-  for (int i = 0; i < led_count; i++) {
-    int off = (led_start + i) * 3;
+  for (int i = 0; i < total_leds; i++) {
+    int off = i * 3;
     uint8_t rr = (uint8_t)fminf(led_buf_front[off + 0] * 255.0f, 255.0f);
     uint8_t gg = (uint8_t)fminf(led_buf_front[off + 1] * 255.0f, 255.0f);
     uint8_t bb = (uint8_t)fminf(led_buf_front[off + 2] * 255.0f, 255.0f);
-    set_led_color(led_start + i, rr, gg, bb);
-    led_colors[led_start + i].color = (rr << 16) | (gg << 8) | bb;
-    led_colors[led_start + i].valid = true;
+    set_led_color(i, rr, gg, bb);
+    led_colors[i].color = (rr << 16) | (gg << 8) | bb;
+    led_colors[i].valid = true;
   }
   pthread_mutex_unlock(&strip_mutex);
 }
