@@ -730,32 +730,45 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   }
 
   // Map mel filters evenly across LEDs (low->high)
-  // Write into back buffer
+  // Write into back buffer. Use mel_smooth (floor-subtracted & smoothed) and
+  // blend with previous front buffer to reduce flicker. Optionally ignore a
+  // couple of the lowest bands which often contain hum/room noise.
+  int ignore_low_bands = effect->n_mel_filters > 6 ? 2 : 0;
+  float db_min = -70.0f;
+  float db_max = -20.0f;
+  float blend_prev = 0.25f; // blend previous front into new back (0..1)
+
   for (int i = 0; i < led_count; i++) {
     float pos = (float)i / (float)(led_count - 1);
     int filter_index = (int)roundf(pos * (effect->n_mel_filters - 1));
     if (filter_index < 0) filter_index = 0;
     if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
-    float energy = effect->mel_energies[filter_index];
-    // convert to dB-like: avoid log(0)
+
+    float energy = effect->mel_smooth[filter_index];
+    // ignore lowest bands
+    if (filter_index < ignore_low_bands) energy = 0.0f;
+
+    // convert to dB-like (power -> dB)
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
-    // map db range [-80..0] to [0..1]
-    float db_min = -80.0f;
-    float db_max = 0.0f;
     float norm = (db - db_min) / (db_max - db_min);
     if (norm < 0.0f) norm = 0.0f;
     if (norm > 1.0f) norm = 1.0f;
-    // apply sensitivity/gain
     float brightness = fminf(norm * effect->sensitivity, 1.0f);
-    // write RGB float into back buffer (scale base color)
+
+    // compute new RGB float
     uint32_t base = led_colors[led_start + i].base_color;
-    float r = ((base >> 16) & 0xFF) / 255.0f * brightness;
-    float g = ((base >> 8) & 0xFF) / 255.0f * brightness;
-    float b = (base & 0xFF) / 255.0f * brightness;
+    float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
+    float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
+    float nb = (base & 0xFF) / 255.0f * brightness;
+
     int off = (led_start + i) * 3;
-    led_buf_back[off + 0] = r;
-    led_buf_back[off + 1] = g;
-    led_buf_back[off + 2] = b;
+    // blend with previous front buffer to reduce abrupt flicker
+    float prev_r = led_buf_front[off + 0];
+    float prev_g = led_buf_front[off + 1];
+    float prev_b = led_buf_front[off + 2];
+    led_buf_back[off + 0] = blend_prev * prev_r + (1.0f - blend_prev) * nr;
+    led_buf_back[off + 1] = blend_prev * prev_g + (1.0f - blend_prev) * ng;
+    led_buf_back[off + 2] = blend_prev * prev_b + (1.0f - blend_prev) * nb;
   }
 
   // Swap back -> front under lock
