@@ -401,7 +401,7 @@ void *capture_loop(void *strip_ptr) {
   }
 
   if(sc_settings.avg_color) {
-    int steps = 40; // number of loops for transition
+    int steps = 60; // number of loops for transition
     avg_color_loop(rgb_buffer, strip, steps);
   } else {
     reg_capture_loop(rgb_buffer, strip);
