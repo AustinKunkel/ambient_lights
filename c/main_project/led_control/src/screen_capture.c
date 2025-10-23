@@ -530,7 +530,7 @@ uint32_t calculate_frame_average(unsigned char* rgb_buffer, int width, int heigh
 
 void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
   int skip_amt = 1;
-  struct timespec ts = {0, 5 * 1000000L}; // 5ms timer
+  //struct timespec ts = {0, 5 * 1000000L}; // 5ms timer
   uint32_t cur_color = (uint32_t)strip->channel[0].leds[0];
  
   while(!stop_capture) {
@@ -560,7 +560,7 @@ void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
       
       set_strip_color(cur_r, cur_g, cur_b);
       ws2811_render(strip);
-      nanosleep(&ts, NULL);
+      //nanosleep(&ts, NULL);
     }
     
     cur_color = (target_r << 16) | (target_g << 8) | target_b;
