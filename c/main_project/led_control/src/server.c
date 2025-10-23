@@ -711,6 +711,7 @@ static struct lws_context *create_server_context()
 
 
 void stop_server(int signo) {
+    set_strip_color(0, 0, 0);
     printf("\nStopping server...\n");
     lws_context_destroy(context);
     exit(0);
