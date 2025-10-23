@@ -549,7 +549,7 @@ void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
         led_positions[j].color = color;
         led_positions[j].valid = 1;
       }
-      ws2811_render(strip);
+      if(!led_settings.sound_react) ws2811_render(strip);
     }
    
     cur_color = target_color;
@@ -589,7 +589,7 @@ void reg_capture_loop(unsigned char *rgb_buffer, ws2811_t *strip) {
 
 int stop_capturing() {
   stop_capture = true;  // Signal thread to stop
-  
+
   cleanup_shared_screen_state();
 
   if(pthread_join(capture_thread, NULL)) { // Wait for thread to finish
