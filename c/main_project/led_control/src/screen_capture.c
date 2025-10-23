@@ -14,6 +14,7 @@
 #include "screen_capture_functions.h"
 #include "csv_control.h"
 #include "server.h"
+#include "shared_state.h"
 
 #define DEVICE "/dev/video0"
 #define LEFT 2
@@ -326,15 +327,13 @@ void *send_led_positions_loop(void *) {
 void *capture_loop(void *);
 
 int start_capturing(ws2811_t *strip) {
+  init_shared_screen_state();
+
   if(!initialize_settings()) {
     printf("Failed to initialize sc_settings!\n");
     return 1;
   }
 
-  // if(setup_strip(LED_COUNT)) {
-  //   printf("Failed to initialize LED strip!\n");
-  //   return 1;
-  // } 
   printf("Setting up capture...\n");
   if(setup_capture(sc_settings.res_x, sc_settings.res_y)) {
 
@@ -541,7 +540,9 @@ void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
    
     for(int i = 1; i <= steps; i++) {
       uint32_t color = lerp_color(cur_color, target_color, (float)i / steps);
-      
+
+      set_avg_screen_color(color); // share screen color with sound effects
+  
       // Set all LEDs to this color
       for(int j = 0; j < LED_COUNT; j++) {
         strip->channel[0].leds[j] = color;
@@ -588,6 +589,9 @@ void reg_capture_loop(unsigned char *rgb_buffer, ws2811_t *strip) {
 
 int stop_capturing() {
   stop_capture = true;  // Signal thread to stop
+  
+  cleanup_shared_screen_state();
+
   if(pthread_join(capture_thread, NULL)) { // Wait for thread to finish
     printf("Failed to join capture thread!\n");
     return 1;

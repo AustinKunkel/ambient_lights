@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "shared_state.h"
+
 #define SOUND_EFFECTS_FILENAME  "led_control/data/sound_effects.csv"
 #define FRAME_SIZE              512
 #ifndef M_PI
@@ -567,16 +569,33 @@ float smooth_brightness_decay(float current_brightness, float target_brightness,
 }
 
 void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float brightness) {
-    int value = (int)(brightness * 255.0f);
-    for (int i = start; i <= end; i++) {
-        uint32_t base = led_colors[i].base_color;
-        uint8_t r = ((base >> 16) & 0xFF) * brightness;
-        uint8_t g = ((base >> 8) & 0xFF) * brightness;
-        uint8_t b = (base & 0xFF) * brightness;
-        set_led_color(i, r, g, b);
-        led_colors[i].color = (r << 16) | (g << 8) | b;
-        led_colors[i].valid = true;
+  int valid = 0;
+
+  int base_color = get_avg_screen_color(&valid);
+
+  // fallback if screen capture isnt active
+  if(!valid) {
+    base_color = led_colors[i].base_color;
+    for(int i = start; i <= end; i++) {
+      
+      uint8_t r = ((base_color >> 16) & 0xFF) * brightness;
+      uint8_t g = ((base_color >> 8) & 0xFF) * brightness;
+      uint8_t b = (base_color & 0xFF) * brightness;
+      set_led_color(i, r, g, b);
+      led_colors[i].color = (r << 16) | (g << 8) | b;
+      led_colors[i].valid = true;
     }
+    return;
+  }
+
+  for (int i = start; i <= end; i++) {
+    uint8_t r = ((base_color >> 16) & 0xFF) * brightness;
+    uint8_t g = ((base_color >> 8) & 0xFF) * brightness;
+    uint8_t b = (base_color & 0xFF) * brightness;
+    set_led_color(i, r, g, b);
+    led_colors[i].color = (r << 16) | (g << 8) | b;
+    led_colors[i].valid = true;
+  }
 }
 
 
@@ -733,6 +752,9 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   // (only the mapped indices will be overwritten below, but clearing avoids stale values)
   for (int i = 0; i < total_leds * 3; i++) led_buf_back[i] = 0.0f;
 
+  int valid = 0;
+  uint32_t avg_color = get_avg_screen_color(&valid);
+
   // Map full mel-range low->high across the right half (forward from bottom_center)
   for (int j = 0; j < right_leds; j++) {
     float pos = (right_leds == 1) ? 0.0f : ((float)j / (float)(right_leds - 1));
@@ -755,7 +777,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     int step = (forward_dist == 1) ? 0 : (int)roundf(pos * (forward_dist - 1));
     int led_index = (bottom_center + step) % total_leds;
 
-    uint32_t base = led_colors[led_index].base_color;
+    uint32_t base = valid ? avg_color : led_colors[led_index].base_color;
     float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
     float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
     float nb = (base & 0xFF) / 255.0f * brightness;
@@ -788,7 +810,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     int step = (backward_dist == 1) ? 0 : (int)roundf(pos * (backward_dist - 1));
     int led_index = (bottom_center - step + total_leds) % total_leds;
 
-    uint32_t base = led_colors[led_index].base_color;
+    uint32_t base = valid ? avg_color : led_colors[led_index].base_color;
     float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
     float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
     float nb = (base & 0xFF) / 255.0f * brightness;
