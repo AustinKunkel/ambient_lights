@@ -560,23 +560,9 @@ document.addEventListener("DOMContentLoaded", async function() {
     brightnessValue.textContent = led_settings.brightness;
     brightnessInput.value = led_settings.brightness;
     countInput.value = Number(led_settings.count);
-    //soundReact.checked = led_settings.sound_react >= 1;
-    //showScrnAndSndReactOptions();
     updateCaptureButton(led_settings.capture_screen > 0);
-
-    const colorPickerContainer = document.getElementById('color-picker-container');
-    const pixelFrameContainer = document.getElementById('pixel-grid');
-    if(led_settings.capture_screen > 0) {
-      colorPickerContainer.style.opacity = 0;
-      colorPickerContainer.style.pointerEvents = 'none';
-      pixelFrameContainer.style.opacity = 1;
-    } else {
-      colorPickerContainer.style.opacity = 1;
-      colorPickerContainer.style.pointerEvents = 'auto';
-      pixelFrameContainer.style.opacity =  0;
-    }
-    
-    pixelFrameContainer.style.opacity = led_settings.capture_screen > 0 ? 1 : 0;
+    updateSoundCaptureButton(led_settings.sound_react > 0);
+    updatePixelFrameVisibility(); // Use helper
     initializeColorPicker();
   }
 
@@ -697,10 +683,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.reactToSound = () => {
-    led_settings.sound_react = led_settings.sound_react > 0 ? 0 : 1; // invert
+    led_settings.sound_react = led_settings.sound_react > 0 ? 0 : 1;
     console.log(led_settings.sound_react > 0 ? "sound capture on" : "sound capture off")
     updateSoundCaptureButton(led_settings.sound_react > 0);
-    setServerLEDSettings()
+    setServerLEDSettings();
+    updatePixelFrameVisibility(); // Use helper
   }
 
   window.updateSoundCaptureButton = function(isReacting) {
@@ -781,9 +768,26 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   window.getCapture = () => {
-    led_settings.capture_screen = led_settings.capture_screen > 0 ? 0 : 1; // invert
+    led_settings.capture_screen = led_settings.capture_screen > 0 ? 0 : 1;
     console.log(led_settings.capture_screen > 0 ? "capture on" : "capture off")
     updateCaptureButton(led_settings.capture_screen > 0);
-    setServerLEDSettings()
-  }
+    setServerLEDSettings();
+    updatePixelFrameVisibility(); // Use helper
+}
 })
+
+function updatePixelFrameVisibility() {
+  const colorPickerContainer = document.getElementById('color-picker-container');
+  const pixelFrameContainer = document.getElementById('pixel-grid');
+  const shouldShowPixelFrame = led_settings.capture_screen > 0 || led_settings.sound_react > 0;
+  
+  if(shouldShowPixelFrame) {
+    colorPickerContainer.style.opacity = 0;
+    colorPickerContainer.style.pointerEvents = 'none';
+    pixelFrameContainer.style.opacity = 1;
+  } else {
+    colorPickerContainer.style.opacity = 1;
+    colorPickerContainer.style.pointerEvents = 'auto';
+    pixelFrameContainer.style.opacity = 0;
+  }
+}
