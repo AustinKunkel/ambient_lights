@@ -573,21 +573,10 @@ void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float 
 
   int base_color = get_avg_screen_color(&valid);
 
-  // fallback if screen capture isnt active
-  if(!valid) {
-    for(int i = start; i <= end; i++) {
-      base_color = led_colors[i].base_color;
-      uint8_t r = ((base_color >> 16) & 0xFF) * brightness;
-      uint8_t g = ((base_color >> 8) & 0xFF) * brightness;
-      uint8_t b = (base_color & 0xFF) * brightness;
-      set_led_color(i, r, g, b);
-      led_colors[i].color = (r << 16) | (g << 8) | b;
-      led_colors[i].valid = true;
-    }
-    return;
-  }
+  int use_avg_color = valid && led_settings.capture_screen && sc_settings.avg_color;
 
-  for (int i = start; i <= end; i++) {
+  for(int i = start; i <= end; i++) {
+    base_color = use_avg_color ? base_color : led_colors[i].base_color;
     uint8_t r = ((base_color >> 16) & 0xFF) * brightness;
     uint8_t g = ((base_color >> 8) & 0xFF) * brightness;
     uint8_t b = (base_color & 0xFF) * brightness;
@@ -753,6 +742,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
 
   int valid = 0;
   uint32_t avg_color = get_avg_screen_color(&valid);
+  int use_avg_color = valid && led_settings.capture_screen && sc_settings.avg_color;
 
   // Map full mel-range low->high across the right half (forward from bottom_center)
   for (int j = 0; j < right_leds; j++) {
@@ -776,7 +766,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     int step = (forward_dist == 1) ? 0 : (int)roundf(pos * (forward_dist - 1));
     int led_index = (bottom_center + step) % total_leds;
 
-    uint32_t base = valid ? avg_color : led_colors[led_index].base_color;
+    uint32_t base = use_avg_color ? avg_color : led_colors[led_index].base_color;
     float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
     float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
     float nb = (base & 0xFF) / 255.0f * brightness;
@@ -809,7 +799,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     int step = (backward_dist == 1) ? 0 : (int)roundf(pos * (backward_dist - 1));
     int led_index = (bottom_center - step + total_leds) % total_leds;
 
-    uint32_t base = valid ? avg_color : led_colors[led_index].base_color;
+    uint32_t base = use_avg_color ? avg_color : led_colors[led_index].base_color;
     float nr = ((base >> 16) & 0xFF) / 255.0f * brightness;
     float ng = ((base >> 8) & 0xFF) / 255.0f * brightness;
     float nb = (base & 0xFF) / 255.0f * brightness;
