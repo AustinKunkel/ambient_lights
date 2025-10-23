@@ -545,7 +545,7 @@ void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
   
       // Set all LEDs to this color
       for(int j = 0; j < LED_COUNT; j++) {
-        strip->channel[0].leds[j] = color;
+        if(!led_settings.sound_react) strip->channel[0].leds[j] = color;
         led_positions[j].color = color;
         led_positions[j].valid = 1;
       }
