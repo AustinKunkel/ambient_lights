@@ -575,9 +575,8 @@ void apply_brightness_ratios_to_leds(ws2811_t *strip, int start, int end, float 
 
   // fallback if screen capture isnt active
   if(!valid) {
-    base_color = led_colors[i].base_color;
     for(int i = start; i <= end; i++) {
-      
+      base_color = led_colors[i].base_color;
       uint8_t r = ((base_color >> 16) & 0xFF) * brightness;
       uint8_t g = ((base_color >> 8) & 0xFF) * brightness;
       uint8_t b = (base_color & 0xFF) * brightness;
