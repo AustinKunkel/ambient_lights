@@ -562,6 +562,10 @@ void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
       cur_b = (cur_color & 0xFF) + (diff_b * (i + 1)) / steps;
       
       set_strip_color(cur_r, cur_g, cur_b);
+      for(int j = 0; j < strip->channel[0].count; j++) {
+        led_positions[j].color = (cur_r << 16) | (cur_g << 8) | cur_b;
+        led_positions[j].valid = 1;
+      }
       ws2811_render(strip);
       //nanosleep(&ts, NULL);
     }
