@@ -31,6 +31,7 @@ pthread_t send_positions_thread;
 
 struct led_position *led_positions; // server.h
 
+// Default Screen capture settings
 CaptureSettings sc_settings = {
   .v_offset = 0,
   .h_offset = 0,
@@ -387,8 +388,8 @@ uint32_t lerp_color(uint32_t from, uint32_t to, float alpha) {
   return (r << 16) | (g << 8) | b;
 }
 
-
-uint32_t blend_colors(struct led_position*, unsigned char*, int, int);
+void avg_color_loop(unsigned char *, ws2811_t *, int);
+void reg_capture_loop(unsigned char *, ws2811_t *);
 
 void *capture_loop(void *strip_ptr) {
   ws2811_t *strip = (ws2811_t *)strip_ptr;
@@ -398,54 +399,14 @@ void *capture_loop(void *strip_ptr) {
     perror("Failed to allocate rgb_buffer...");
     return NULL;
   }
-  //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
-  bool blend_mode_active = sc_settings.blend_mode > 0;
-  int i = 0;
-  float alpha = sc_settings.transition_rate + 0.001f; // higher provides faster transitions than lower
-  while(!stop_capture) {
-    // printf("Capturing frame...\n");
-    capture_frame(rgb_buffer);
-    if(blend_mode_active) {
-      for(int i = 0; i < LED_COUNT; i++) {
-        int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        uint32_t target_color = blend_colors(led_positions, rgb_buffer,i, sc_settings.blend_depth);
-        uint32_t smoothed_color = lerp_color(led_positions[i].color, target_color, alpha);
 
-        set_led_32int_color(i, smoothed_color);
-        led_positions[i].color = smoothed_color;
-        led_positions[i].valid = 1;
-      }
-      // for(int i = 0; i < LED_COUNT; i++) {
-      //   int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-      //   uint32_t color = blend_colors(led_positions, rgb_buffer, i, 5);
-      //   set_led_32int_color(i, color);
-      //   led_positions[i].color = color;
-      //   led_positions[i].valid = 1;
-      // }
-    } else {
-      for(int i = 0; i < LED_COUNT; i++) {
-        int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
-        int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
-        set_led_color(i, r, g, b);
-        led_positions[i].color = (r << 16) | (g << 8) | b;
-        led_positions[i].valid = 1;
-      }
-    }
-    ws2811_render(strip);
+  if(sc_settings.avg_color) {
+    int steps = 40; // number of loops for transition
+    avg_color_loop(rgb_buffer, strip, steps);
+  } else {
+    reg_capture_loop(rgb_buffer, strip);
   }
-  // while(!stop_capture) {
-  //   int led_count = strip->channel[0].count;
-  //   for(int i = 0; i < led_count; i++) {
-  //     set_led_color(i, 0, 255, 0);
-  //     ws2811_render(strip);
-  //     sleep(.01);
-  //   }
-  //   for(int i = 0; i < led_count; i++) {
-  //     set_led_color(i, 0, 0, 255);
-  //     ws2811_render(strip);
-  //     sleep(.01);
-  //   }
-  // }
+
   free(rgb_buffer);
   printf("Capture stopped...\n");
 }
@@ -523,6 +484,121 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
   }
 
   return ((int)(r_total / count) << 16) | ((int)(g_total / count) << 8) | (int)(b_total / count);
+}
+
+/**
+ * Returns the average color in the rgb_buffer array.
+ * @param rgb_buffer The buffer of rgb colors passed in from the frame
+ * @param width The width of the frame
+ * @param height The height of the frame
+ * @param skip_amt The step of pixels to skip when calculating the average
+ */
+uint32_t calculate_frame_average(unsigned char* rgb_buffer, int width, int height, int skip_amt) {
+
+  if (!rgb_buffer || width <= 0 || height <= 0) return 0;
+
+  int r_sum = 0, g_sum = 0, b_sum = 0;
+
+  int pixel_count = 0;
+
+  // Calculate the total num of pixels processed
+  int total_pixels = ((width * height) + skip_amt) / skip_amt;
+
+  // Process every skip_amt-th + 1 pixel
+  for(int y = 0; y < height; y += skip_amt + 1) {
+    for(int x = 0; x < width; x += skip_amt + 1) {
+      int index = (y * width + x) * 3; // simple index calc
+
+      // ensure we don't read past buffer
+      if (index + 2 < width * height * 3) {
+        r_sum += rgb_buffer[index];
+        g_sum += rgb_buffer[index + 1];
+        b_sum += rgb_buffer[index + 2];
+        pixel_count++;
+      }
+    }
+  }
+  
+  if(pixel_count == 0) return 0;
+
+  int r_avg = r_sum / total_pixels;
+  int g_avg = g_sum / total_pixels;
+  int b_avg = b_sum / total_pixels;
+
+  return (r_avg << 16) | (g_avg << 8) | (b_avg);
+}
+
+void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
+  int skip_amt = 1; // skip 1 pixel for each when traversing
+  struct timespec ts = {0, 5 * 1000000L}; // 5ms sleep
+
+  uint32_t cur_color = (uint32_t)strip->channel[0].leds[0]; // init cur_color to the first pixel
+  
+  while(!stop_capture) {
+    capture_frame(rgb_buffer);
+    uint32_t avg_color = calculate_frame_average(rgb_buffer, WIDTH, HEIGHT, skip_amt);
+
+    uint8_t cur_r = (cur_color >> 16) & 0xFF;
+    uint8_t cur_g = (cur_color >> 8) & 0xFF;
+    uint8_t cur_b = cur_color & 0xFF;
+
+    // figure out the change required for each loop
+    uint8_t r_step = ((uint8_t)(avg_color >> 16) - cur_r) / steps;
+    uint8_t g_step = ((uint8_t)(avg_color >> 8) - cur_g) / steps;
+    uint8_t b_step = ((uint8_t)avg_color - cur_b) / steps;
+
+    // change the color over a loop
+    for(int i = 0; i < steps; i++) {
+      cur_r += r_step;
+      if(cur_r > 255) cur_r = 255;
+      else if(cur_r < 0) cur_r = 0;
+
+      cur_g += g_step;
+      if(cur_g > 255) cur_g = 255;
+      else if(cur_g < 0) cur_g = 0;
+
+      cur_b += b_step;
+      if(cur_b > 255) cur_b = 255;
+      else if(cur_b < 0) cur_b = 0;
+
+      set_strip_color(cur_r, cur_g, cur_b);
+      ws2811_render(strip);
+      nanosleep(&ts, NULL);
+    }
+
+    cur_color = (cur_r << 16) | (cur_g << 8) | cur_b;
+  }
+}
+
+void reg_capture_loop(unsigned char *rgb_buffer, ws2811_t *strip) {
+  //int LED_COUNT = sc_settings.top_count + sc_settings.right_count + sc_settings.bottom_count + sc_settings.left_count;
+  bool blend_mode_active = sc_settings.blend_mode > 0;
+  int i = 0;
+  float alpha = sc_settings.transition_rate + 0.001f; // higher provides faster transitions than lower
+  while(!stop_capture) {
+    // printf("Capturing frame...\n");
+    capture_frame(rgb_buffer);
+    if(blend_mode_active) {
+      for(int i = 0; i < LED_COUNT; i++) {
+        int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+        uint32_t target_color = blend_colors(led_positions, rgb_buffer,i, sc_settings.blend_depth);
+        uint32_t smoothed_color = lerp_color(led_positions[i].color, target_color, alpha);
+
+        set_led_32int_color(i, smoothed_color);
+        led_positions[i].color = smoothed_color;
+        led_positions[i].valid = 1;
+      }
+    } else {
+      for(int i = 0; i < LED_COUNT; i++) {
+        int index = (led_positions[i].y * WIDTH + led_positions[i].x) * 3;
+        int r = rgb_buffer[index], g = rgb_buffer[index + 1], b = rgb_buffer[index + 2];
+        set_led_color(i, r, g, b);
+        led_positions[i].color = (r << 16) | (g << 8) | b;
+        led_positions[i].valid = 1;
+      }
+    }
+    ws2811_render(strip);
+  }
 }
 
 int stop_capturing() {

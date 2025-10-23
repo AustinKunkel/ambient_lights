@@ -682,42 +682,6 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
     effect->mel_energies[f] = effect->rms_alpha * e + (1.0f - effect->rms_alpha) * effect->mel_energies[f];
   }
 
-  // // Debug: periodically print a small sample of mel energies and the mapped LED values
-  // {
-  //   static int dbg_frames = 0;
-  //   dbg_frames++;
-  //   if ((dbg_frames & 0xF) == 0) { // every 16 frames
-  //     int to_print = effect->n_mel_filters < 8 ? effect->n_mel_filters : 8;
-  //     printf("[melbank] effect=%s n_filters=%d led_range=%d\n", effect->name, effect->n_mel_filters, led_count);
-  //     printf("[melbank] energies:");
-  //     for (int f = 0; f < to_print; f++) printf(" %.6f", effect->mel_energies[f]);
-  //     if (effect->n_mel_filters > to_print) printf(" ...");
-  //     printf("\n");
-
-  //     // Print a few mapped LED float RGB values from back buffer (written earlier)
-  //     int sample_leds = led_count < 6 ? led_count : 6;
-  //     for (int i = 0; i < sample_leds; i++) {
-  //       int filter_index = (int)roundf(((float)i / (float)(led_count - 1)) * (effect->n_mel_filters - 1));
-  //       if (filter_index < 0) filter_index = 0;
-  //       if (filter_index >= effect->n_mel_filters) filter_index = effect->n_mel_filters - 1;
-  //       float energy = effect->mel_energies[filter_index];
-  //       float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
-  //       float db_min = -80.0f;
-  //       float db_max = 0.0f;
-  //       float norm = (db - db_min) / (db_max - db_min);
-  //       if (norm < 0.0f) norm = 0.0f;
-  //       if (norm > 1.0f) norm = 1.0f;
-  //       float brightness = fminf(norm * effect->sensitivity, 1.0f);
-  //       int off = (led_start + i) * 3;
-  //       float rf = led_buf_back[off + 0];
-  //       float gf = led_buf_back[off + 1];
-  //       float bf = led_buf_back[off + 2];
-  //       printf("[melbank] led %d filter=%d energy=%.6g db=%.2f brightness=%.3f rgbf=(%.3f,%.3f,%.3f)\n",
-  //              led_start + i, filter_index, energy, db, brightness, rf, gf, bf);
-  //     }
-  //   }
-  // }
-
   // Reduce baseline via a slow noise-floor estimate and apply attack/release smoothing per band
   float floor_alpha = 0.005f; // very slow floor update (lower = slower)
   float attack_alpha = 0.25f;
@@ -772,14 +736,14 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   // Map full mel-range low->high across the right half (forward from bottom_center)
   for (int j = 0; j < right_leds; j++) {
     float pos = (right_leds == 1) ? 0.0f : ((float)j / (float)(right_leds - 1));
-  // Map pos into the reduced (effective) filter range, then offset by low_ignore
-  int low_ignore = ignore_low_bands + effect->mel_low_ignore;
-  int filter_index = low_ignore + (int)roundf(pos * (effective_filters - 1));
-  // apply per-effect shift
-  filter_index += effect->mel_shift;
-  if (filter_index < 0) filter_index = 0;
-  if (filter_index >= n_filters - high_ignore) filter_index = n_filters - high_ignore - 1;
-  float energy = (filter_index < low_ignore || filter_index >= n_filters - high_ignore) ? 0.0f : effect->mel_smooth[filter_index];
+    // Map pos into the reduced (effective) filter range, then offset by low_ignore
+    int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+    int filter_index = low_ignore + (int)roundf(pos * (effective_filters - 1));
+    // apply per-effect shift
+    filter_index += effect->mel_shift;
+    if (filter_index < 0) filter_index = 0;
+    if (filter_index >= n_filters - high_ignore) filter_index = n_filters - high_ignore - 1;
+    float energy = (filter_index < low_ignore || filter_index >= n_filters - high_ignore) ? 0.0f : effect->mel_smooth[filter_index];
 
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
     float norm = (db - db_min) / (db_max - db_min);
@@ -808,12 +772,12 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   // Map full mel-range low->high across the left half (backward from bottom_center)
   for (int j = 0; j < left_leds; j++) {
     float pos = (left_leds == 1) ? 0.0f : ((float)j / (float)(left_leds - 1));
-  int low_ignore = ignore_low_bands + effect->mel_low_ignore;
-  int filter_index = low_ignore + (int)roundf(pos * (effective_filters - 1));
-  filter_index += effect->mel_shift;
-  if (filter_index < 0) filter_index = 0;
-  if (filter_index >= n_filters - high_ignore) filter_index = n_filters - high_ignore - 1;
-  float energy = (filter_index < low_ignore || filter_index >= n_filters - high_ignore) ? 0.0f : effect->mel_smooth[filter_index];
+    int low_ignore = ignore_low_bands + effect->mel_low_ignore;
+    int filter_index = low_ignore + (int)roundf(pos * (effective_filters - 1));
+    filter_index += effect->mel_shift;
+    if (filter_index < 0) filter_index = 0;
+    if (filter_index >= n_filters - high_ignore) filter_index = n_filters - high_ignore - 1;
+    float energy = (filter_index < low_ignore || filter_index >= n_filters - high_ignore) ? 0.0f : effect->mel_smooth[filter_index];
 
     float db = 10.0f * log10f(fmaxf(energy, 1e-12f));
     float norm = (db - db_min) / (db_max - db_min);

@@ -1,3 +1,9 @@
+function toggleAvgColorMode() {
+  const isChecked = document.getElementById("avg-scrn-color-check").checked;
+  capt_settings.avg_color = isChecked ? 1 : 0;
+  saveCaptSettingsButtonContainer.classList.remove("hidden-container");
+}
+
 function toggleBlendMode() {
   const isChecked = document.getElementById("blend-toggle").checked;
   capt_settings.blend_mode = isChecked ? 1 : 0;
