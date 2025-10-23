@@ -545,17 +545,39 @@ static void *audio_processing_thread_fn(void *arg) {
 // ---- Renderer thread: calls ws2811_render at fixed FPS ----
 static void *renderer_thread_fn(void *arg) {
   ws2811_t *strip_local = (ws2811_t *)arg;
-  const long frame_ns = 11111111L; // ~90Hz (11.11ms)
-  struct timespec ts;
-  ts.tv_sec = 0;
-  ts.tv_nsec = frame_ns;
-
+  const long target_frame_ns = 8333333L; // ~120Hz (8.333 ms)
+  
+  struct timespec frame_start, frame_end, sleep_time;
+  long elapsed_ns, sleep_ns;
+  
   while (!stop_sound_capture) {
+    // Get frame start time
+    clock_gettime(CLOCK_MONOTONIC, &frame_start);
+    
+    // Do the work
     pthread_mutex_lock(&strip_mutex);
-    // strip data (led_colors) already updated by processing thread under strip_mutex
     ws2811_render(strip_local);
     pthread_mutex_unlock(&strip_mutex);
-    nanosleep(&ts, NULL);
+    
+    // Get frame end time
+    clock_gettime(CLOCK_MONOTONIC, &frame_end);
+    
+    // Calculate elapsed time in nanoseconds
+    elapsed_ns = (frame_end.tv_sec - frame_start.tv_sec) * 1000000000L +
+                 (frame_end.tv_nsec - frame_start.tv_nsec);
+    
+    // Calculate remaining sleep time
+    sleep_ns = target_frame_ns - elapsed_ns;
+    
+    // Only sleep if we have time left in the frame
+    if (sleep_ns > 0) {
+      sleep_time.tv_sec = 0;
+      sleep_time.tv_nsec = sleep_ns;
+      nanosleep(&sleep_time, NULL);
+    } else {
+      // Frame took longer than target - we're running behind
+      printf("Renderer running slow: %ld ns over target\n", -sleep_ns);
+    }
   }
   return NULL;
 }
@@ -697,7 +719,7 @@ void process_melbank_frame(struct sound_effect *effect, ws2811_t *strip, const i
   // Reduce baseline via a slow noise-floor estimate and apply attack/release smoothing per band
   float floor_alpha = 0.005f; // very slow floor update (lower = slower)
   float attack_alpha = 0.25f;
-  float release_alpha = 0.05f;
+  float release_alpha = 0.03f; // lower means LEDs fade slower
   for (int f = 0; f < effect->n_mel_filters; f++) {
     float cur = effect->mel_energies[f];
     // update slow floor
