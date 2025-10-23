@@ -401,7 +401,7 @@ void *capture_loop(void *strip_ptr) {
   }
 
   if(sc_settings.avg_color) {
-    int steps = 60; // number of loops for transition
+    int steps = 100; // number of loops for transition
     avg_color_loop(rgb_buffer, strip, steps);
   } else {
     reg_capture_loop(rgb_buffer, strip);
@@ -529,7 +529,7 @@ uint32_t calculate_frame_average(unsigned char* rgb_buffer, int width, int heigh
 }
 
 void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
-  int skip_amt = 4;
+  int skip_amt = 10;
   //struct timespec ts = {0, 5 * 1000000L}; // 5ms timer
   uint32_t cur_color = (uint32_t)strip->channel[0].leds[0];
  
