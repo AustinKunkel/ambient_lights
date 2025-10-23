@@ -200,11 +200,14 @@ int auto_align_offsets() {
  */
 int setup_strip_capture(ws2811_t *strip) {
   LED_COUNT = led_settings.count;
-  printf("Mallocing led positions...\n");
-  led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
-  if (led_positions == NULL) {
-    printf("Memory allocation failed!\n");
-    return 1;
+
+  if(!(sc_settings.avg_color && led_settings.sound_react)) {
+    printf("Mallocing led positions...\n");
+    led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
+    if (led_positions == NULL) {
+      printf("Memory allocation failed!\n");
+      return 1;
+    }
   }
 
   if(sc_settings.auto_offset) {
@@ -351,17 +354,20 @@ int start_capturing(ws2811_t *strip) {
   stop_capture = false;
   //printf("LED Count: %d\n", strip->channel[0].count);
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
-    free(led_positions);
+    if(!(sc_settings.avg_color && led_settings.sound_react)) free(led_positions);
     stop_video_capture();
     printf("Failed to create capture thread!\n"); 
     return 1;
   }
 
-  printf("Creating send led positions loop...\n");
-  if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
-    stop_video_capture();
-    printf("Failed to create send positions thread!");
-    return 1;
+  // only send led colors if avg color and sound capture is off
+  if(!(sc_settings.avg_color && led_settings.sound_react)) {
+    printf("Creating send led positions loop...\n");
+    if(pthread_create(&send_positions_thread, NULL, send_led_positions_loop, NULL) != 0) {
+        stop_video_capture();
+        printf("Failed to create send positions thread!");
+        return 1;
+      }
   }
 
   printf("Capturing started...\n");
@@ -543,13 +549,15 @@ void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
 
       set_avg_screen_color(color); // share screen color with sound effects
   
-      // Set all LEDs to this color
-      for(int j = 0; j < LED_COUNT; j++) {
-        if(!led_settings.sound_react) strip->channel[0].leds[j] = color;
-        led_positions[j].color = color;
-        led_positions[j].valid = 1;
+      // Set all LEDs to this color only if sound react is off
+      if(!led_settings.sound_react) {
+        for(int j = 0; j < LED_COUNT; j++) {
+            strip->channel[0].leds[j] = color;
+            led_positions[j].color = color;
+            led_positions[j].valid = 1;
+        }
+        ws2811_render(strip);
       }
-      if(!led_settings.sound_react) ws2811_render(strip);
     }
    
     cur_color = target_color;
@@ -596,11 +604,13 @@ int stop_capturing() {
     printf("Failed to join capture thread!\n");
     return 1;
   } 
-  if(pthread_join(send_positions_thread, NULL)) {
-    printf("Failed to join send positions thread!\n");
-    return 1;
+  if(!(sc_settings.avg_color && led_settings.sound_react)) {
+    if(pthread_join(send_positions_thread, NULL)) {
+      printf("Failed to join send positions thread!\n");
+      return 1;
+    }
+    free(led_positions);
   }
-  free(led_positions);
   stop_video_capture();
   printf("Capture thread joined.\n");
   return 0;
