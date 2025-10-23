@@ -532,45 +532,26 @@ uint32_t calculate_frame_average(unsigned char* rgb_buffer, int width, int heigh
 }
 
 void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
-  int skip_amt = 30;
-  //struct timespec ts = {0, 5 * 1000000L}; // 5ms timer
+  int skip_amt = 30; // skip LEDs in between averaging
   uint32_t cur_color = (uint32_t)strip->channel[0].leds[0];
  
   while(!stop_capture) {
     capture_frame(rgb_buffer);
-    uint32_t avg_color = calculate_frame_average(rgb_buffer, WIDTH, HEIGHT, skip_amt);
-    
-    // get the avg color's r g b values
-    uint8_t target_r = (avg_color >> 16) & 0xFF;
-    uint8_t target_g = (avg_color >> 8) & 0xFF;
-    uint8_t target_b = avg_color & 0xFF;
-    
-    // grab the current color's r g b values
-    uint8_t cur_r = (cur_color >> 16) & 0xFF;
-    uint8_t cur_g = (cur_color >> 8) & 0xFF;
-    uint8_t cur_b = cur_color & 0xFF;
-    
-    // Use signed differences
-    int16_t diff_r = target_r - cur_r;
-    int16_t diff_g = target_g - cur_g;
-    int16_t diff_b = target_b - cur_b;
-    
-    for(int i = 0; i < steps; i++) {
-      // Calculate position (0.0 to 1.0) and apply to difference
-      cur_r = ((cur_color >> 16) & 0xFF) + (diff_r * (i + 1)) / steps;
-      cur_g = ((cur_color >> 8) & 0xFF) + (diff_g * (i + 1)) / steps;
-      cur_b = (cur_color & 0xFF) + (diff_b * (i + 1)) / steps;
+    uint32_t target_color = calculate_frame_average(rgb_buffer, WIDTH, HEIGHT, skip_amt);
+   
+    for(int i = 1; i <= steps; i++) {
+      uint32_t color = lerp_color(cur_color, target_color, (float)i / steps);
       
-      set_strip_color(cur_r, cur_g, cur_b);
-      for(int j = 0; j < strip->channel[0].count; j++) {
-        led_positions[j].color = (cur_r << 16) | (cur_g << 8) | cur_b;
+      // Set all LEDs to this color
+      for(int j = 0; j < LED_COUNT; j++) {
+        strip->channel[0].leds[j] = color;
+        led_positions[j].color = color;
         led_positions[j].valid = 1;
       }
       ws2811_render(strip);
-      //nanosleep(&ts, NULL);
     }
-    
-    cur_color = (target_r << 16) | (target_g << 8) | target_b;
+   
+    cur_color = target_color;
   }
 }
 

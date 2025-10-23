@@ -549,34 +549,34 @@ void handle_set_user_colors(struct lws *wsi, cJSON *json) {
 int currently_sending_colors = 0;
 
 void send_led_strip_colors(struct led_position* led_positions) {
-
     if(currently_sending_colors) {
         return; // prevent overlapping sends
     }
     currently_sending_colors = 1;
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "action", "led_pixel_data");
-
     cJSON *data_array = cJSON_CreateArray();
-
+    
     for(int i = 0; i < led_settings.count; i++) {
         cJSON *item = cJSON_CreateObject();
         char color_hex[8];
-        if(!led_positions[i].valid) {
-            continue;
+        
+        // Send black if invalid, otherwise send the actual color
+        if(led_positions[i].valid) {
+            color_to_hex(led_positions[i].color, color_hex);
+        } else {
+            strcpy(color_hex, "#000000");  // Black for invalid LEDs
         }
-        color_to_hex(led_positions[i].color, color_hex);
+        
         cJSON_AddStringToObject(item, "color", color_hex);
-
         cJSON_AddItemToArray(data_array, item);
     }
-
+    
     cJSON_AddItemToObject(root, "data", data_array);
     char* json_str = cJSON_PrintUnformatted(root);
-
-    for(int  i = 0; i < client_count; i++) {
+    
+    for(int i = 0; i < client_count; i++) {
         struct lws *wsi = clients[i]->wsi;
-
         size_t len = strlen(json_str);
         unsigned char *buf = malloc(LWS_PRE + len);
         if(buf) {
@@ -585,7 +585,7 @@ void send_led_strip_colors(struct led_position* led_positions) {
             free(buf);
         }
     }
-
+    
     cJSON_Delete(root);
     free(json_str);
     currently_sending_colors = 0;
