@@ -494,37 +494,40 @@ uint32_t blend_colors(struct led_position* led_list, unsigned char *rgb_buffer, 
  * @param skip_amt The step of pixels to skip when calculating the average
  */
 uint32_t calculate_frame_average(unsigned char* rgb_buffer, int width, int height, int skip_amt) {
-
   if (!rgb_buffer || width <= 0 || height <= 0) return 0;
-
-  int r_sum = 0, g_sum = 0, b_sum = 0;
-
+  
+  uint32_t r_sum = 0, g_sum = 0, b_sum = 0;
   int pixel_count = 0;
-
-  // Calculate the total num of pixels processed
-  int total_pixels = ((width * height) + skip_amt) / skip_amt;
-
-  // Process every skip_amt-th + 1 pixel
-  for(int y = 0; y < height; y += skip_amt + 1) {
-    for(int x = 0; x < width; x += skip_amt + 1) {
-      int index = (y * width + x) * 3; // simple index calc
-
-      // ensure we don't read past buffer
-      if (index + 2 < width * height * 3) {
-        r_sum += rgb_buffer[index];
-        g_sum += rgb_buffer[index + 1];
-        b_sum += rgb_buffer[index + 2];
-        pixel_count++;
-      }
+  int step = skip_amt + 1;
+  
+  // Process in blocks of 4 pixels (manual loop unrolling)
+  for(int y = 0; y < height; y += step) {
+    unsigned char* row = &rgb_buffer[y * width * 3];
+    int x;
+    for(x = 0; x < width - 3 * step; x += 4 * step) {
+      int idx = x * 3;
+      // Process 4 pixels at once
+      r_sum += row[idx] + row[idx + step*3] + row[idx + step*6] + row[idx + step*9];
+      g_sum += row[idx+1] + row[idx + step*3+1] + row[idx + step*6+1] + row[idx + step*9+1];
+      b_sum += row[idx+2] + row[idx + step*3+2] + row[idx + step*6+2] + row[idx + step*9+2];
+      pixel_count += 4;
+    }
+    // Handle remaining pixels
+    for(; x < width; x += step) {
+      int idx = x * 3;
+      r_sum += row[idx];
+      g_sum += row[idx + 1];
+      b_sum += row[idx + 2];
+      pixel_count++;
     }
   }
   
   if(pixel_count == 0) return 0;
-
-  int r_avg = r_sum / total_pixels;
-  int g_avg = g_sum / total_pixels;
-  int b_avg = b_sum / total_pixels;
-
+  
+  uint8_t r_avg = r_sum / pixel_count;
+  uint8_t g_avg = g_sum / pixel_count;
+  uint8_t b_avg = b_sum / pixel_count;
+  
   return (r_avg << 16) | (g_avg << 8) | (b_avg);
 }
 
