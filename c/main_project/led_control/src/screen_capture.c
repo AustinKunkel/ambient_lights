@@ -529,44 +529,41 @@ uint32_t calculate_frame_average(unsigned char* rgb_buffer, int width, int heigh
 }
 
 void avg_color_loop(unsigned char *rgb_buffer, ws2811_t *strip, int steps) {
-  int skip_amt = 1; // skip 1 pixel for each when traversing
-  struct timespec ts = {0, 5 * 1000000L}; // 5ms sleep
-
-  uint32_t cur_color = (uint32_t)strip->channel[0].leds[0]; // init cur_color to the first pixel
-  
+  int skip_amt = 1;
+  struct timespec ts = {0, 5 * 1000000L}; // 5ms timer
+  uint32_t cur_color = (uint32_t)strip->channel[0].leds[0];
+ 
   while(!stop_capture) {
     capture_frame(rgb_buffer);
     uint32_t avg_color = calculate_frame_average(rgb_buffer, WIDTH, HEIGHT, skip_amt);
-
+    
+    // get the avg color's r g b values
+    uint8_t target_r = (avg_color >> 16) & 0xFF;
+    uint8_t target_g = (avg_color >> 8) & 0xFF;
+    uint8_t target_b = avg_color & 0xFF;
+    
+    // grab the current color's r g b values
     uint8_t cur_r = (cur_color >> 16) & 0xFF;
     uint8_t cur_g = (cur_color >> 8) & 0xFF;
     uint8_t cur_b = cur_color & 0xFF;
-
-    // figure out the change required for each loop
-    uint8_t r_step = ((uint8_t)(avg_color >> 16) - cur_r) / steps;
-    uint8_t g_step = ((uint8_t)(avg_color >> 8) - cur_g) / steps;
-    uint8_t b_step = ((uint8_t)avg_color - cur_b) / steps;
-
-    // change the color over a loop
+    
+    // Use signed differences
+    int16_t diff_r = target_r - cur_r;
+    int16_t diff_g = target_g - cur_g;
+    int16_t diff_b = target_b - cur_b;
+    
     for(int i = 0; i < steps; i++) {
-      cur_r += r_step;
-      if(cur_r > 255) cur_r = 255;
-      else if(cur_r < 0) cur_r = 0;
-
-      cur_g += g_step;
-      if(cur_g > 255) cur_g = 255;
-      else if(cur_g < 0) cur_g = 0;
-
-      cur_b += b_step;
-      if(cur_b > 255) cur_b = 255;
-      else if(cur_b < 0) cur_b = 0;
-
+      // Calculate position (0.0 to 1.0) and apply to difference
+      cur_r = ((cur_color >> 16) & 0xFF) + (diff_r * (i + 1)) / steps;
+      cur_g = ((cur_color >> 8) & 0xFF) + (diff_g * (i + 1)) / steps;
+      cur_b = (cur_color & 0xFF) + (diff_b * (i + 1)) / steps;
+      
       set_strip_color(cur_r, cur_g, cur_b);
       ws2811_render(strip);
       nanosleep(&ts, NULL);
     }
-
-    cur_color = (cur_r << 16) | (cur_g << 8) | cur_b;
+    
+    cur_color = (target_r << 16) | (target_g << 8) | target_b;
   }
 }
 
