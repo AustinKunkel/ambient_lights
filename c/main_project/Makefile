@@ -30,6 +30,7 @@ CSV_CTRL_TEST_SRC = led_control/test/csv_control_test.c
 MAIN_SRC = led_control/src/server.c \
            led_control/src/led_functions.c \
            led_control/src/main.c \
+           led_control/src/sharec_state.c \
            led_control/src/screen_capture.c \
            led_control/src/screen_capture_functions.c \
            led_control/src/csv_control.c \
