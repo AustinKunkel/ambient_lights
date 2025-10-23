@@ -481,6 +481,9 @@ static void *audio_processing_thread_fn(void *arg) {
   // Use the global precomputed Hann window defined at file scope.
   // (Do not shadow it with a local array — use 'window' global directly.)
 
+  struct timespec ts;
+  ts.tv_sec = 0;
+  ts.tv_nsec = 3 * 1000000L; // 5 ms
   while (!stop_sound_capture) {
     if (rb_pop(local_frame) != 0) break; // stopping
 
@@ -532,6 +535,8 @@ static void *audio_processing_thread_fn(void *arg) {
       apply_brightness_ratios_to_leds(strip_local, g_effect_ptr->led_start, g_effect_ptr->led_end, g_effect_ptr->brightness_smooth);
       pthread_mutex_unlock(&strip_mutex);
     }
+
+    nanosleep(&ts, NULL);
   }
 
   return NULL;
