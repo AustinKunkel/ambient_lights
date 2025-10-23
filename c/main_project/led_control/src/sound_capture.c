@@ -545,7 +545,7 @@ static void *audio_processing_thread_fn(void *arg) {
 // ---- Renderer thread: calls ws2811_render at fixed FPS ----
 static void *renderer_thread_fn(void *arg) {
   ws2811_t *strip_local = (ws2811_t *)arg;
-  const long target_frame_ns = 8333333L; // ~120Hz (8.333 ms)
+  const long target_frame_ns = 11111111L; // ~90Hz (8.333 ms)
   
   struct timespec frame_start, frame_end, sleep_time;
   long elapsed_ns, sleep_ns;
