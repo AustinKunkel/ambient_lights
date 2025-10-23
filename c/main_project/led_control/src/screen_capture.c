@@ -201,13 +201,11 @@ int auto_align_offsets() {
 int setup_strip_capture(ws2811_t *strip) {
   LED_COUNT = led_settings.count;
 
-  if(!(sc_settings.avg_color && led_settings.sound_react)) {
-    printf("Mallocing led positions...\n");
-    led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
-    if (led_positions == NULL) {
-      printf("Memory allocation failed!\n");
-      return 1;
-    }
+  printf("Mallocing led positions...\n");
+  led_positions = malloc(sizeof(struct led_position) * LED_COUNT);
+  if (led_positions == NULL) {
+    printf("Memory allocation failed!\n");
+    return 1;
   }
 
   if(sc_settings.auto_offset) {
@@ -354,7 +352,7 @@ int start_capturing(ws2811_t *strip) {
   stop_capture = false;
   //printf("LED Count: %d\n", strip->channel[0].count);
   if(pthread_create(&capture_thread, NULL, capture_loop, (void *)strip) != 0) {
-    if(!(sc_settings.avg_color && led_settings.sound_react)) free(led_positions);
+    free(led_positions);
     stop_video_capture();
     printf("Failed to create capture thread!\n"); 
     return 1;
@@ -609,8 +607,9 @@ int stop_capturing() {
       printf("Failed to join send positions thread!\n");
       return 1;
     }
-    free(led_positions);
   }
+
+  free(led_positions);
   stop_video_capture();
   printf("Capture thread joined.\n");
   return 0;
