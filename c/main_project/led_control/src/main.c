@@ -41,15 +41,21 @@ char *update_leds() {
     set_brightness(led_settings.brightness);
     if(led_settings.capture_screen) {
         printf("Creating task: Screen Capture...\n");
+        if(sc_settings.avg_color && led_settings.sound_react) {
+            if(start_sound_capture(get_ledstring(), 0)) {
+                printf("Error starting sound capture!\n");
+                return"{\"Error\": \"Error starting sound capture!\"}";
+            }
+            sound_effect_task.task_status = 1;
+        }
         if(start_capturing(get_ledstring())) {
             printf("Error starting screen capture!\n");
             return"{\"Error\": \"Error starting screen capture!\"}";
         }
         screen_capture_task.task_status = 1;
     }
-    if(led_settings.sound_react) { // TODO: Sound Effect functions
+    else if(led_settings.sound_react) { // TODO: Sound Effect functions
         printf("Creating task: Sound Capture...\n");
-        set_strip_32int_color(led_settings.color);
         if(start_sound_capture(get_ledstring(), 0)) {
             printf("Error starting sound capture!\n");
             return"{\"Error\": \"Error starting sound capture!\"}";
