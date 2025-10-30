@@ -1,7 +1,7 @@
 # Ambient Light Project ReadMe
 
 ## Overview
-Welcome to my DIY TV ambient light project! Developed over the past year, this project is designed to elevate your visual experience whether you're watching movies, playing games, listening to music, or more.
+Welcome to my DIY TV ambient light project! This project is designed to elevate your visual experience whether you're watching movies, playing games, listening to music, or more.
 
 By using a Raspberry Pi Zero 2 W, an affordable capture card, an individually addressable LED strip, and a web-based interface, this project provides an immersive experience at a fraction of the cost. What would typically cost $150+ from commercial companies can be achieved for around $40.
 
